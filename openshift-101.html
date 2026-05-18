@@ -720,7 +720,7 @@ html.dark code { color:#5b9cf5; }
 <h2>High-Level Deployment Architecture</h2>
 <div class="diagram-box">
   <div class="diagram-title">Typical OpenShift Cluster &mdash; Load Balancers, Node Roles &amp; Network Layers</div>
-  <svg width="820" height="440" viewBox="0 0 820 440" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+  <svg width="820" height="390" viewBox="0 0 820 390" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
     <defs>
       <marker id="aArch" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--text-muted)"/></marker>
     </defs>
@@ -745,7 +745,7 @@ html.dark code { color:#5b9cf5; }
     <text x="650" y="17" text-anchor="middle" fill="var(--text-dim)" font-size="7.5" font-weight="500">Application Traffic (Routes)</text>
 
     <!-- ===== OPENSHIFT CLUSTER BOUNDARY ===== -->
-    <rect x="4" y="86" width="812" height="310" rx="10" fill="rgba(26,115,232,.015)" stroke="var(--blue)" stroke-opacity=".2" stroke-dasharray="6" stroke-width="1.2"/>
+    <rect x="4" y="86" width="812" height="270" rx="10" fill="rgba(26,115,232,.015)" stroke="var(--blue)" stroke-opacity=".2" stroke-dasharray="6" stroke-width="1.2"/>
     <text x="14" y="100" fill="var(--blue)" font-size="8" font-weight="600" letter-spacing=".06em">OPENSHIFT CLUSTER</text>
 
     <!-- LB arrows crossing boundary into cluster -->
@@ -775,103 +775,104 @@ html.dark code { color:#5b9cf5; }
       <text x="378" y="162" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="9">master-2</text>
     </g>
 
-    <!-- ===== WORKER NODES (top row — infra workloads co-located) ===== -->
+    <!-- ===== WORKER NODES (top row — infra co-located) ===== -->
     <g class="d-node" data-tip="hl-worker-infra">
-      <rect x="462" y="118" width="128" height="52" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
+      <rect x="462" y="118" width="168" height="52" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
       <rect x="470" y="132" width="42" height="10" rx="2" fill="var(--red)" opacity=".6"/>
       <circle cx="522" cy="137" r="4" fill="var(--red)" opacity=".5"/>
-      <text x="526" y="152" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="7.5">worker + infra</text>
-      <text x="526" y="163" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="7.5">router/mon/reg</text>
+      <text x="546" y="152" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="7.5">worker + infra</text>
+      <text x="546" y="163" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="7.5">router/mon/reg</text>
     </g>
     <g class="d-node" data-tip="hl-worker-infra">
-      <rect x="596" y="118" width="128" height="52" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
-      <rect x="604" y="132" width="42" height="10" rx="2" fill="var(--red)" opacity=".6"/>
-      <circle cx="656" cy="137" r="4" fill="var(--red)" opacity=".5"/>
-      <text x="660" y="152" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="7.5">worker + infra</text>
-      <text x="660" y="163" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="7.5">router/mon/reg</text>
-    </g>
-    <g class="d-node" data-tip="hl-worker">
-      <rect x="730" y="118" width="78" height="52" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
-      <rect x="738" y="132" width="32" height="10" rx="2" fill="var(--red)" opacity=".6"/>
-      <circle cx="776" cy="137" r="4" fill="var(--red)" opacity=".5"/>
-      <text x="769" y="162" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="9">worker-0</text>
+      <rect x="636" y="118" width="168" height="52" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
+      <rect x="644" y="132" width="42" height="10" rx="2" fill="var(--red)" opacity=".6"/>
+      <circle cx="696" cy="137" r="4" fill="var(--red)" opacity=".5"/>
+      <text x="720" y="152" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="7.5">worker + infra</text>
+      <text x="720" y="163" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="7.5">router/mon/reg</text>
     </g>
 
     <!-- Node role labels -->
-    <text x="244" y="186" text-anchor="middle" fill="var(--text-dim)" font-size="7">Control Plane (etcd, API, scheduler)</text>
-    <text x="593" y="186" text-anchor="middle" fill="var(--text-dim)" font-size="7">Infra + App workloads (co-located)</text>
-    <text x="769" y="186" text-anchor="middle" fill="var(--text-dim)" font-size="7">Apps</text>
+    <text x="244" y="184" text-anchor="middle" fill="var(--text-dim)" font-size="7">Control Plane (etcd, API, scheduler)</text>
+    <text x="633" y="184" text-anchor="middle" fill="var(--text-dim)" font-size="7">Infra + App workloads (co-located)</text>
 
-    <!-- ===== NETWORK LAYERS ===== -->
-    <!-- Machine Network (green) -->
-    <rect x="14" y="196" width="796" height="12" rx="4" fill="var(--green)" opacity=".2"/>
-    <text x="808" y="207" text-anchor="end" fill="var(--green)" font-size="7.5" font-weight="600">Machine Network</text>
-    <!-- Machine Network wires (all nodes) -->
-    <line x1="110" y1="170" x2="110" y2="196" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
-    <line x1="244" y1="170" x2="244" y2="196" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
-    <line x1="378" y1="170" x2="378" y2="196" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
-    <line x1="526" y1="170" x2="526" y2="196" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
-    <line x1="660" y1="170" x2="660" y2="196" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
-    <line x1="769" y1="170" x2="769" y2="196" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
+    <!-- ===== NETWORK: Machine Network ===== -->
+    <rect x="14" y="194" width="796" height="12" rx="4" fill="var(--green)" opacity=".2"/>
+    <text x="808" y="205" text-anchor="end" fill="var(--green)" font-size="7.5" font-weight="600">Machine Network</text>
+    <!-- Machine wires (top row nodes) -->
+    <line x1="110" y1="170" x2="110" y2="194" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
+    <line x1="244" y1="170" x2="244" y2="194" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
+    <line x1="378" y1="170" x2="378" y2="194" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
+    <line x1="546" y1="170" x2="546" y2="194" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
+    <line x1="720" y1="170" x2="720" y2="194" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
 
-    <!-- Storage Network (rose/red) — dedicated wires -->
-    <rect x="14" y="220" width="796" height="12" rx="4" fill="var(--rose)" opacity=".12"/>
-    <text x="808" y="231" text-anchor="end" fill="var(--rose)" font-size="7.5" font-weight="600">Storage (FC / iSCSI)</text>
-    <!-- Dedicated storage wires from infra + worker (offset +10px) -->
-    <line x1="536" y1="170" x2="536" y2="220" stroke="var(--rose)" stroke-width="1.5" opacity=".5"/>
-    <line x1="670" y1="170" x2="670" y2="220" stroke="var(--rose)" stroke-width="1.5" opacity=".5"/>
-    <line x1="777" y1="170" x2="777" y2="220" stroke="var(--rose)" stroke-width="1.5" opacity=".5"/>
+    <!-- ===== NETWORK: Storage Network (shared bar) ===== -->
+    <rect x="14" y="216" width="796" height="12" rx="4" fill="var(--rose)" opacity=".12"/>
+    <text x="808" y="227" text-anchor="end" fill="var(--rose)" font-size="7.5" font-weight="600">Storage (FC / iSCSI)</text>
+    <!-- Storage wires from top row infra+workers -->
+    <line x1="556" y1="170" x2="556" y2="216" stroke="var(--rose)" stroke-width="1.5" opacity=".5"/>
+    <line x1="730" y1="170" x2="730" y2="216" stroke="var(--rose)" stroke-width="1.5" opacity=".5"/>
 
-    <!-- ===== ADDITIONAL WORKER NODES (below networks) ===== -->
-    <line x1="260" y1="232" x2="260" y2="256" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
-    <line x1="390" y1="232" x2="390" y2="256" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
-    <line x1="520" y1="232" x2="520" y2="256" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
-    <line x1="650" y1="232" x2="650" y2="256" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
+    <!-- ===== WORKER NODES (bottom row — all workers including worker-0) ===== -->
+    <!-- Machine wires to bottom workers -->
+    <line x1="160" y1="206" x2="160" y2="244" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
+    <line x1="310" y1="206" x2="310" y2="244" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
+    <line x1="460" y1="206" x2="460" y2="244" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
+    <line x1="610" y1="206" x2="610" y2="244" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
+    <line x1="752" y1="206" x2="752" y2="244" stroke="var(--green)" stroke-width="1.5" opacity=".5"/>
 
     <g class="d-node" data-tip="hl-worker">
-      <rect x="200" y="256" width="128" height="52" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
-      <rect x="208" y="270" width="42" height="10" rx="2" fill="var(--red)" opacity=".6"/>
-      <circle cx="260" cy="275" r="4" fill="var(--red)" opacity=".5"/>
-      <text x="264" y="300" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="9">worker-1</text>
+      <rect x="100" y="244" width="128" height="48" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
+      <rect x="108" y="256" width="42" height="10" rx="2" fill="var(--red)" opacity=".6"/>
+      <circle cx="160" cy="261" r="4" fill="var(--red)" opacity=".5"/>
+      <text x="164" y="284" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="9">worker-0</text>
     </g>
     <g class="d-node" data-tip="hl-worker">
-      <rect x="334" y="256" width="128" height="52" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
-      <rect x="342" y="270" width="42" height="10" rx="2" fill="var(--red)" opacity=".6"/>
-      <circle cx="394" cy="275" r="4" fill="var(--red)" opacity=".5"/>
-      <text x="398" y="300" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="9">worker-2</text>
+      <rect x="248" y="244" width="128" height="48" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
+      <rect x="256" y="256" width="42" height="10" rx="2" fill="var(--red)" opacity=".6"/>
+      <circle cx="308" cy="261" r="4" fill="var(--red)" opacity=".5"/>
+      <text x="312" y="284" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="9">worker-1</text>
     </g>
     <g class="d-node" data-tip="hl-worker">
-      <rect x="468" y="256" width="128" height="52" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
-      <rect x="476" y="270" width="42" height="10" rx="2" fill="var(--red)" opacity=".6"/>
-      <circle cx="528" cy="275" r="4" fill="var(--red)" opacity=".5"/>
-      <text x="532" y="300" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="9">worker-3</text>
+      <rect x="396" y="244" width="128" height="48" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
+      <rect x="404" y="256" width="42" height="10" rx="2" fill="var(--red)" opacity=".6"/>
+      <circle cx="456" cy="261" r="4" fill="var(--red)" opacity=".5"/>
+      <text x="460" y="284" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="9">worker-2</text>
     </g>
     <g class="d-node" data-tip="hl-worker">
-      <rect x="602" y="256" width="128" height="52" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
-      <rect x="610" y="270" width="42" height="10" rx="2" fill="var(--red)" opacity=".6"/>
-      <circle cx="662" cy="275" r="4" fill="var(--red)" opacity=".5"/>
-      <text x="666" y="300" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="9">worker-4</text>
+      <rect x="544" y="244" width="128" height="48" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
+      <rect x="552" y="256" width="42" height="10" rx="2" fill="var(--red)" opacity=".6"/>
+      <circle cx="604" cy="261" r="4" fill="var(--red)" opacity=".5"/>
+      <text x="608" y="284" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="9">worker-3</text>
+    </g>
+    <g class="d-node" data-tip="hl-worker">
+      <rect x="692" y="244" width="108" height="48" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
+      <rect x="700" y="256" width="42" height="10" rx="2" fill="var(--red)" opacity=".6"/>
+      <circle cx="752" cy="261" r="4" fill="var(--red)" opacity=".5"/>
+      <text x="746" y="284" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="9">worker-4</text>
     </g>
 
-    <!-- Dedicated storage wires for bottom workers (offset +10px) -->
-    <line x1="270" y1="308" x2="270" y2="332" stroke="var(--rose)" stroke-width="1.5" opacity=".5"/>
-    <line x1="400" y1="308" x2="400" y2="332" stroke="var(--rose)" stroke-width="1.5" opacity=".5"/>
-    <line x1="530" y1="308" x2="530" y2="332" stroke="var(--rose)" stroke-width="1.5" opacity=".5"/>
-    <line x1="662" y1="308" x2="662" y2="332" stroke="var(--rose)" stroke-width="1.5" opacity=".5"/>
-    <rect x="14" y="332" width="796" height="8" rx="3" fill="var(--rose)" opacity=".1"/>
+    <!-- Storage wires from bottom workers to shared storage bar -->
+    <line x1="170" y1="244" x2="170" y2="228" stroke="var(--rose)" stroke-width="1.5" opacity=".5"/>
+    <line x1="318" y1="244" x2="318" y2="228" stroke="var(--rose)" stroke-width="1.5" opacity=".5"/>
+    <line x1="466" y1="244" x2="466" y2="228" stroke="var(--rose)" stroke-width="1.5" opacity=".5"/>
+    <line x1="614" y1="244" x2="614" y2="228" stroke="var(--rose)" stroke-width="1.5" opacity=".5"/>
+    <line x1="760" y1="244" x2="760" y2="228" stroke="var(--rose)" stroke-width="1.5" opacity=".5"/>
+
+    <!-- Label for bottom row -->
+    <text x="450" y="306" text-anchor="middle" fill="var(--text-dim)" font-size="7">Application Worker Nodes</text>
 
     <!-- Legend -->
-    <rect x="12" y="408" width="796" height="22" rx="6" fill="var(--bg-surface)" stroke="var(--border)"/>
-    <rect x="24" y="415" width="14" height="8" rx="2" fill="var(--green)" opacity=".4"/>
-    <text x="44" y="423" fill="var(--text-muted)" font-size="8">Machine Network</text>
-    <rect x="180" y="415" width="14" height="8" rx="2" fill="var(--rose)" opacity=".3"/>
-    <text x="200" y="423" fill="var(--text-muted)" font-size="8">Storage (FC / iSCSI) &mdash; dedicated</text>
-    <rect x="400" y="415" width="14" height="8" rx="2" fill="var(--blue)" opacity=".3"/>
-    <text x="420" y="423" fill="var(--text-muted)" font-size="8">Control Plane</text>
-    <rect x="530" y="415" width="14" height="8" rx="2" fill="var(--green)" opacity=".3"/>
-    <text x="550" y="423" fill="var(--text-muted)" font-size="8">Worker + Infra</text>
-    <rect x="650" y="415" width="14" height="8" rx="2" fill="var(--green)" opacity=".3"/>
-    <text x="670" y="423" fill="var(--text-muted)" font-size="8">Worker Node</text>
+    <rect x="12" y="360" width="796" height="22" rx="6" fill="var(--bg-surface)" stroke="var(--border)"/>
+    <rect x="24" y="367" width="14" height="8" rx="2" fill="var(--green)" opacity=".4"/>
+    <text x="44" y="375" fill="var(--text-muted)" font-size="8">Machine Network</text>
+    <rect x="180" y="367" width="14" height="8" rx="2" fill="var(--rose)" opacity=".3"/>
+    <text x="200" y="375" fill="var(--text-muted)" font-size="8">Storage (FC / iSCSI)</text>
+    <rect x="370" y="367" width="14" height="8" rx="2" fill="var(--blue)" opacity=".3"/>
+    <text x="390" y="375" fill="var(--text-muted)" font-size="8">Control Plane</text>
+    <rect x="500" y="367" width="14" height="8" rx="2" fill="var(--green)" opacity=".3"/>
+    <text x="520" y="375" fill="var(--text-muted)" font-size="8">Worker + Infra</text>
+    <rect x="630" y="367" width="14" height="8" rx="2" fill="var(--green)" opacity=".3"/>
+    <text x="650" y="375" fill="var(--text-muted)" font-size="8">Worker Node</text>
   </svg>
 </div>
 
@@ -1165,104 +1166,160 @@ html.dark code { color:#5b9cf5; }
 <p>Every OpenShift node (control plane and worker) runs a set of core components. Understanding what each does is essential for troubleshooting and architecture decisions.</p>
 
 <div class="diagram-box">
-  <div class="diagram-title">Node Internals &mdash; All Components Running on Every Node</div>
-  <svg width="820" height="440" viewBox="0 0 820 440" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+  <div class="diagram-title">Node Internals &mdash; Components Running on Every Worker Node</div>
+  <svg width="820" height="540" viewBox="0 0 820 540" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs>
+      <marker id="aNI" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--blue)"/></marker>
+      <marker id="aNIG" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--green)"/></marker>
+      <marker id="aNIT" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--teal)"/></marker>
+    </defs>
+
     <!-- Node boundary -->
-    <rect x="5" y="5" width="810" height="430" rx="14" fill="var(--bg-surface)" stroke="var(--border-active)" stroke-width="1.5"/>
-    <text x="410" y="28" text-anchor="middle" fill="var(--text-bright)" font-weight="700" font-size="13">OpenShift Node (RHCOS)</text>
-    <!-- Pod area -->
-    <rect x="20" y="40" width="780" height="100" rx="10" fill="var(--bg-primary)" stroke="var(--border)"/>
-    <text x="35" y="58" fill="var(--text-dim)" font-size="8" font-weight="600">POD AREA (managed by kubelet)</text>
+    <rect x="5" y="5" width="810" height="530" rx="14" fill="var(--bg-surface)" stroke="var(--border-active)" stroke-width="1.5"/>
+    <text x="410" y="26" text-anchor="middle" fill="var(--text-bright)" font-weight="700" font-size="13">OpenShift Node (RHCOS)</text>
+    <text x="410" y="40" text-anchor="middle" fill="var(--text-dim)" font-size="8">Each layer depends on the one below it</text>
+
+    <!-- ===== LAYER 1: PODS (2 rows) ===== -->
+    <rect x="18" y="50" width="784" height="118" rx="10" fill="var(--bg-primary)" stroke="var(--border)" stroke-dasharray="4"/>
+    <text x="30" y="66" fill="var(--text-dim)" font-size="8" font-weight="600" letter-spacing=".06em">PODS (user + platform DaemonSets on every node)</text>
+
+    <!-- Row 1: App pods -->
     <g class="d-node" data-tip="ni-pod-app">
-      <rect x="30" y="66" width="135" height="58" rx="8" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".4"/>
-      <text x="97" y="86" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="10">App Pod</text>
-      <text x="97" y="102" text-anchor="middle" fill="var(--text-muted)" font-size="8">containers, volumes</text>
-      <text x="97" y="116" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">10.128.2.15:8080</text>
+      <rect x="28" y="74" width="150" height="38" rx="7" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".4"/>
+      <text x="103" y="90" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="9.5">App Pod</text>
+      <text x="103" y="105" text-anchor="middle" fill="var(--text-dim)" font-size="7">10.128.2.15:8080</text>
+    </g>
+    <g class="d-node" data-tip="ni-pod-app">
+      <rect x="186" y="74" width="150" height="38" rx="7" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".4"/>
+      <text x="261" y="90" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="9.5">App Pod</text>
+      <text x="261" y="105" text-anchor="middle" fill="var(--text-dim)" font-size="7">10.128.2.22:3000</text>
+    </g>
+    <g class="d-node" data-tip="ni-pod-app">
+      <rect x="344" y="74" width="150" height="38" rx="7" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".3"/>
+      <text x="419" y="90" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="9.5">App Pod</text>
+      <text x="419" y="105" text-anchor="middle" fill="var(--text-dim)" font-size="7">10.128.2.31:9090</text>
+    </g>
+    <text x="530" y="95" fill="var(--text-dim)" font-size="8">. . .</text>
+
+    <!-- Row 2: DaemonSet pods (platform) -->
+    <g class="d-node" data-tip="ni-pod-ds">
+      <rect x="28" y="120" width="110" height="38" rx="7" fill="var(--amber-dim)" stroke="var(--amber)" stroke-opacity=".4"/>
+      <text x="83" y="136" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="8.5">node-exporter</text>
+      <text x="83" y="150" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">DS &mdash; metrics</text>
     </g>
     <g class="d-node" data-tip="ni-pod-ds">
-      <rect x="180" y="66" width="155" height="58" rx="8" fill="var(--amber-dim)" stroke="var(--amber)" stroke-opacity=".4"/>
-      <text x="257" y="86" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="10">DaemonSet Pods</text>
-      <text x="257" y="102" text-anchor="middle" fill="var(--text-muted)" font-size="8">node-exporter, vector</text>
-      <text x="257" y="116" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">monitoring + logging agents</text>
+      <rect x="146" y="120" width="90" height="38" rx="7" fill="var(--amber-dim)" stroke="var(--amber)" stroke-opacity=".4"/>
+      <text x="191" y="136" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="8.5">vector</text>
+      <text x="191" y="150" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">DS &mdash; logs</text>
     </g>
     <g class="d-node" data-tip="ni-pod-csi">
-      <rect x="350" y="66" width="135" height="58" rx="8" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".4"/>
-      <text x="417" y="86" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="10">CSI Node Plugin</text>
-      <text x="417" y="102" text-anchor="middle" fill="var(--text-muted)" font-size="8">mount/format volumes</text>
-      <text x="417" y="116" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">DaemonSet per driver</text>
+      <rect x="244" y="120" width="110" height="38" rx="7" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".4"/>
+      <text x="299" y="136" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="8.5">CSI Node</text>
+      <text x="299" y="150" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">DS &mdash; volumes</text>
     </g>
     <g class="d-node" data-tip="ni-pod-ovn">
-      <rect x="500" y="66" width="145" height="58" rx="8" fill="var(--teal-dim)" stroke="var(--teal)" stroke-opacity=".4"/>
-      <text x="572" y="86" text-anchor="middle" fill="var(--teal)" font-weight="600" font-size="10">ovnkube-node</text>
-      <text x="572" y="102" text-anchor="middle" fill="var(--text-muted)" font-size="8">OVN + Open vSwitch</text>
-      <text x="572" y="116" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">pod networking + policy</text>
+      <rect x="362" y="120" width="120" height="38" rx="7" fill="var(--teal-dim)" stroke="var(--teal)" stroke-opacity=".4"/>
+      <text x="422" y="136" text-anchor="middle" fill="var(--teal)" font-weight="600" font-size="8.5">ovnkube-node</text>
+      <text x="422" y="150" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">DS &mdash; networking</text>
     </g>
     <g class="d-node" data-tip="ni-pod-dns">
-      <rect x="660" y="66" width="130" height="58" rx="8" fill="var(--purple-dim)" stroke="var(--purple)" stroke-opacity=".4"/>
-      <text x="725" y="86" text-anchor="middle" fill="var(--purple)" font-weight="600" font-size="10">CoreDNS</text>
-      <text x="725" y="102" text-anchor="middle" fill="var(--text-muted)" font-size="8">service discovery</text>
-      <text x="725" y="116" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">svc.cluster.local</text>
-    </g>
-
-    <!-- Core agents row -->
-    <text x="410" y="162" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".08em">CORE NODE AGENTS (systemd services)</text>
-    <g class="d-node" data-tip="ni-kubelet">
-      <rect x="20" y="175" width="245" height="72" rx="10" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".5"/>
-      <text x="142" y="196" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="12">kubelet</text>
-      <text x="142" y="212" text-anchor="middle" fill="var(--text)" font-size="8.5">Primary node agent. Talks to API server via HTTPS.</text>
-      <text x="142" y="226" text-anchor="middle" fill="var(--text-muted)" font-size="8">Pod lifecycle | Image pull | Volume mount | Status report</text>
-      <text x="142" y="240" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Port 10250 (API) | Communicates with CRI-O via gRPC</text>
-    </g>
-    <g class="d-node" data-tip="ni-crio">
-      <rect x="280" y="175" width="260" height="72" rx="10" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
-      <text x="410" y="196" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="12">CRI-O</text>
-      <text x="410" y="212" text-anchor="middle" fill="var(--text)" font-size="8.5">Lightweight container runtime. OCI-compliant. Not Docker.</text>
-      <text x="410" y="226" text-anchor="middle" fill="var(--text-muted)" font-size="8">Image pull | Container create/start/stop | cgroup mgmt</text>
-      <text x="410" y="240" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">CRI gRPC socket | Versioned with Kubernetes | Uses runc/crun</text>
+      <rect x="490" y="120" width="110" height="38" rx="7" fill="var(--purple-dim)" stroke="var(--purple)" stroke-opacity=".4"/>
+      <text x="545" y="136" text-anchor="middle" fill="var(--purple)" font-weight="600" font-size="8.5">dns-default</text>
+      <text x="545" y="150" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">DS &mdash; CoreDNS</text>
     </g>
     <g class="d-node" data-tip="ni-mcd">
-      <rect x="555" y="175" width="245" height="72" rx="10" fill="var(--purple-dim)" stroke="var(--purple)" stroke-opacity=".5"/>
-      <text x="677" y="196" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="12">Machine Config Daemon</text>
-      <text x="677" y="212" text-anchor="middle" fill="var(--text)" font-size="8.5">Applies OS-level config from MachineConfig CRs.</text>
-      <text x="677" y="226" text-anchor="middle" fill="var(--text-muted)" font-size="8">Files | systemd units | kernel args | SSH keys | registries</text>
-      <text x="677" y="240" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">DaemonSet | Triggers reboot on config change</text>
-    </g>
-
-    <!-- Network + Tuning row -->
-    <text x="410" y="270" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".08em">NETWORKING &amp; PLATFORM AGENTS</text>
-    <g class="d-node" data-tip="ni-ovn-detail">
-      <rect x="20" y="283" width="250" height="72" rx="10" fill="var(--teal-dim)" stroke="var(--teal)" stroke-opacity=".5"/>
-      <text x="145" y="304" text-anchor="middle" fill="var(--teal)" font-weight="700" font-size="12">OVN-Kubernetes</text>
-      <text x="145" y="320" text-anchor="middle" fill="var(--text)" font-size="8.5">SDN/CNI plugin. Geneve overlay tunnels.</text>
-      <text x="145" y="334" text-anchor="middle" fill="var(--text-muted)" font-size="8">Pod networking | Service LB (replaces kube-proxy)</text>
-      <text x="145" y="348" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">NetworkPolicy via ACLs | EgressIP | Multus secondary NICs</text>
-    </g>
-    <g class="d-node" data-tip="ni-coredns">
-      <rect x="285" y="283" width="250" height="72" rx="10" fill="var(--purple-dim)" stroke="var(--purple)" stroke-opacity=".5"/>
-      <text x="410" y="304" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="12">CoreDNS</text>
-      <text x="410" y="320" text-anchor="middle" fill="var(--text)" font-size="8.5">Cluster DNS server. Resolves Service names to ClusterIPs.</text>
-      <text x="410" y="334" text-anchor="middle" fill="var(--text-muted)" font-size="8">&lt;svc&gt;.&lt;ns&gt;.svc.cluster.local &rarr; ClusterIP</text>
-      <text x="410" y="348" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Runs as Deployment | Managed by DNS Operator | Port 53</text>
+      <rect x="608" y="120" width="110" height="38" rx="7" fill="var(--purple-dim)" stroke="var(--purple)" stroke-opacity=".3"/>
+      <text x="663" y="136" text-anchor="middle" fill="var(--purple)" font-weight="600" font-size="8.5">MCD</text>
+      <text x="663" y="150" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">DS &mdash; OS config</text>
     </g>
     <g class="d-node" data-tip="ni-tuning">
-      <rect x="550" y="283" width="250" height="72" rx="10" fill="var(--amber-dim)" stroke="var(--amber)" stroke-opacity=".5"/>
-      <text x="675" y="304" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="12">Node Tuning Operator</text>
-      <text x="675" y="320" text-anchor="middle" fill="var(--text)" font-size="8.5">Manages node-level kernel tuning via Tuned profiles.</text>
-      <text x="675" y="334" text-anchor="middle" fill="var(--text-muted)" font-size="8">sysctl params | hugepages | CPU governor | NUMA</text>
-      <text x="675" y="348" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">DaemonSet (tuned) | Used for real-time, low-latency workloads</text>
+      <rect x="726" y="120" width="68" height="38" rx="7" fill="var(--amber-dim)" stroke="var(--amber)" stroke-opacity=".3"/>
+      <text x="760" y="136" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="8.5">tuned</text>
+      <text x="760" y="150" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">DS</text>
     </g>
 
-    <!-- OS Foundation -->
+    <!-- ===== LAYER 2: SYSTEMD SERVICES ===== -->
+    <text x="410" y="186" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".06em">SYSTEMD SERVICES (on every node)</text>
+
+    <!-- kubelet -->
+    <g class="d-node" data-tip="ni-kubelet">
+      <rect x="18" y="196" width="310" height="78" rx="10" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="173" y="217" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="13">kubelet</text>
+      <text x="173" y="233" text-anchor="middle" fill="var(--text)" font-size="8.5">Primary node agent &mdash; manages all pods on this node</text>
+      <text x="173" y="247" text-anchor="middle" fill="var(--text-muted)" font-size="8">Pod lifecycle | Probes | Volume mount | Status &rarr; API Server</text>
+      <text x="173" y="261" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Port :10250 | Watches API Server for pod assignments</text>
+    </g>
+
+    <!-- kubelet → pods (manages) -->
+    <line x1="93" y1="196" x2="93" y2="170" stroke="var(--blue)" stroke-width="1.2" marker-end="url(#aNI)"/>
+    <line x1="261" y1="196" x2="261" y2="170" stroke="var(--blue)" stroke-width="1.2" marker-end="url(#aNI)"/>
+    <text x="177" y="184" text-anchor="middle" fill="var(--blue)" font-size="7" font-weight="500">manages all pods</text>
+
+    <!-- CRI-O -->
+    <g class="d-node" data-tip="ni-crio">
+      <rect x="340" y="196" width="240" height="78" rx="10" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
+      <text x="460" y="217" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="13">CRI-O</text>
+      <text x="460" y="233" text-anchor="middle" fill="var(--text)" font-size="8.5">Container runtime (OCI). Not Docker.</text>
+      <text x="460" y="247" text-anchor="middle" fill="var(--text-muted)" font-size="8">Pull image | Create container | Start/Stop | cgroups</text>
+      <text x="460" y="261" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">CRI gRPC socket | Uses runc/crun | Versioned with K8s</text>
+    </g>
+
+    <!-- kubelet → CRI-O arrow -->
+    <line x1="328" y1="235" x2="340" y2="235" stroke="var(--green)" stroke-width="1.5" marker-end="url(#aNIG)"/>
+    <text x="334" y="228" text-anchor="middle" fill="var(--green)" font-size="6.5" font-weight="500">gRPC</text>
+
+    <!-- CRI-O → containers note -->
+    <line x1="460" y1="196" x2="460" y2="170" stroke="var(--green)" stroke-width="1" stroke-dasharray="3" marker-end="url(#aNIG)"/>
+    <text x="480" y="184" fill="var(--green)" font-size="6.5" font-weight="500">runs containers</text>
+
+    <!-- MCO (systemd, not pod) -->
+    <g class="d-node" data-tip="ni-mco">
+      <rect x="592" y="196" width="206" height="78" rx="10" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".4"/>
+      <text x="695" y="214" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="11">Machine Config</text>
+      <text x="695" y="228" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="11">Operator (MCO)</text>
+      <text x="695" y="245" text-anchor="middle" fill="var(--text-muted)" font-size="8">Delivers OS config to nodes</text>
+      <text x="695" y="259" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">MCD pod applies configs</text>
+      <text x="695" y="271" text-anchor="middle" fill="var(--text-dim)" font-size="7">Reboot on kernel/systemd changes</text>
+    </g>
+
+    <!-- ===== LAYER 3: NETWORKING ===== -->
+    <text x="410" y="294" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".06em">NETWORKING STACK</text>
+
+    <g class="d-node" data-tip="ni-ovn-detail">
+      <rect x="18" y="304" width="500" height="68" rx="10" fill="var(--teal-dim)" stroke="var(--teal)" stroke-opacity=".5"/>
+      <text x="268" y="322" text-anchor="middle" fill="var(--teal)" font-weight="700" font-size="12">OVN-Kubernetes + Open vSwitch (CNI)</text>
+      <text x="268" y="338" text-anchor="middle" fill="var(--text)" font-size="8.5">Pod networking | Service LB (no kube-proxy) | Geneve tunnels (UDP 6081)</text>
+      <text x="268" y="352" text-anchor="middle" fill="var(--text-muted)" font-size="8">NetworkPolicy via ACLs | EgressIP | Multus | br-int bridge per node</text>
+      <text x="268" y="364" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">ovnkube-node DaemonSet programs OVS flow rules</text>
+    </g>
+
+    <g class="d-node" data-tip="ni-coredns">
+      <rect x="530" y="304" width="268" height="68" rx="10" fill="var(--purple-dim)" stroke="var(--purple)" stroke-opacity=".4"/>
+      <text x="664" y="322" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="12">CoreDNS (dns-default)</text>
+      <text x="664" y="338" text-anchor="middle" fill="var(--text)" font-size="8.5">Cluster DNS &mdash; DaemonSet, one per node</text>
+      <text x="664" y="352" text-anchor="middle" fill="var(--text-muted)" font-size="8">&lt;svc&gt;.&lt;ns&gt;.svc.cluster.local &rarr; ClusterIP</text>
+      <text x="664" y="364" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Port 53 UDP/TCP | Managed by DNS Operator</text>
+    </g>
+
+    <!-- ===== LAYER 4: OS FOUNDATION ===== -->
+    <text x="410" y="392" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".06em">OPERATING SYSTEM</text>
+
     <g class="d-node" data-tip="ni-rhcos">
-      <rect x="20" y="370" width="390" height="52" rx="10" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".4"/>
-      <text x="215" y="392" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="11">RHCOS (Red Hat Enterprise Linux CoreOS)</text>
-      <text x="215" y="410" text-anchor="middle" fill="var(--text-muted)" font-size="8.5">Immutable | ostree atomic updates | SELinux enforcing | FIPS capable</text>
+      <rect x="18" y="400" width="500" height="52" rx="10" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".4"/>
+      <text x="268" y="420" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="11">RHCOS (Red Hat Enterprise Linux CoreOS)</text>
+      <text x="268" y="438" text-anchor="middle" fill="var(--text-muted)" font-size="8.5">Immutable | ostree atomic updates | SELinux enforcing | FIPS | Managed by MCO</text>
     </g>
     <g class="d-node" data-tip="ni-kernel">
-      <rect x="425" y="370" width="375" height="52" rx="10" fill="var(--bg-elevated)" stroke="var(--border)"/>
-      <text x="612" y="392" text-anchor="middle" fill="var(--text-bright)" font-weight="700" font-size="11">Linux Kernel + cgroups v2 + namespaces</text>
-      <text x="612" y="410" text-anchor="middle" fill="var(--text-muted)" font-size="8.5">Process isolation | Resource limits | Network namespaces | seccomp | capabilities</text>
+      <rect x="530" y="400" width="268" height="52" rx="10" fill="var(--bg-elevated)" stroke="var(--border)"/>
+      <text x="664" y="420" text-anchor="middle" fill="var(--text-bright)" font-weight="700" font-size="11">Linux Kernel</text>
+      <text x="664" y="438" text-anchor="middle" fill="var(--text-muted)" font-size="8.5">cgroups v2 | namespaces | seccomp | capabilities</text>
     </g>
+
+    <!-- ===== EXTERNAL: API Server connection ===== -->
+    <rect x="18" y="466" width="780" height="56" rx="8" fill="var(--bg-primary)" stroke="var(--border)"/>
+    <text x="30" y="482" fill="var(--text-bright)" font-weight="700" font-size="9">Connections to Control Plane</text>
+    <text x="30" y="498" fill="var(--text)" font-size="8"><tspan fill="var(--blue)" font-weight="600">kubelet</tspan> &rarr; API Server :6443 (watches pods, reports node status)</text>
+    <text x="30" y="512" fill="var(--text)" font-size="8"><tspan fill="var(--teal)" font-weight="600">ovnkube-node</tspan> &rarr; ovnkube-master (network config) &nbsp;&nbsp; <tspan fill="var(--purple)" font-weight="600">MCD</tspan> &rarr; API Server (watches MachineConfig) &nbsp;&nbsp; <tspan fill="var(--purple)" font-weight="600">CoreDNS</tspan> &rarr; upstream DNS</text>
   </svg>
 </div>
 
@@ -1449,6 +1506,112 @@ html.dark code { color:#5b9cf5; }
 <span class="cmt"># Remove taint</span>
 <span class="kw">oc</span> adm taint nodes worker-1 dedicated=infra:NoSchedule-</pre>
 
+<h2>Example: Toleration Matching</h2>
+<p>Node has taint <code>dedicated=gpu:NoSchedule</code>. Only pods with matching toleration can schedule there.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">Taint &amp; Toleration &mdash; Which Pods Land on a Tainted Node?</div>
+  <svg width="820" height="330" viewBox="0 0 820 330" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs>
+      <marker id="aTol" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--green)"/></marker>
+      <marker id="aTolR" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--red)"/></marker>
+    </defs>
+
+    <!-- ===== TAINTED NODE ===== -->
+    <g class="d-node" data-tip="taint-node-example">
+      <rect x="470" y="16" width="340" height="300" rx="12" fill="var(--bg-primary)" stroke="var(--amber)" stroke-opacity=".4" stroke-width="1.5"/>
+      <text x="640" y="40" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="12">worker-gpu-01</text>
+      <rect x="488" y="48" width="304" height="22" rx="5" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".4"/>
+      <text x="640" y="64" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">Taint: dedicated=gpu:NoSchedule</text>
+    </g>
+
+    <!-- GPU pod (scheduled successfully) -->
+    <g class="d-node" data-tip="tol-pod-match">
+      <rect x="488" y="84" width="145" height="80" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
+      <text x="560" y="104" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="10">ML Training Pod</text>
+      <text x="560" y="120" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">tolerations:</text>
+      <text x="560" y="132" text-anchor="middle" fill="var(--green)" font-size="7">key: dedicated</text>
+      <text x="560" y="143" text-anchor="middle" fill="var(--green)" font-size="7">value: gpu</text>
+      <text x="560" y="154" text-anchor="middle" fill="var(--green)" font-size="7">effect: NoSchedule</text>
+    </g>
+    <text x="560" y="176" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="8">&#10003; Scheduled</text>
+
+    <!-- Inference pod (also has toleration) -->
+    <g class="d-node" data-tip="tol-pod-match">
+      <rect x="647" y="84" width="145" height="80" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
+      <text x="719" y="104" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="10">Inference Pod</text>
+      <text x="719" y="120" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">tolerations:</text>
+      <text x="719" y="132" text-anchor="middle" fill="var(--green)" font-size="7">key: dedicated</text>
+      <text x="719" y="143" text-anchor="middle" fill="var(--green)" font-size="7">operator: Exists</text>
+      <text x="719" y="154" text-anchor="middle" fill="var(--green)" font-size="7">(matches any value)</text>
+    </g>
+    <text x="719" y="176" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="8">&#10003; Scheduled</text>
+
+    <!-- GPU hardware label -->
+    <rect x="488" y="192" width="304" height="36" rx="6" fill="var(--bg-surface)" stroke="var(--border)"/>
+    <text x="640" y="208" text-anchor="middle" fill="var(--text)" font-size="8.5" font-weight="600">nvidia.com/gpu: 4</text>
+    <text x="640" y="222" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">NVIDIA A100 GPU &times; 4 (node resource)</text>
+
+    <!-- Platform DaemonSet pods (always scheduled) -->
+    <g class="d-node" data-tip="tol-ds-always">
+      <rect x="488" y="242" width="145" height="58" rx="8" fill="var(--amber-dim)" stroke="var(--amber)" stroke-opacity=".3"/>
+      <text x="560" y="262" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="9">node-exporter</text>
+      <text x="560" y="278" text-anchor="middle" fill="var(--text-dim)" font-size="7">DaemonSet &mdash; auto-tolerates</text>
+      <text x="560" y="290" text-anchor="middle" fill="var(--amber)" font-size="7">&#10003; always runs</text>
+    </g>
+    <g class="d-node" data-tip="tol-ds-always">
+      <rect x="647" y="242" width="145" height="58" rx="8" fill="var(--teal-dim)" stroke="var(--teal)" stroke-opacity=".3"/>
+      <text x="719" y="262" text-anchor="middle" fill="var(--teal)" font-weight="600" font-size="9">ovnkube-node</text>
+      <text x="719" y="278" text-anchor="middle" fill="var(--text-dim)" font-size="7">DaemonSet &mdash; auto-tolerates</text>
+      <text x="719" y="290" text-anchor="middle" fill="var(--teal)" font-size="7">&#10003; always runs</text>
+    </g>
+
+    <!-- ===== PODS TRYING TO SCHEDULE ===== -->
+    <text x="18" y="26" fill="var(--text-dim)" font-size="8" font-weight="600" letter-spacing=".06em">PODS IN SCHEDULING QUEUE</text>
+
+    <!-- Pod WITH toleration → curves to node (green, success) -->
+    <g class="d-node" data-tip="tol-pod-match">
+      <rect x="18" y="40" width="200" height="68" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
+      <text x="118" y="60" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="10">ML Training Pod</text>
+      <text x="118" y="76" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">tolerations:</text>
+      <text x="118" y="88" text-anchor="middle" fill="var(--green)" font-size="7.5">- key: dedicated, value: gpu</text>
+      <text x="118" y="100" text-anchor="middle" fill="var(--green)" font-size="7.5">&nbsp; effect: NoSchedule</text>
+    </g>
+    <path d="M218,74 Q360,40 470,100" fill="none" stroke="var(--green)" stroke-width="1.5" marker-end="url(#aTol)"/>
+    <text x="340" y="50" fill="var(--green)" font-size="8" font-weight="600">&#10003; toleration matches taint</text>
+
+    <!-- Pod WITHOUT toleration → rejected (red, blocked) -->
+    <g class="d-node" data-tip="tol-pod-reject">
+      <rect x="18" y="130" width="200" height="56" rx="8" fill="var(--bg-elevated)" stroke="var(--red)" stroke-opacity=".3"/>
+      <text x="118" y="152" text-anchor="middle" fill="var(--red)" font-weight="700" font-size="10">Web Frontend Pod</text>
+      <text x="118" y="168" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">no tolerations defined</text>
+      <text x="118" y="180" text-anchor="middle" fill="var(--red)" font-size="7.5">Stays Pending (no matching node)</text>
+    </g>
+    <path d="M218,158 Q340,130 430,120" fill="none" stroke="var(--red)" stroke-width="1.5" stroke-dasharray="5,3"/>
+    <text x="370" y="116" fill="var(--red)" font-size="8" font-weight="600">&#10007; rejected &mdash; no toleration</text>
+    <text x="430" y="128" fill="var(--red)" font-size="14" font-weight="700">&times;</text>
+
+    <!-- Pod with WRONG toleration → rejected -->
+    <g class="d-node" data-tip="tol-pod-reject">
+      <rect x="18" y="206" width="200" height="68" rx="8" fill="var(--bg-elevated)" stroke="var(--red)" stroke-opacity=".3"/>
+      <text x="118" y="226" text-anchor="middle" fill="var(--red)" font-weight="700" font-size="10">Batch Job Pod</text>
+      <text x="118" y="242" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">tolerations:</text>
+      <text x="118" y="254" text-anchor="middle" fill="var(--red)" font-size="7.5">- key: dedicated, value: <tspan font-weight="700">database</tspan></text>
+      <text x="118" y="266" text-anchor="middle" fill="var(--red)" font-size="7.5">&nbsp; effect: NoSchedule</text>
+    </g>
+    <path d="M218,240 Q340,210 430,180" fill="none" stroke="var(--red)" stroke-width="1.5" stroke-dasharray="5,3"/>
+    <text x="350" y="210" fill="var(--red)" font-size="8" font-weight="600">&#10007; wrong value (database ≠ gpu)</text>
+    <text x="430" y="188" fill="var(--red)" font-size="14" font-weight="700">&times;</text>
+
+    <!-- Legend -->
+    <rect x="18" y="296" width="440" height="26" rx="6" fill="var(--bg-surface)" stroke="var(--border)"/>
+    <line x1="30" y1="309" x2="70" y2="309" stroke="var(--green)" stroke-width="1.5"/>
+    <text x="76" y="313" fill="var(--text-muted)" font-size="7.5">Toleration matches &rarr; scheduled</text>
+    <line x1="220" y1="309" x2="260" y2="309" stroke="var(--red)" stroke-width="1.5" stroke-dasharray="5,3"/>
+    <text x="266" y="313" fill="var(--text-muted)" font-size="7.5">No match / wrong value &rarr; rejected</text>
+  </svg>
+</div>
+
 <h2>Node Affinity</h2>
 <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># Hard requirement: only schedule in us-east zones</span>
 <span class="key">spec</span>:
@@ -1590,25 +1753,131 @@ html.dark code { color:#5b9cf5; }
 
 <h2>Resource Quick Reference</h2>
 <table>
-  <thead><tr><th>Resource</th><th>Scope</th><th>Purpose</th><th>Key Fields</th></tr></thead>
+  <thead><tr><th>Resource</th><th>Scope</th><th>Purpose</th></tr></thead>
   <tbody>
-    <tr><td><strong>Container</strong></td><td>Pod</td><td>Running process from an image</td><td>image, command, ports, resources</td></tr>
-    <tr><td><strong>Image</strong></td><td>Registry</td><td>Immutable binary artifact (OCI format)</td><td>layers, entrypoint, labels</td></tr>
-    <tr><td><strong>Pod</strong></td><td>Namespace</td><td>Smallest deployable unit; wraps 1+ containers</td><td>containers[], volumes[], nodeName</td></tr>
-    <tr><td><strong>Deployment</strong></td><td>Namespace</td><td>Manages ReplicaSets with rolling updates and rollback</td><td>replicas, strategy, template, revisionHistoryLimit</td></tr>
-    <tr><td><strong>ReplicaSet</strong></td><td>Namespace</td><td>Ensures N pod replicas are running (managed by Deployment)</td><td>replicas, selector, template</td></tr>
-    <tr><td><strong>DaemonSet</strong></td><td>Namespace</td><td>Runs one pod per matching node</td><td>selector, template, nodeSelector</td></tr>
-    <tr><td><strong>StatefulSet</strong></td><td>Namespace</td><td>Ordered pods with stable network IDs and per-pod PVCs</td><td>serviceName, volumeClaimTemplates</td></tr>
-    <tr><td><strong>ConfigMap</strong></td><td>Namespace</td><td>Stores non-sensitive config as key-value pairs</td><td>data, binaryData</td></tr>
-    <tr><td><strong>Secret</strong></td><td>Namespace</td><td>Stores sensitive data (tokens, passwords)</td><td>data (base64), type</td></tr>
-    <tr><td><strong>Service</strong></td><td>Namespace</td><td>Stable VIP + DNS name for pod access</td><td>selector, ports, type, clusterIP</td></tr>
-    <tr><td><strong>Route</strong></td><td>Namespace</td><td>External hostname with TLS termination</td><td>host, to (service), tls</td></tr>
-    <tr><td><strong>Namespace / Project</strong></td><td>Cluster</td><td>Logical isolation; Project adds default RBAC</td><td>labels, annotations</td></tr>
+    <tr><td><strong>Container</strong></td><td>Pod</td><td>Running process from an image</td></tr>
+    <tr><td><strong>Image</strong></td><td>Registry</td><td>Immutable binary artifact (OCI format)</td></tr>
+    <tr><td><strong>Pod</strong></td><td>Namespace</td><td>Smallest deployable unit; wraps 1+ containers</td></tr>
+    <tr><td><strong>Deployment</strong></td><td>Namespace</td><td>Manages ReplicaSets with rolling updates and rollback</td></tr>
+    <tr><td><strong>ReplicaSet</strong></td><td>Namespace</td><td>Ensures N pod replicas are running (managed by Deployment)</td></tr>
+    <tr><td><strong>DaemonSet</strong></td><td>Namespace</td><td>Runs one pod per matching node</td></tr>
+    <tr><td><strong>StatefulSet</strong></td><td>Namespace</td><td>Ordered pods with stable network IDs and per-pod PVCs</td></tr>
+    <tr><td><strong>ConfigMap</strong></td><td>Namespace</td><td>Stores non-sensitive config as key-value pairs</td></tr>
+    <tr><td><strong>Secret</strong></td><td>Namespace</td><td>Stores sensitive data (tokens, passwords)</td></tr>
+    <tr><td><strong>Service</strong></td><td>Namespace</td><td>Stable VIP + DNS name for pod access</td></tr>
+    <tr><td><strong>Route</strong></td><td>Namespace</td><td>External hostname with TLS termination</td></tr>
+    <tr><td><strong>Namespace / Project</strong></td><td>Cluster</td><td>Logical isolation; Project adds default RBAC</td></tr>
   </tbody>
 </table>
 
 <div class="callout">
   <strong>Project vs Namespace:</strong> An OpenShift Project is a Kubernetes Namespace with additional annotations and automatic RBAC (admin/edit/view roles for the creator). Use <code>oc new-project</code> instead of <code>kubectl create namespace</code>.
+</div>
+
+<h2>Pod Anatomy &mdash; How a Pod Uses Resources</h2>
+<p>A Pod consumes configuration, secrets, and storage by referencing other Kubernetes objects. Compare this to how a traditional VM gets its config.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">Traditional VM vs OpenShift Pod &mdash; How Applications Get Config, Secrets &amp; Storage</div>
+  <svg width="820" height="280" viewBox="0 0 820 280" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs>
+      <marker id="aPA" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--blue)"/></marker>
+      <marker id="aPAg" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--text-dim)"/></marker>
+    </defs>
+
+    <!-- ===== LEFT: Traditional VM ===== -->
+    <rect x="6" y="6" width="380" height="268" rx="12" fill="none" stroke="var(--text-dim)" stroke-opacity=".2" stroke-dasharray="6"/>
+    <text x="196" y="24" text-anchor="middle" fill="var(--text-dim)" font-weight="700" font-size="11">Traditional VM</text>
+
+    <g class="d-node" data-tip="vm-compare">
+      <rect x="24" y="38" width="344" height="140" rx="10" fill="var(--bg-primary)" stroke="var(--text-dim)" stroke-opacity=".15"/>
+      <text x="196" y="58" text-anchor="middle" fill="var(--text-bright)" font-weight="700" font-size="11">Virtual Machine</text>
+      <text x="196" y="74" text-anchor="middle" fill="var(--text-dim)" font-size="8">full OS + app process</text>
+
+      <rect x="40" y="84" width="140" height="36" rx="6" fill="var(--bg-surface)" stroke="var(--border)"/>
+      <text x="110" y="100" text-anchor="middle" fill="var(--text)" font-size="8" font-weight="600">Config Files</text>
+      <text x="110" y="114" text-anchor="middle" fill="var(--text-dim)" font-size="7">/etc/app/config.yaml</text>
+
+      <rect x="196" y="84" width="156" height="36" rx="6" fill="var(--bg-surface)" stroke="var(--border)"/>
+      <text x="274" y="100" text-anchor="middle" fill="var(--text)" font-size="8" font-weight="600">Passwords</text>
+      <text x="274" y="114" text-anchor="middle" fill="var(--text-dim)" font-size="7">/etc/app/db-pass (plaintext)</text>
+
+      <rect x="40" y="130" width="312" height="36" rx="6" fill="var(--bg-surface)" stroke="var(--border)"/>
+      <text x="196" y="146" text-anchor="middle" fill="var(--text)" font-size="8" font-weight="600">Local Disk / SAN LUN</text>
+      <text x="196" y="160" text-anchor="middle" fill="var(--text-dim)" font-size="7">/data &mdash; manually provisioned, VMDK/RAW</text>
+    </g>
+
+
+    <!-- ===== RIGHT: OpenShift Pod ===== -->
+    <rect x="404" y="6" width="410" height="268" rx="12" fill="rgba(26,115,232,.015)" stroke="var(--blue)" stroke-opacity=".2" stroke-dasharray="6"/>
+    <text x="609" y="24" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="11">OpenShift Pod</text>
+
+    <!-- Pod box -->
+    <g class="d-node" data-tip="pod-anatomy">
+      <rect x="422" y="38" width="164" height="100" rx="10" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="504" y="58" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="11">Pod</text>
+      <text x="504" y="74" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">my-app</text>
+
+      <rect x="434" y="82" width="140" height="46" rx="6" fill="var(--bg-primary)" stroke="var(--blue)" stroke-opacity=".2"/>
+      <text x="504" y="100" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="9">Container</text>
+      <text x="504" y="114" text-anchor="middle" fill="var(--text-dim)" font-size="7">nginx:1.25</text>
+      <text x="504" y="124" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">:8080</text>
+    </g>
+
+    <!-- ConfigMap -->
+    <g class="d-node" data-tip="res-configmap">
+      <rect x="616" y="38" width="180" height="52" rx="8" fill="var(--teal-dim)" stroke="var(--teal)" stroke-opacity=".5"/>
+      <text x="706" y="58" text-anchor="middle" fill="var(--teal)" font-weight="700" font-size="10">ConfigMap</text>
+      <text x="706" y="74" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">app-config</text>
+      <text x="706" y="86" text-anchor="middle" fill="var(--text-dim)" font-size="7">LOG_LEVEL=info, DB_HOST=...</text>
+    </g>
+    <!-- Pod ← ConfigMap (curved) -->
+    <path d="M616,64 Q596,64 586,72" fill="none" stroke="var(--teal)" stroke-width="1.3" marker-end="url(#aPA)"/>
+    <text x="594" y="58" fill="var(--teal)" font-size="6.5" font-weight="600">env vars</text>
+    <text x="594" y="92" fill="var(--teal)" font-size="6.5" font-weight="600">or volume</text>
+
+    <!-- Secret -->
+    <g class="d-node" data-tip="res-secret">
+      <rect x="616" y="102" width="180" height="52" rx="8" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".5"/>
+      <text x="706" y="122" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="10">Secret</text>
+      <text x="706" y="138" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">db-credentials</text>
+      <text x="706" y="150" text-anchor="middle" fill="var(--text-dim)" font-size="7">base64 encoded, RBAC-protected</text>
+    </g>
+    <!-- Pod ← Secret (curved) -->
+    <path d="M616,128 Q596,128 586,118" fill="none" stroke="var(--rose)" stroke-width="1.3" marker-end="url(#aPA)"/>
+    <text x="594" y="136" fill="var(--rose)" font-size="6.5" font-weight="600">mounted</text>
+    <text x="594" y="146" fill="var(--rose)" font-size="6.5" font-weight="600">/var/secrets/</text>
+
+    <!-- PVC + PV -->
+    <g class="d-node" data-tip="res-pvc">
+      <rect x="422" y="152" width="164" height="48" rx="8" fill="var(--purple-dim)" stroke="var(--purple)" stroke-opacity=".5"/>
+      <text x="504" y="172" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="10">PVC</text>
+      <text x="504" y="188" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">data-vol (10Gi RWO)</text>
+    </g>
+    <!-- Pod → PVC (curved) -->
+    <path d="M504,138 Q504,145 504,152" fill="none" stroke="var(--purple)" stroke-width="1.3" marker-end="url(#aPA)"/>
+
+    <g class="d-node" data-tip="pod-pv">
+      <rect x="616" y="164" width="180" height="36" rx="8" fill="var(--bg-surface)" stroke="var(--purple)" stroke-opacity=".3"/>
+      <text x="706" y="180" text-anchor="middle" fill="var(--purple)" font-weight="600" font-size="9">PV (auto-provisioned)</text>
+      <text x="706" y="194" text-anchor="middle" fill="var(--text-dim)" font-size="7">StorageClass &rarr; CSI &rarr; Backend</text>
+    </g>
+    <path d="M586,176 Q600,176 616,180" fill="none" stroke="var(--purple)" stroke-width="1" stroke-dasharray="4"/>
+
+    <!-- Service + Route -->
+    <g class="d-node" data-tip="res-service">
+      <rect x="422" y="214" width="164" height="48" rx="8" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".4"/>
+      <text x="504" y="234" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="10">Service</text>
+      <text x="504" y="250" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">ClusterIP 172.30.1.42</text>
+    </g>
+    <g class="d-node" data-tip="res-route">
+      <rect x="616" y="214" width="180" height="48" rx="8" fill="var(--amber-dim)" stroke="var(--amber)" stroke-opacity=".4"/>
+      <text x="706" y="234" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="10">Route</text>
+      <text x="706" y="250" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">myapp.apps.cluster.com</text>
+    </g>
+    <path d="M586,238 Q600,238 616,238" fill="none" stroke="var(--amber)" stroke-width="1.3" marker-end="url(#aPA)"/>
+
+  </svg>
 </div>
 
 <h2>Deployment In Depth</h2>
@@ -4351,7 +4620,9 @@ const T = {
   'ni-crio':{t:'CRI-O (Container Runtime)',b:'Lightweight OCI-compliant container runtime. Implements Kubernetes CRI via gRPC socket (/var/run/crio/crio.sock). Replaces Docker entirely. Handles: RunPodSandbox, CreateContainer, StartContainer, StopContainer, RemoveContainer. Uses runc/crun as low-level OCI runtime. Version matches Kubernetes version (OCP 4.14 = K8s 1.27 = CRI-O 1.27). Config managed by MCO — never edit /etc/crio/ directly.'},
   'ni-mcd':{t:'Machine Config Daemon (MCD)',b:'DaemonSet agent of the Machine Config Operator (MCO). Compares current node config with rendered MachineConfig target. Delivers: files, systemd units, kernel args, SSH keys, registry config. Most changes trigger reboot: cordon → drain → apply → reboot → uncordon. One node at a time per pool. All OS config is declarative via CRDs — no SSH needed.'},
   'ni-ovn-detail':{t:'OVN-Kubernetes (CNI)',b:'Default CNI plugin since OCP 4.12. Built on Open Virtual Network (OVN) + Open vSwitch (OVS). Geneve tunnel encapsulation for cross-node pod traffic. Replaces kube-proxy — service load balancing done natively in OVN via OVS flows. Creates logical switches (one per node), routers, ports, ACLs (NetworkPolicy), and load balancers. Supports EgressIP, EgressFirewall, and Multus for secondary network interfaces.'},
-  'ni-coredns':{t:'CoreDNS (Cluster DNS)',b:'Cluster DNS server providing service discovery. Resolves <service>.<namespace>.svc.cluster.local → ClusterIP. For headless Services (clusterIP: None), returns individual pod IPs (e.g., pod-0.svc.ns.svc.cluster.local for StatefulSets). Forwards non-cluster queries to upstream DNS. Runs as DaemonSet in openshift-dns namespace, managed by DNS Operator. Listens on port 53 UDP/TCP.'},
+  'ni-ovs':{t:'Open vSwitch (OVS)',b:'Programmable virtual switch on every node. OVN-Kubernetes uses OVS to implement pod networking, service load balancing, and NetworkPolicy enforcement via flow rules. The br-int bridge connects all pod interfaces. Geneve tunnels (UDP 6081) carry cross-node pod traffic. OVS is managed by the ovnkube-node DaemonSet pod — never configure OVS directly.'},
+  'ni-mco':{t:'Machine Config Operator (MCO)',b:'Cluster-level operator that manages OS configuration across all nodes. Renders MachineConfig CRs into ignition configs. The Machine Config Daemon (MCD) DaemonSet on each node applies changes: files, systemd units, kernel arguments, SSH keys, registry mirrors. Changes to kernel args or systemd require node reboot (rolling, one node at a time per MachineConfigPool).'},
+  'ni-coredns':{t:'CoreDNS (Cluster DNS)',b:'Cluster DNS server providing service discovery. Resolves <service>.<namespace>.svc.cluster.local → ClusterIP. For headless Services (clusterIP: None), returns individual pod IPs. Runs as DaemonSet (dns-default) in openshift-dns namespace — one pod per node. Managed by DNS Operator. Listens on port 53 UDP/TCP. Forwards non-cluster queries to upstream DNS.'},
   'ni-tuning':{t:'Node Tuning Operator',b:'Manages node-level kernel and performance tuning via Tuned profiles. DaemonSet (tuned) runs on every node applying sysctl parameters, hugepage allocation, CPU governor, NUMA pinning. Supports PerformanceProfile CRD for telco/edge/real-time workloads. Most changes applied live without reboot — unlike MachineConfig changes.'},
   'ni-rhcos':{t:'RHCOS (Immutable OS)',b:'Red Hat Enterprise Linux CoreOS. Immutable, container-optimized OS. Updates via ostree (entire OS image replaced atomically). SELinux always enforcing. FIPS 140-2 capable (install-time flag). No manual package management — rpm-ostree only. Managed entirely by Machine Config Operator. SSH access for debugging only.'},
   'ni-kernel':{t:'Linux Kernel + Isolation',b:'The Linux kernel provides the fundamental isolation primitives: namespaces (PID, network, mount, user, IPC, UTS) isolate container view of the system. cgroups v2 enforce CPU/memory/IO resource limits. seccomp profiles restrict system calls. Capabilities control root privilege decomposition. These are the building blocks that CRI-O uses to create containers.'},
@@ -4362,6 +4633,10 @@ const T = {
   'sch-filter-resource':{t:'Filter: Resource Check',b:'Checks if the node has enough allocatable CPU and memory to satisfy the pod requests. Also checks hostPort conflicts and volume zone constraints. Insufficient resources = node excluded.'},
   'sch-score':{t:'Score Phase',b:'Remaining nodes are scored 0-100 by plugins: preferredDuringScheduling affinity (weighted), LeastAllocated (spread load), topology spread constraints, inter-pod affinity. Highest score wins.'},
   'sch-bind':{t:'Bind to Node',b:'The scheduler sets spec.nodeName on the pod, binding it to the winning node. The kubelet on that node picks up the pod and starts pulling images and creating containers.'},
+  'taint-node-example':{t:'Tainted Node (GPU)',b:'This node has taint dedicated=gpu:NoSchedule. Only pods with a matching toleration (key=dedicated, value=gpu, effect=NoSchedule) can be scheduled here. Platform DaemonSets (node-exporter, ovnkube-node) auto-tolerate all taints by default, so they always run on every node regardless of taints.'},
+  'tol-pod-match':{t:'Pod With Matching Toleration',b:'This pod declares a toleration that matches the node taint. The toleration key, value, and effect must all match (Equal operator) or key and effect must match (Exists operator, matches any value). Once matched, the scheduler treats the taint as if it does not exist and the pod can be scheduled on this node.'},
+  'tol-pod-reject':{t:'Pod Rejected (No/Wrong Toleration)',b:'This pod either has no toleration at all, or has a toleration with a different value than the node taint. The scheduler cannot place it on this tainted node. If no other untainted nodes have sufficient resources, the pod stays in Pending state until a matching node becomes available.'},
+  'tol-ds-always':{t:'DaemonSet Auto-Toleration',b:'DaemonSets automatically add tolerations for node.kubernetes.io/not-ready, node.kubernetes.io/unreachable, and node.kubernetes.io/disk-pressure. OpenShift platform DaemonSets (ovnkube-node, node-exporter, MCD) also tolerate all taints to ensure they run on every node including tainted infra/GPU nodes.'},
   'taint-noschedule':{t:'NoSchedule',b:'Hard scheduling constraint. New pods without a matching toleration will NOT be scheduled on this node. Existing pods already running on the node are NOT affected. Most common effect for infra node isolation.'},
   'taint-prefernoschedule':{t:'PreferNoSchedule',b:'Soft scheduling constraint. The scheduler tries to avoid placing pods on this node, but will do so if no other node is available. No eviction of existing pods. Use when you prefer but do not require separation.'},
   'taint-noexecute':{t:'NoExecute',b:'Hard constraint that also evicts. New pods without toleration are not scheduled AND existing pods without toleration are evicted. tolerationSeconds controls how long existing pods survive before eviction. Used for node conditions (NotReady, Unreachable).'},
@@ -4391,6 +4666,9 @@ const T = {
   'res-replicaset':{t:'ReplicaSet',b:'Ensures a specified number of pod replicas are running at all times. Managed by Deployments — you rarely create ReplicaSets directly. Uses label selectors to identify pods.'},
   'res-daemonset':{t:'DaemonSet',b:'Ensures one pod runs on every node (or a subset). Used for node-level agents: log collectors, monitoring agents, CSI plugins, network plugins. Pods are auto-created on new nodes.'},
   'res-statefulset':{t:'StatefulSet',b:'For stateful applications. Provides stable network identifiers (pod-0, pod-1), ordered deployment/scaling, and per-pod persistent storage via volumeClaimTemplates.'},
+  'vm-compare':{t:'Traditional VM',b:'In a traditional VM, config files are baked into the image or manually placed via SSH/Ansible. Passwords sit in plaintext files. Storage is manually provisioned (VMDK, LUN). Scaling means cloning the entire VM with a full OS boot (minutes). Different environments (dev/staging/prod) require different images or manual config changes.'},
+  'pod-anatomy':{t:'Pod Resource Consumption',b:'A Pod references other Kubernetes objects to get its config, secrets, and storage. ConfigMaps inject as env vars or mounted files. Secrets mount at specific paths (e.g., /var/secrets/). PVCs provide persistent storage that survives pod restarts. The container image stays the same across all environments — only the ConfigMap/Secret values change.'},
+  'pod-pv':{t:'PersistentVolume (auto-provisioned)',b:'When a Pod claims storage via PVC, the StorageClass triggers a CSI driver to dynamically provision a PersistentVolume on the backend (NFS, iSCSI, Ceph, etc.). No manual provisioning needed. The PV binds to the PVC and remains even if the pod is deleted. StatefulSets create per-pod PVCs automatically.'},
   'res-configmap':{t:'ConfigMap',b:'Stores non-sensitive configuration data as key-value pairs. Mounted as files or injected as environment variables. Namespace-scoped. Changes require pod restart unless using mounted volumes.'},
   'res-secret':{t:'Secret',b:'Stores sensitive data (passwords, tokens, certificates). Base64 encoded (not encrypted by default). Types: Opaque, kubernetes.io/tls, kubernetes.io/dockerconfigjson. Enable etcd encryption at rest for security.'},
   'res-deployment':{t:'Deployment',b:'Declarative workload controller managing ReplicaSets and pod templates. Handles rolling updates, rollbacks, scaling, and revision history. Creates a new ReplicaSet on each template change and gradually shifts pods from old to new. Use maxSurge and maxUnavailable to control update speed.'},
