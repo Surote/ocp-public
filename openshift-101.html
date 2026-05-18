@@ -472,42 +472,10 @@ html.dark code { color:#5b9cf5; }
 
 <!-- ═══════════════ SIDEBAR ═══════════════ -->
 <nav class="sidebar" id="sidebar">
-  <div class="nav-group"><div class="nav-group-label">Foundations</div></div>
+  <div class="nav-group"><div class="nav-group-label">Platform</div></div>
   <div class="nav-item active" data-page="platform" data-idx="0">
     <span class="nav-icon">&#9670;</span>
     <span class="nav-label">What is OpenShift</span>
-    <span class="nav-check">&#10003;</span>
-  </div>
-  <div class="nav-item" data-page="nodes" data-idx="1">
-    <span class="nav-icon">&#9641;</span>
-    <span class="nav-label">Nodes &amp; Node Types</span>
-    <span class="nav-check">&#10003;</span>
-  </div>
-  <div class="nav-item" data-page="taints" data-idx="15">
-    <span class="nav-icon">&#9878;</span>
-    <span class="nav-label">Taints &amp; Affinity</span>
-    <span class="nav-check">&#10003;</span>
-  </div>
-  <div class="nav-item" data-page="resources" data-idx="12">
-    <span class="nav-icon">&#9830;</span>
-    <span class="nav-label">Core Resources</span>
-    <span class="nav-check">&#10003;</span>
-  </div>
-  <div class="nav-item" data-page="namespaces" data-idx="17">
-    <span class="nav-icon">&#9634;</span>
-    <span class="nav-label">Namespaces &amp; Projects</span>
-    <span class="nav-check">&#10003;</span>
-  </div>
-  <div class="nav-item" data-page="pods" data-idx="2">
-    <span class="nav-icon">&#9673;</span>
-    <span class="nav-label">Pod Lifecycle</span>
-    <span class="nav-check">&#10003;</span>
-  </div>
-
-  <div class="nav-group"><div class="nav-group-label">Workloads</div></div>
-  <div class="nav-item" data-page="deployments" data-idx="3">
-    <span class="nav-icon">&#9654;</span>
-    <span class="nav-label">Deployments &amp; Workloads</span>
     <span class="nav-check">&#10003;</span>
   </div>
   <div class="nav-item" data-page="installation" data-idx="13">
@@ -516,7 +484,41 @@ html.dark code { color:#5b9cf5; }
     <span class="nav-check">&#10003;</span>
   </div>
 
-  <div class="nav-group"><div class="nav-group-label">Networking &amp; Storage</div></div>
+  <div class="nav-group"><div class="nav-group-label">Architecture</div></div>
+  <div class="nav-item" data-page="nodes" data-idx="1">
+    <span class="nav-icon">&#9641;</span>
+    <span class="nav-label">Nodes &amp; Node Types</span>
+    <span class="nav-check">&#10003;</span>
+  </div>
+  <div class="nav-item" data-page="namespaces" data-idx="17">
+    <span class="nav-icon">&#9634;</span>
+    <span class="nav-label">Namespaces &amp; Projects</span>
+    <span class="nav-check">&#10003;</span>
+  </div>
+
+  <div class="nav-group"><div class="nav-group-label">Workloads</div></div>
+  <div class="nav-item" data-page="resources" data-idx="12">
+    <span class="nav-icon">&#9830;</span>
+    <span class="nav-label">Core Resources</span>
+    <span class="nav-check">&#10003;</span>
+  </div>
+  <div class="nav-item" data-page="pods" data-idx="2">
+    <span class="nav-icon">&#9673;</span>
+    <span class="nav-label">Pod Lifecycle</span>
+    <span class="nav-check">&#10003;</span>
+  </div>
+  <div class="nav-item" data-page="deployments" data-idx="3">
+    <span class="nav-icon">&#9654;</span>
+    <span class="nav-label">Deployments &amp; Workloads</span>
+    <span class="nav-check">&#10003;</span>
+  </div>
+  <div class="nav-item" data-page="taints" data-idx="15">
+    <span class="nav-icon">&#9878;</span>
+    <span class="nav-label">Taints &amp; Affinity</span>
+    <span class="nav-check">&#10003;</span>
+  </div>
+
+  <div class="nav-group"><div class="nav-group-label">Networking</div></div>
   <div class="nav-item" data-page="networking" data-idx="4">
     <span class="nav-icon">&#8644;</span>
     <span class="nav-label">Networking &amp; Routes</span>
@@ -527,18 +529,20 @@ html.dark code { color:#5b9cf5; }
     <span class="nav-label">NetworkPolicy</span>
     <span class="nav-check">&#10003;</span>
   </div>
+
+  <div class="nav-group"><div class="nav-group-label">Storage &amp; Security</div></div>
   <div class="nav-item" data-page="storage" data-idx="5">
     <span class="nav-icon">&#9744;</span>
     <span class="nav-label">Storage &amp; CSI</span>
     <span class="nav-check">&#10003;</span>
   </div>
-
-  <div class="nav-group"><div class="nav-group-label">Security &amp; Operations</div></div>
   <div class="nav-item" data-page="security" data-idx="6">
     <span class="nav-icon">&#9919;</span>
     <span class="nav-label">Security &amp; SCC</span>
     <span class="nav-check">&#10003;</span>
   </div>
+
+  <div class="nav-group"><div class="nav-group-label">Operations</div></div>
   <div class="nav-item" data-page="logging" data-idx="14">
     <span class="nav-icon">&#9776;</span>
     <span class="nav-label">Logging &amp; Monitoring</span>
@@ -547,6 +551,11 @@ html.dark code { color:#5b9cf5; }
   <div class="nav-item" data-page="operators" data-idx="7">
     <span class="nav-icon">&#9881;</span>
     <span class="nav-label">Operators &amp; OLM</span>
+    <span class="nav-check">&#10003;</span>
+  </div>
+  <div class="nav-item" data-page="day2" data-idx="11">
+    <span class="nav-icon">&#8634;</span>
+    <span class="nav-label">Day-2 Operations</span>
     <span class="nav-check">&#10003;</span>
   </div>
 
@@ -567,11 +576,6 @@ html.dark code { color:#5b9cf5; }
     <span class="nav-icon">&#9827;</span>
     <span class="nav-label">ODF</span>
     <span class="nav-badge badge-adv">ADV</span>
-    <span class="nav-check">&#10003;</span>
-  </div>
-  <div class="nav-item" data-page="day2" data-idx="11">
-    <span class="nav-icon">&#8634;</span>
-    <span class="nav-label">Day-2 Operations</span>
     <span class="nav-check">&#10003;</span>
   </div>
 </nav>
@@ -748,12 +752,13 @@ html.dark code { color:#5b9cf5; }
     <rect x="4" y="86" width="812" height="270" rx="10" fill="rgba(26,115,232,.015)" stroke="var(--blue)" stroke-opacity=".2" stroke-dasharray="6" stroke-width="1.2"/>
     <text x="14" y="100" fill="var(--blue)" font-size="8" font-weight="600" letter-spacing=".06em">OPENSHIFT CLUSTER</text>
 
-    <!-- LB arrows crossing boundary into cluster -->
+    <!-- API LB arrows → master nodes -->
     <line x1="110" y1="66" x2="110" y2="116" stroke="var(--text-dim)" stroke-width="1" marker-end="url(#aArch)"/>
-    <line x1="170" y1="66" x2="240" y2="116" stroke="var(--text-dim)" stroke-width="1" marker-end="url(#aArch)"/>
-    <line x1="230" y1="66" x2="370" y2="116" stroke="var(--text-dim)" stroke-width="1" marker-end="url(#aArch)"/>
-    <line x1="590" y1="66" x2="505" y2="116" stroke="var(--text-dim)" stroke-width="1" marker-end="url(#aArch)"/>
-    <line x1="650" y1="66" x2="610" y2="116" stroke="var(--text-dim)" stroke-width="1" marker-end="url(#aArch)"/>
+    <line x1="170" y1="66" x2="244" y2="116" stroke="var(--text-dim)" stroke-width="1" marker-end="url(#aArch)"/>
+    <line x1="230" y1="66" x2="378" y2="116" stroke="var(--text-dim)" stroke-width="1" marker-end="url(#aArch)"/>
+    <!-- Apps LB arrows → infra/worker nodes (where HAProxy router runs) -->
+    <line x1="610" y1="66" x2="546" y2="116" stroke="var(--text-dim)" stroke-width="1" marker-end="url(#aArch)"/>
+    <line x1="690" y1="66" x2="720" y2="116" stroke="var(--text-dim)" stroke-width="1" marker-end="url(#aArch)"/>
 
     <!-- ===== MASTER NODES ===== -->
     <g class="d-node" data-tip="hl-master">
@@ -2073,17 +2078,17 @@ html.dark code { color:#5b9cf5; }
 
 <h2>Default System Namespaces</h2>
 <table>
-  <thead><tr><th>Namespace</th><th>Purpose</th><th>Modify?</th></tr></thead>
+  <thead><tr><th>Namespace</th><th>Purpose</th></tr></thead>
   <tbody>
-    <tr><td><strong>openshift-apiserver</strong></td><td>OpenShift API Server pods</td><td>No (CVO-managed)</td></tr>
-    <tr><td><strong>openshift-etcd</strong></td><td>etcd cluster members</td><td>No</td></tr>
-    <tr><td><strong>openshift-ingress</strong></td><td>Ingress Controller (HAProxy) pods</td><td>No</td></tr>
-    <tr><td><strong>openshift-monitoring</strong></td><td>Prometheus, Alertmanager, Thanos</td><td>ConfigMap only</td></tr>
-    <tr><td><strong>openshift-logging</strong></td><td>Loki, Vector, logging stack</td><td>Via operator CR</td></tr>
-    <tr><td><strong>openshift-operators</strong></td><td>AllNamespaces operator installs</td><td>Via OLM only</td></tr>
-    <tr><td><strong>openshift-image-registry</strong></td><td>Internal container image registry</td><td>Via operator CR</td></tr>
-    <tr><td><strong>kube-system</strong></td><td>Kubernetes core components</td><td>No</td></tr>
-    <tr><td><strong>default</strong></td><td>Default namespace for ad-hoc resources</td><td>Avoid for production</td></tr>
+    <tr><td><strong>openshift-apiserver</strong></td><td>OpenShift API Server pods</td></tr>
+    <tr><td><strong>openshift-etcd</strong></td><td>etcd cluster members</td></tr>
+    <tr><td><strong>openshift-ingress</strong></td><td>Ingress Controller (HAProxy) pods</td></tr>
+    <tr><td><strong>openshift-monitoring</strong></td><td>Prometheus, Alertmanager, Thanos</td></tr>
+    <tr><td><strong>openshift-logging</strong></td><td>Loki, Vector, logging stack</td></tr>
+    <tr><td><strong>openshift-operators</strong></td><td>AllNamespaces operator installs</td></tr>
+    <tr><td><strong>openshift-image-registry</strong></td><td>Internal container image registry</td></tr>
+    <tr><td><strong>kube-system</strong></td><td>Kubernetes core components</td></tr>
+    <tr><td><strong>default</strong></td><td>Default namespace for ad-hoc resources</td></tr>
   </tbody>
 </table>
 
@@ -4553,7 +4558,7 @@ html.dark code { color:#5b9cf5; }
 <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">&#8593;</button>
 
 <script>
-const PAGES = ['platform','nodes','taints','resources','namespaces','pods','deployments','installation','networking','netpol','storage','security','logging','operators','acm','acs','odf','day2'];
+const PAGES = ['platform','installation','nodes','namespaces','resources','pods','deployments','taints','networking','netpol','storage','security','logging','operators','day2','acm','acs','odf'];
 const readState = JSON.parse(localStorage.getItem('ocp101-read') || '[]');
 const navItems = document.querySelectorAll('.nav-item[data-page]');
 
