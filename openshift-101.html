@@ -3324,9 +3324,116 @@ html.dark code { color:#5b9cf5; }
 </ul>
 
 <h2>EgressIP</h2>
-<div class="callout">
-  <strong>EgressIP:</strong> Assigns a predictable source IP address to outbound traffic from a namespace. External firewalls can whitelist this IP instead of all node IPs. The EgressIP is bound to a specific node and fails over if the node goes down.
+<p>By default, outbound traffic from pods uses the <strong>node IP</strong> as source. This is a problem when external firewalls need to whitelist your cluster — you'd need to allow ALL node IPs, and they change when nodes scale. <strong>EgressIP</strong> assigns a predictable, static source IP to all outbound traffic from a namespace.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">EgressIP &mdash; Predictable Source IP for Outbound Traffic</div>
+  <svg width="820" height="240" viewBox="0 0 820 240" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs>
+      <marker id="aEgr" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--blue)"/></marker>
+      <marker id="aEgrR" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--rose)"/></marker>
+    </defs>
+
+    <!-- ===== LEFT: OpenShift Cluster ===== -->
+    <rect x="6" y="6" width="480" height="228" rx="12" fill="rgba(26,115,232,.015)" stroke="var(--blue)" stroke-opacity=".2" stroke-dasharray="6"/>
+    <text x="16" y="22" fill="var(--blue)" font-size="8" font-weight="600" letter-spacing=".06em">OPENSHIFT CLUSTER</text>
+
+    <!-- Project namespace -->
+    <rect x="18" y="32" width="200" height="100" rx="10" fill="var(--bg-primary)" stroke="var(--amber)" stroke-opacity=".3" stroke-dasharray="4"/>
+    <text x="28" y="46" fill="var(--amber)" font-weight="600" font-size="8">Project: my-app</text>
+
+    <g class="d-node" data-tip="egress-pod">
+      <rect x="28" y="54" width="82" height="34" rx="6" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".4"/>
+      <text x="69" y="70" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="8.5">Pod A</text>
+      <text x="69" y="82" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">10.128.2.15</text>
+    </g>
+    <g class="d-node" data-tip="egress-pod">
+      <rect x="118" y="54" width="82" height="34" rx="6" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".4"/>
+      <text x="159" y="70" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="8.5">Pod B</text>
+      <text x="159" y="82" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">10.128.4.22</text>
+    </g>
+
+    <g class="d-node" data-tip="egress-ip">
+      <rect x="28" y="96" width="172" height="26" rx="5" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".5"/>
+      <text x="114" y="114" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="8.5">EgressIP: 192.168.1.155</text>
+    </g>
+
+    <!-- Egress node (active) -->
+    <g class="d-node" data-tip="egress-node">
+      <rect x="240" y="32" width="230" height="56" rx="8" fill="var(--bg-surface)" stroke="var(--rose)" stroke-opacity=".3"/>
+      <text x="355" y="50" text-anchor="middle" fill="var(--text-bright)" font-weight="600" font-size="9">worker-1 (egress-assignable)</text>
+      <text x="355" y="66" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="8">EgressIP 192.168.1.155 bound</text>
+      <text x="355" y="80" text-anchor="middle" fill="var(--text-dim)" font-size="7">Node IP: 192.168.1.30</text>
+    </g>
+
+    <!-- Failover node -->
+    <g class="d-node" data-tip="egress-failover">
+      <rect x="240" y="100" width="230" height="42" rx="8" fill="var(--bg-surface)" stroke="var(--border)" stroke-dasharray="4"/>
+      <text x="355" y="118" text-anchor="middle" fill="var(--text)" font-weight="600" font-size="8.5">worker-2 (failover)</text>
+      <text x="355" y="134" text-anchor="middle" fill="var(--text-dim)" font-size="7">Takes over EgressIP if worker-1 down</text>
+    </g>
+
+    <!-- Pod → egress node (curved, goes right then up) -->
+    <path d="M200,76 Q226,76 240,60" fill="none" stroke="var(--rose)" stroke-width="1.3" marker-end="url(#aEgrR)"/>
+    <text x="222" y="62" fill="var(--rose)" font-size="6.5" font-weight="500">SNAT</text>
+
+    <!-- Egress node → external (clean right curve) -->
+    <path d="M470,60 Q498,60 510,60" fill="none" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aEgr)"/>
+    <text x="490" y="52" fill="var(--blue)" font-size="7" font-weight="600">src: .155</text>
+
+    <!-- Node label note -->
+    <rect x="18" y="154" width="452" height="28" rx="6" fill="var(--bg-surface)" stroke="var(--border)"/>
+    <text x="30" y="172" fill="var(--text)" font-size="8"><tspan font-weight="600">Node label:</tspan> <tspan fill="var(--amber)" font-weight="600">k8s.ovn.org/egress-assignable=""</tspan> <tspan fill="var(--text-dim)">&mdash; required on egress nodes</tspan></text>
+
+    <!-- Without EgressIP note -->
+    <rect x="18" y="192" width="452" height="34" rx="6" fill="var(--bg-surface)" stroke="var(--border)"/>
+    <text x="30" y="206" fill="var(--text)" font-size="8"><tspan font-weight="600">Without EgressIP:</tspan> <tspan fill="var(--red)">Pod uses random node IP &rarr; must whitelist ALL node IPs &rarr; breaks on scale</tspan></text>
+    <text x="30" y="220" fill="var(--text-dim)" font-size="7.5">With EgressIP: one static IP per namespace, auto-failover, no firewall changes on scale</text>
+
+    <!-- ===== RIGHT: External ===== -->
+    <rect x="518" y="6" width="296" height="228" rx="12" fill="none" stroke="var(--text-dim)" stroke-opacity=".2" stroke-dasharray="6"/>
+    <text x="528" y="22" fill="var(--text-dim)" font-size="8" font-weight="600" letter-spacing=".06em">EXTERNAL</text>
+
+    <g class="d-node" data-tip="egress-external">
+      <rect x="534" y="34" width="264" height="86" rx="8" fill="var(--bg-surface)" stroke="var(--border)"/>
+      <text x="666" y="54" text-anchor="middle" fill="var(--text-bright)" font-weight="700" font-size="10">External Database / API</text>
+      <text x="666" y="72" text-anchor="middle" fill="var(--text-muted)" font-size="8">Firewall rule:</text>
+      <text x="666" y="90" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9">ALLOW src 192.168.1.155 &#10003;</text>
+      <text x="666" y="106" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">One IP to whitelist instead of all node IPs</text>
+    </g>
+
+    <!-- Use cases -->
+    <rect x="534" y="134" width="264" height="90" rx="8" fill="var(--bg-surface)" stroke="var(--border)"/>
+    <text x="546" y="152" fill="var(--text-bright)" font-weight="600" font-size="9">When to use EgressIP:</text>
+    <text x="546" y="168" fill="var(--text-muted)" font-size="8">&#8226; External DB with IP-based firewall</text>
+    <text x="546" y="184" fill="var(--text-muted)" font-size="8">&#8226; Third-party API with IP allowlist</text>
+    <text x="546" y="200" fill="var(--text-muted)" font-size="8">&#8226; Compliance: traceable outbound IPs</text>
+    <text x="546" y="216" fill="var(--text-muted)" font-size="8">&#8226; Partner VPN requiring static source</text>
+  </svg>
 </div>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># 1. Label nodes as egress-assignable</span>
+<span class="kw">oc</span> label node worker-1 k8s.ovn.org/egress-assignable=""
+<span class="kw">oc</span> label node worker-2 k8s.ovn.org/egress-assignable=""
+
+<span class="cmt"># 2. Create EgressIP object</span>
+<span class="kw">oc</span> apply -f - &lt;&lt;EOF
+<span class="key">apiVersion</span>: k8s.ovn.org/v1
+<span class="key">kind</span>: EgressIP
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">my-app-egress</span>
+<span class="key">spec</span>:
+  <span class="key">egressIPs</span>:
+    - <span class="str">192.168.1.155</span>
+  <span class="key">namespaceSelector</span>:
+    <span class="key">matchLabels</span>:
+      <span class="key">kubernetes.io/metadata.name</span>: <span class="str">my-app</span>
+EOF
+
+<span class="cmt"># 3. Verify EgressIP assignment</span>
+<span class="kw">oc</span> get egressip
+<span class="kw">oc</span> get egressip my-app-egress -o yaml</pre>
+
 
 <h2>Multus CNI</h2>
 <p><strong>Multus</strong> is a meta-plugin that enables pods to have <strong>multiple network interfaces</strong>. The primary interface uses OVN-Kubernetes; additional interfaces can use SR-IOV, macvlan, bridge, or other CNI plugins. Common for telco, NFV, and high-performance workloads.</p>
@@ -4030,12 +4137,6 @@ html.dark code { color:#5b9cf5; }
     </g>
     <line x1="605" y1="123" x2="605" y2="135" stroke="var(--teal)" stroke-width="1" stroke-dasharray="4"/>
 
-    <!-- Telemeter -->
-    <g class="d-node" data-tip="mon-telemeter">
-      <rect x="720" y="135" width="90" height="42" rx="8" fill="var(--bg-surface)" stroke="var(--border)"/>
-      <text x="765" y="153" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="8.5">Telemeter</text>
-      <text x="765" y="168" text-anchor="middle" fill="var(--text-dim)" font-size="7">to Red Hat</text>
-    </g>
 
     <!-- User Workload Monitoring -->
     <rect x="10" y="240" width="800" height="120" rx="10" fill="var(--bg-surface)" stroke="var(--border)" stroke-dasharray="6"/>
@@ -4095,6 +4196,21 @@ html.dark code { color:#5b9cf5; }
     <text x="410" y="500" text-anchor="middle" fill="var(--text-muted)" font-size="8.5">oc -n openshift-monitoring edit cm cluster-monitoring-config &rarr; set <tspan fill="var(--amber)" font-weight="600">enableUserWorkload: true</tspan> &rarr; then create ServiceMonitor in your namespace</text>
   </svg>
 </div>
+
+<h2>Monitoring Components</h2>
+<table>
+  <thead><tr><th>Component</th><th>What It Does</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Prometheus (x2 HA)</strong></td><td>Time-series database. Scrapes metrics from all targets every 30s via pull model.</td><td>Runs in openshift-monitoring. 15-day default retention. Each instance stores data independently on PVC. 100+ built-in alerting rules.</td></tr>
+    <tr><td><strong>Thanos Sidecar</strong></td><td>Runs alongside each Prometheus. Exposes StoreAPI for remote reads.</td><td>Enables Thanos Querier to aggregate data from multiple Prometheus instances without data duplication.</td></tr>
+    <tr><td><strong>Thanos Querier</strong></td><td>Unified PromQL query endpoint. Aggregates data from all Thanos Sidecars.</td><td>Single entry point for OCP Console dashboards and external Grafana. Deduplicates HA pairs.</td></tr>
+    <tr><td><strong>Alertmanager (x2 HA)</strong></td><td>Receives firing alerts from Prometheus. Routes, deduplicates, groups, and sends notifications.</td><td>Supports Slack, PagerDuty, email, webhook, OpsGenie. Silencing and inhibition rules. Cluster-scoped HA gossip.</td></tr>
+    <tr><td><strong>node-exporter</strong></td><td>DaemonSet exposing host-level metrics: CPU, memory, disk, network per node.</td><td>Scraped by Prometheus. Metrics like <code>node_cpu_seconds_total</code>, <code>node_memory_MemAvailable_bytes</code>.</td></tr>
+    <tr><td><strong>kube-state-metrics</strong></td><td>Generates metrics from Kubernetes object state (deployments, pods, nodes, etc.).</td><td>Metrics like <code>kube_deployment_status_replicas</code>, <code>kube_pod_status_phase</code>. Not resource usage &mdash; object state.</td></tr>
+    <tr><td><strong>Prometheus Adapter</strong></td><td>Exposes custom Prometheus metrics via Kubernetes Metrics API.</td><td>Enables HPA (Horizontal Pod Autoscaler) to scale based on custom metrics like requests-per-second.</td></tr>
+    <tr><td><strong>UWM Prometheus</strong></td><td>Separate Prometheus instance for user workloads.</td><td>Scrapes user-created ServiceMonitor/PodMonitor resources. Isolated from platform monitoring. Must be enabled.</td></tr>
+  </tbody>
+</table>
 
 <!-- ═══ LOGGING SECTION ═══ -->
 <h2>Logging Architecture</h2>
@@ -4202,6 +4318,20 @@ html.dark code { color:#5b9cf5; }
     <text x="65" y="425" fill="var(--text)" font-size="8">  - inputRefs: [application, infrastructure]  outputRefs: [loki-internal]  |  - inputRefs: [audit]  outputRefs: [splunk-external]</text>
   </svg>
 </div>
+
+<h2>Logging Components</h2>
+<table>
+  <thead><tr><th>Component</th><th>What It Does</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Vector</strong></td><td>Log collector. DaemonSet running on every node. Reads container logs and journald.</td><td>Rust-based, low memory (~50MB). Reads from <code>/var/log/containers/</code> and journald. Replaces Fluentd (deprecated). Supports parsing, filtering, transforms.</td></tr>
+    <tr><td><strong>ClusterLogForwarder</strong></td><td>Custom resource defining log routing pipelines. Connects inputs (log types) to outputs (destinations).</td><td>Three input types: application, infrastructure, audit. Output types: lokiStack, splunk, elasticsearch, cloudwatch, kafka, syslog, http. Filter by namespace.</td></tr>
+    <tr><td><strong>LokiStack</strong></td><td>Log storage backend. Stores log data in object storage with metadata indexing.</td><td>Components: Distributor (receives), Ingester (writes chunks), Compactor (optimizes), Querier (reads), Query-frontend (caches). Requires S3-compatible object storage (ODF NooBaa, AWS S3, Azure Blob).</td></tr>
+    <tr><td><strong>Logging Operator</strong></td><td>Deploys and manages Vector DaemonSet. Watches ClusterLogForwarder CR.</td><td>Install from OperatorHub. Creates collector pods in openshift-logging namespace.</td></tr>
+    <tr><td><strong>Loki Operator</strong></td><td>Deploys and manages LokiStack. Handles sizing, storage config, tenant separation.</td><td>Sizes: 1x.demo, 1x.extra-small, 1x.small, 1x.medium. Manages schema upgrades and compaction.</td></tr>
+    <tr><td><strong>Cluster Observability Operator</strong></td><td>Provides UIPlugin for log viewing in OCP Console.</td><td>Adds &ldquo;Logs&rdquo; tab to pod/namespace views. LogQL query support. Replaces legacy Kibana UI.</td></tr>
+    <tr><td><strong>Log Tenants</strong></td><td>Loki enforces RBAC via three built-in tenants.</td><td><strong>application</strong>: user pod logs. <strong>infrastructure</strong>: openshift-*/kube-* pod logs + journald. <strong>audit</strong>: API server, OAuth, OVN audit logs.</td></tr>
+  </tbody>
+</table>
 
 <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># Check monitoring stack health</span>
 <span class="kw">oc</span> get pods -n openshift-monitoring
@@ -4959,6 +5089,13 @@ const T = {
   'ai-onprem':{t:'On-Prem Mode',b:'Assisted Service deployed on existing hub cluster via Infrastructure Operator (part of MCE/RHACM). Create AgentServiceConfig CRD to deploy. Supports disconnected environments with mirror registry. GitOps integration for ZTP at scale.'},
 
   // Networking
+  // EgressIP
+  'egress-pod':{t:'Pod (EgressIP Source)',b:'Outbound traffic from this pod will be SNAT\'d to the EgressIP address instead of the node IP. The pod itself is unaware of EgressIP — OVN-Kubernetes handles the source NAT transparently at the OVS level. All pods in the matching namespace use the same EgressIP.'},
+  'egress-ip':{t:'EgressIP Address',b:'A static IP address (from the node subnet) assigned to outbound traffic for a namespace. Defined in the EgressIP CR spec.egressIPs field. Multiple EgressIPs can be specified for load distribution. The IP must be in the same subnet as the node hosting it and must not conflict with existing IPs.'},
+  'egress-node':{t:'Egress Node (Assignable)',b:'Node labeled k8s.ovn.org/egress-assignable="" that can host EgressIPs. OVN-Kubernetes binds the EgressIP as a secondary IP on this node\'s primary interface. All matching namespace traffic is routed through this node for SNAT. Multiple EgressIPs can be distributed across multiple assignable nodes.'},
+  'egress-failover':{t:'EgressIP Failover',b:'If the node hosting the EgressIP goes down, OVN-Kubernetes automatically reassigns the EgressIP to another egress-assignable node. Failover takes a few seconds. External systems see the same source IP — no firewall changes needed. Requires at least 2 egress-assignable nodes for HA.'},
+  'egress-external':{t:'External System (Firewall)',b:'External database, API, or service with IP-based firewall rules. With EgressIP, you only need to whitelist one static IP per namespace instead of all node IPs. When cluster scales up/down, the EgressIP stays the same — no firewall updates needed.'},
+
   'net-client':{t:'External Client',b:'Browser or CLI outside the cluster. Resolves app hostname to LB VIP via DNS.'},
   'net-dns':{t:'DNS (Wildcard)',b:'*.apps.cluster.example.com resolves to the external LB VIP. Every Route hostname resolves automatically via this wildcard record.'},
   'net-lb':{t:'Load Balancer',b:'L4 TCP on ports 80/443 to infra nodes running Ingress Controller. Can be HAProxy, F5, MetalLB, cloud LB.'},
@@ -5058,7 +5195,7 @@ const T = {
   'mon-alertmgr':{t:'Alertmanager (x2 HA)',b:'Receives firing alerts from Prometheus. Deduplicates, groups by label, and routes to receivers: Slack, PagerDuty, email, webhooks. Configure via alertmanager-main secret in openshift-monitoring. HA pair for reliability.'},
   'mon-adapter':{t:'Prometheus Adapter',b:'Exposes custom Prometheus metrics as Kubernetes custom.metrics.k8s.io API. Enables HorizontalPodAutoscaler (HPA) to scale on application-specific metrics (requests/sec, queue depth) instead of just CPU/memory.'},
   'mon-telemeter':{t:'Telemeter Client',b:'Sends anonymized telemetry data to Red Hat: cluster size, version, operator status, health metrics. Used for proactive support and product improvements. Can be disabled in disconnected clusters.'},
-  'mon-cmo':{t:'Cluster Monitoring Operator',b:'Deploys and manages the entire monitoring stack: Prometheus, Alertmanager, Thanos Querier, node-exporter, kube-state-metrics, Prometheus Adapter, Telemeter. Configured via cluster-monitoring-config ConfigMap.'},
+  'mon-cmo':{t:'Cluster Monitoring Operator',b:'Deploys and manages the entire monitoring stack: Prometheus, Alertmanager, Thanos Querier, node-exporter, kube-state-metrics, Prometheus Adapter. Configured via cluster-monitoring-config ConfigMap.'},
   'mon-uwm-prom':{t:'User Workload Monitoring Prometheus',b:'Separate Prometheus instance in openshift-user-workload-monitoring. Scrapes user-created ServiceMonitor and PodMonitor CRs. Isolated from platform monitoring. Enable via cluster-monitoring-config ConfigMap.'},
   'mon-uwm-sidecar':{t:'UWM Thanos Sidecar',b:'Sidecar on the UWM Prometheus. Registers with the main Thanos Querier so user metrics are queryable alongside platform metrics in the OCP Console.'},
   'mon-thanos-ruler':{t:'Thanos Ruler',b:'Evaluates user-defined alerting and recording rules. Queries Thanos Querier for data. Sends alerts to Alertmanager. Enables users to create PrometheusRule CRs in their namespace for custom alerts.'},
