@@ -1160,6 +1160,7 @@ html.dark code { color:#5b9cf5; }
 <table>
   <thead><tr><th>Property</th><th>Control Plane</th><th>Infrastructure</th><th>Worker</th></tr></thead>
   <tbody>
+    <tr><td><strong>Purpose</strong></td><td>Cluster brain &mdash; runs API Server, etcd, Controller Manager, Scheduler. Manages all cluster state and decisions.</td><td>Platform services &mdash; runs Ingress Controller (HAProxy), Registry, Prometheus, Alertmanager, Logging. Keeps platform workloads off worker nodes.</td><td>Application workloads &mdash; runs user pods, deployments, jobs. Where your actual business applications run.</td></tr>
     <tr><td>OS</td><td>RHCOS only</td><td>RHCOS</td><td>RHCOS</td></tr>
     <tr><td>Schedulable</td><td>No (default)</td><td>Yes (restricted by taints)</td><td>Yes</td></tr>
     <tr><td>Min Count</td><td>3 (HA) / 1 (SNO)</td><td>2-3 recommended</td><td>2+ (prod)</td></tr>
@@ -1664,95 +1665,216 @@ html.dark code { color:#5b9cf5; }
 <h1>Core Resources</h1>
 <p class="page-subtitle">The fundamental Kubernetes and OpenShift objects that compose every application deployment.</p>
 
-<h2>Resource Hierarchy</h2>
-<p>OpenShift applications are built from a hierarchy of resources. Understanding how these objects relate to each other is essential for deploying and troubleshooting workloads.</p>
+<h2>Container Image Lifecycle</h2>
+<p>Before a container can run in a Pod, its <strong>image</strong> must be built and pushed to a registry. Here is how source code becomes a running container.</p>
 
 <div class="diagram-box">
-  <div class="diagram-title">OpenShift Resource Hierarchy &mdash; From Container to Route</div>
-  <svg width="820" height="520" viewBox="0 0 820 520" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
-    <defs><marker id="aRes" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--blue)"/></marker></defs>
+  <div class="diagram-title">From Dockerfile to Running Container</div>
+  <svg width="820" height="192" viewBox="0 0 820 192" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs><marker id="aImg" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--blue)"/></marker></defs>
 
-    <!-- Container & Image -->
-    <g class="d-node" data-tip="res-container">
-      <rect x="10" y="10" width="160" height="55" rx="8" fill="rgba(251,113,133,.06)" stroke="var(--rose)" stroke-opacity=".5"/>
-      <text x="90" y="32" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="11">Container</text>
-      <text x="90" y="50" text-anchor="middle" fill="var(--text-muted)" font-size="8">Running process instance</text>
-    </g>
-    <line x1="170" y1="37" x2="198" y2="37" stroke="var(--blue)" stroke-width="1.5" stroke-dasharray="4" stroke-opacity=".4"/>
-    <g class="d-node" data-tip="res-image">
-      <rect x="198" y="10" width="160" height="55" rx="8" fill="rgba(167,139,250,.06)" stroke="var(--purple)" stroke-opacity=".5"/>
-      <text x="278" y="32" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="11">Image</text>
-      <text x="278" y="50" text-anchor="middle" fill="var(--text-muted)" font-size="8">Immutable binary artifact</text>
-    </g>
-    <line x1="358" y1="37" x2="386" y2="37" stroke="var(--blue)" stroke-width="1.5" stroke-dasharray="4" stroke-opacity=".4"/>
-    <g class="d-node" data-tip="res-registry">
-      <rect x="386" y="10" width="180" height="55" rx="8" fill="rgba(54,214,181,.06)" stroke="var(--teal)" stroke-opacity=".5"/>
-      <text x="476" y="32" text-anchor="middle" fill="var(--teal)" font-weight="700" font-size="11">Image Registry</text>
-      <text x="476" y="50" text-anchor="middle" fill="var(--text-muted)" font-size="8">Stores and distributes images</text>
+    <!-- Step 1: Source Code + Dockerfile -->
+    <g class="d-node" data-tip="img-source">
+      <rect x="10" y="20" width="130" height="70" rx="8" fill="var(--bg-elevated)" stroke="var(--text-dim)" stroke-opacity=".4"/>
+      <text x="75" y="42" text-anchor="middle" fill="var(--text-bright)" font-weight="700" font-size="10">Source Code</text>
+      <text x="75" y="58" text-anchor="middle" fill="var(--text-muted)" font-size="8">app.py, go.mod...</text>
+      <text x="75" y="72" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="8">+ Dockerfile</text>
+      <text x="75" y="84" text-anchor="middle" fill="var(--text-dim)" font-size="7">or Containerfile</text>
     </g>
 
-    <!-- Pod -->
-    <line x1="90" y1="65" x2="90" y2="88" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aRes)"/>
+    <!-- Arrow 1 -->
+    <path d="M140,55 Q155,55 168,55" fill="none" stroke="var(--blue)" stroke-width="1.3" marker-end="url(#aImg)"/>
+
+    <!-- Step 2: Build -->
+    <g class="d-node" data-tip="img-build">
+      <rect x="170" y="20" width="140" height="70" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
+      <text x="240" y="42" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="10">Build</text>
+      <text x="240" y="58" text-anchor="middle" fill="var(--text-muted)" font-size="8">podman build -t</text>
+      <text x="240" y="72" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Executes Dockerfile steps:</text>
+      <text x="240" y="84" text-anchor="middle" fill="var(--text-dim)" font-size="7">FROM, COPY, RUN, EXPOSE</text>
+    </g>
+
+    <!-- Arrow 2 -->
+    <path d="M310,55 Q325,55 338,55" fill="none" stroke="var(--blue)" stroke-width="1.3" marker-end="url(#aImg)"/>
+
+    <!-- Step 3: Image (layers) -->
+    <g class="d-node" data-tip="img-layers">
+      <rect x="340" y="14" width="140" height="82" rx="8" fill="var(--purple-dim)" stroke="var(--purple)" stroke-opacity=".5"/>
+      <text x="410" y="34" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="10">Container Image</text>
+      <text x="410" y="50" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">OCI format, immutable</text>
+      <rect x="356" y="58" width="88" height="12" rx="3" fill="var(--purple)" opacity=".15"/>
+      <text x="400" y="68" text-anchor="middle" fill="var(--purple)" font-size="6.5">Layer 3: app code</text>
+      <rect x="356" y="72" width="88" height="12" rx="3" fill="var(--purple)" opacity=".1"/>
+      <text x="400" y="82" text-anchor="middle" fill="var(--purple)" font-size="6.5">Layer 2: deps</text>
+      <rect x="356" y="86" width="88" height="6" rx="2" fill="var(--purple)" opacity=".06"/>
+      <text x="400" y="91" text-anchor="middle" fill="var(--purple)" font-size="5.5">Layer 1: base OS</text>
+    </g>
+
+    <!-- Arrow 3 -->
+    <path d="M480,55 Q495,55 508,55" fill="none" stroke="var(--blue)" stroke-width="1.3" marker-end="url(#aImg)"/>
+
+    <!-- Step 4: Tag -->
+    <g class="d-node" data-tip="img-tag">
+      <rect x="510" y="20" width="130" height="70" rx="8" fill="var(--amber-dim)" stroke="var(--amber)" stroke-opacity=".5"/>
+      <text x="575" y="42" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="10">Tag</text>
+      <text x="575" y="58" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">podman tag</text>
+      <text x="575" y="72" text-anchor="middle" fill="var(--amber)" font-size="7">registry.example.com/</text>
+      <text x="575" y="84" text-anchor="middle" fill="var(--amber)" font-size="7">my-app:v1.2.0</text>
+    </g>
+
+    <!-- Arrow 4 -->
+    <path d="M640,55 Q655,55 668,55" fill="none" stroke="var(--blue)" stroke-width="1.3" marker-end="url(#aImg)"/>
+
+    <!-- Step 5: Push to Registry -->
+    <g class="d-node" data-tip="img-push">
+      <rect x="670" y="14" width="140" height="82" rx="8" fill="var(--teal-dim)" stroke="var(--teal)" stroke-opacity=".5"/>
+      <text x="740" y="34" text-anchor="middle" fill="var(--teal)" font-weight="700" font-size="10">Image Registry</text>
+      <text x="740" y="50" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">podman push</text>
+      <text x="740" y="66" text-anchor="middle" fill="var(--text-dim)" font-size="7">Quay, Docker Hub,</text>
+      <text x="740" y="78" text-anchor="middle" fill="var(--text-dim)" font-size="7">OCP internal registry,</text>
+      <text x="740" y="90" text-anchor="middle" fill="var(--text-dim)" font-size="7">or private registry</text>
+    </g>
+
+    <!-- Step 6: Pod pulls from registry -->
+    <path d="M740,96 Q740,118 740,126 Q740,134 680,138 Q560,146 460,146 Q360,146 260,150" fill="none" stroke="var(--rose)" stroke-width="1.3" stroke-dasharray="5,3" marker-end="url(#aImg)"/>
+    <g class="d-node" data-tip="img-pull">
+      <rect x="100" y="124" width="160" height="60" rx="8" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".5"/>
+      <text x="180" y="146" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="10">Pod (CRI-O pulls)</text>
+      <text x="180" y="162" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">image: registry.example.com/</text>
+      <text x="180" y="174" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">my-app:v1.2.0</text>
+    </g>
+    <text x="500" y="140" text-anchor="middle" fill="var(--rose)" font-size="7.5" font-weight="500">kubelet triggers CRI-O to pull image</text>
+
+  </svg>
+</div>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># Example Dockerfile</span>
+<span class="key">FROM</span> registry.access.redhat.com/ubi9/python-311:latest
+<span class="key">COPY</span> . /app
+<span class="key">RUN</span>  pip install -r /app/requirements.txt
+<span class="key">EXPOSE</span> 8080
+<span class="key">CMD</span>  ["python", "/app/main.py"]
+
+<span class="cmt"># Build, tag, push</span>
+<span class="kw">podman</span> build -t my-app:v1.0 .
+<span class="kw">podman</span> tag my-app:v1.0 registry.example.com/team/my-app:v1.0
+<span class="kw">podman</span> push registry.example.com/team/my-app:v1.0</pre>
+
+<ul>
+  <li><strong>Dockerfile / Containerfile</strong> &mdash; Text file with instructions to build image. Each instruction (FROM, COPY, RUN) creates a layer. Use multi-stage builds to reduce final image size.</li>
+  <li><strong>Build</strong> &mdash; <code>podman build</code> or <code>buildah bud</code> executes Dockerfile. OpenShift also supports <strong>BuildConfig</strong> for in-cluster builds (S2I, Docker, Custom strategies).</li>
+  <li><strong>Layers</strong> &mdash; Images are stacked read-only layers. Base OS at bottom, app code at top. Shared layers between images save disk and pull time.</li>
+  <li><strong>Tag</strong> &mdash; Names image with registry/repository:tag format. Use semantic versioning (<code>:v1.2.0</code>) not <code>:latest</code> in production.</li>
+  <li><strong>Push</strong> &mdash; Uploads layers to registry. OpenShift has built-in registry at <code>image-registry.openshift-image-registry.svc:5000</code>. External: Quay, Docker Hub, private registries.</li>
+  <li><strong>Pull</strong> &mdash; When pod starts, kubelet tells CRI-O to pull image. Pull policy: <code>Always</code>, <code>IfNotPresent</code>, <code>Never</code>. Use <strong>ImagePullSecret</strong> for private registries.</li>
+</ul>
+
+<h2>How Resources Wire Together</h2>
+<p>Each resource references others via specific YAML fields. Understanding these connections is key to building and debugging applications.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">Resource Wiring &mdash; How Objects Reference Each Other</div>
+  <svg width="820" height="300" viewBox="0 0 820 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs>
+      <marker id="aRes" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--blue)"/></marker>
+      <marker id="aResG" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--green)"/></marker>
+    </defs>
+
+    <!-- Deployment -->
+    <g class="d-node" data-tip="res-deploy">
+      <rect x="10" y="10" width="160" height="56" rx="8" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="90" y="32" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="11">Deployment</text>
+      <text x="90" y="48" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">spec.replicas: 3</text>
+      <text x="90" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="7">spec.template &darr;</text>
+    </g>
+
+    <!-- Deployment → Pod template -->
+    <path d="M90,66 Q90,80 90,90" fill="none" stroke="var(--blue)" stroke-width="1.3" marker-end="url(#aRes)"/>
+    <text x="100" y="82" fill="var(--blue)" font-size="6.5" font-weight="500">creates</text>
+
+    <!-- Pod (central) -->
     <g class="d-node" data-tip="res-pod">
-      <rect x="10" y="88" width="380" height="60" rx="10" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".5" stroke-width="1.5"/>
-      <text x="200" y="112" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="12">Pod</text>
-      <text x="200" y="132" text-anchor="middle" fill="var(--text-muted)" font-size="8.5">Smallest deployable unit | 1+ containers | Shared network namespace + storage</text>
+      <rect x="10" y="92" width="160" height="90" rx="10" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5" stroke-width="1.5"/>
+      <text x="90" y="112" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="12">Pod</text>
+      <text x="90" y="128" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">spec.containers[].image</text>
+      <text x="90" y="142" text-anchor="middle" fill="var(--text-dim)" font-size="7">spec.volumes[]</text>
+      <text x="90" y="156" text-anchor="middle" fill="var(--text-dim)" font-size="7">spec.containers[].env[]</text>
+      <text x="90" y="170" text-anchor="middle" fill="var(--text-dim)" font-size="7">labels: {app: my-app}</text>
     </g>
 
-    <!-- Controllers row -->
-    <line x1="120" y1="148" x2="120" y2="178" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aRes)"/>
-    <line x1="200" y1="148" x2="350" y2="178" stroke="var(--blue)" stroke-width="1.5" stroke-dasharray="4" stroke-opacity=".4"/>
-    <line x1="280" y1="148" x2="580" y2="178" stroke="var(--blue)" stroke-width="1.5" stroke-dasharray="4" stroke-opacity=".4"/>
-
-    <g class="d-node" data-tip="res-replicaset">
-      <rect x="10" y="178" width="220" height="55" rx="8" fill="rgba(74,222,128,.06)" stroke="var(--green)" stroke-opacity=".5"/>
-      <text x="120" y="200" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="11">ReplicaSet</text>
-      <text x="120" y="220" text-anchor="middle" fill="var(--text-muted)" font-size="8">Maintains desired pod count</text>
-    </g>
-    <g class="d-node" data-tip="res-daemonset">
-      <rect x="250" y="178" width="200" height="55" rx="8" fill="rgba(245,166,35,.06)" stroke="var(--amber)" stroke-opacity=".5"/>
-      <text x="350" y="200" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="11">DaemonSet</text>
-      <text x="350" y="220" text-anchor="middle" fill="var(--text-muted)" font-size="8">One pod per node</text>
-    </g>
-    <g class="d-node" data-tip="res-statefulset">
-      <rect x="470" y="178" width="220" height="55" rx="8" fill="rgba(167,139,250,.06)" stroke="var(--purple)" stroke-opacity=".5"/>
-      <text x="580" y="200" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="11">StatefulSet</text>
-      <text x="580" y="220" text-anchor="middle" fill="var(--text-muted)" font-size="8">Stable identity + persistent storage</text>
-    </g>
-
-    <!-- Config row -->
-    <text x="410" y="270" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="10" letter-spacing=".08em">CONFIGURATION RESOURCES</text>
+    <!-- ConfigMap -->
     <g class="d-node" data-tip="res-configmap">
-      <rect x="10" y="284" width="200" height="50" rx="8" fill="rgba(54,214,181,.06)" stroke="var(--teal)" stroke-opacity=".4"/>
-      <text x="110" y="306" text-anchor="middle" fill="var(--teal)" font-weight="700" font-size="11">ConfigMap</text>
-      <text x="110" y="324" text-anchor="middle" fill="var(--text-muted)" font-size="8">Non-sensitive key-value config data</text>
+      <rect x="220" y="10" width="160" height="56" rx="8" fill="var(--teal-dim)" stroke="var(--teal)" stroke-opacity=".5"/>
+      <text x="300" y="30" text-anchor="middle" fill="var(--teal)" font-weight="700" font-size="10">ConfigMap</text>
+      <text x="300" y="46" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">data: {config.yaml: ...}</text>
+      <text x="300" y="58" text-anchor="middle" fill="var(--text-dim)" font-size="7">non-sensitive config</text>
     </g>
+    <path d="M220,38 Q190,38 170,60 Q160,70 160,92" fill="none" stroke="var(--teal)" stroke-width="1.2" marker-end="url(#aRes)"/>
+    <text x="195" y="72" fill="var(--teal)" font-size="6.5" font-weight="500">envFrom / volume</text>
+
+    <!-- Secret -->
     <g class="d-node" data-tip="res-secret">
-      <rect x="230" y="284" width="200" height="50" rx="8" fill="rgba(251,113,133,.06)" stroke="var(--rose)" stroke-opacity=".4"/>
-      <text x="330" y="306" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="11">Secret</text>
-      <text x="330" y="324" text-anchor="middle" fill="var(--text-muted)" font-size="8">Sensitive data (base64 encoded)</text>
+      <rect x="220" y="80" width="160" height="56" rx="8" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".5"/>
+      <text x="300" y="100" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="10">Secret</text>
+      <text x="300" y="116" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">data: {password: base64}</text>
+      <text x="300" y="128" text-anchor="middle" fill="var(--text-dim)" font-size="7">RBAC-protected</text>
     </g>
+    <path d="M220,108 Q190,108 170,120" fill="none" stroke="var(--rose)" stroke-width="1.2" marker-end="url(#aRes)"/>
+    <text x="188" y="120" fill="var(--rose)" font-size="6.5" font-weight="500">volume mount</text>
 
-    <!-- Networking row -->
-    <text x="410" y="370" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="10" letter-spacing=".08em">NETWORKING RESOURCES</text>
+    <!-- PVC -->
+    <g class="d-node" data-tip="res-pvc">
+      <rect x="220" y="150" width="160" height="56" rx="8" fill="var(--purple-dim)" stroke="var(--purple)" stroke-opacity=".5"/>
+      <text x="300" y="170" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="10">PVC</text>
+      <text x="300" y="186" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">spec.resources: 10Gi</text>
+      <text x="300" y="198" text-anchor="middle" fill="var(--text-dim)" font-size="7">storageClassName: gp3</text>
+    </g>
+    <path d="M220,178 Q190,178 170,165" fill="none" stroke="var(--purple)" stroke-width="1.2" marker-end="url(#aRes)"/>
+    <text x="186" y="178" fill="var(--purple)" font-size="6.5" font-weight="500">volumes[].pvc</text>
+
+    <!-- Service (matches Pod labels) -->
     <g class="d-node" data-tip="res-service">
-      <rect x="10" y="384" width="250" height="55" rx="8" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".5"/>
-      <text x="135" y="406" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="11">Service</text>
-      <text x="135" y="426" text-anchor="middle" fill="var(--text-muted)" font-size="8">Stable IP + DNS | Load-balances to pods via labels</text>
+      <rect x="10" y="210" width="160" height="56" rx="8" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".4"/>
+      <text x="90" y="230" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="10">Service</text>
+      <text x="90" y="246" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">spec.selector: {app: my-app}</text>
+      <text x="90" y="258" text-anchor="middle" fill="var(--text-dim)" font-size="7">ClusterIP 172.30.1.42</text>
     </g>
-    <line x1="260" y1="411" x2="298" y2="411" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aRes)"/>
-    <g class="d-node" data-tip="res-route">
-      <rect x="298" y="384" width="250" height="55" rx="8" fill="rgba(245,166,35,.06)" stroke="var(--amber)" stroke-opacity=".5"/>
-      <text x="423" y="406" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="11">Route</text>
-      <text x="423" y="426" text-anchor="middle" fill="var(--text-muted)" font-size="8">External hostname + TLS | OpenShift-specific ingress</text>
-    </g>
+    <path d="M90,210 Q90,200 90,182" fill="none" stroke="var(--green)" stroke-width="1.2" marker-end="url(#aResG)"/>
+    <text x="100" y="198" fill="var(--green)" font-size="6.5" font-weight="500">selector matches labels</text>
 
-    <!-- Namespace -->
-    <text x="410" y="470" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="10" letter-spacing=".08em">ISOLATION</text>
-    <g class="d-node" data-tip="res-namespace">
-      <rect x="10" y="482" width="800" height="32" rx="8" fill="rgba(167,139,250,.04)" stroke="var(--purple)" stroke-opacity=".3"/>
-      <text x="410" y="504" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="10">Namespace / Project &mdash; Logical isolation boundary for all namespaced resources | RBAC + NetworkPolicy + Quota scope</text>
+    <!-- Route → Service -->
+    <g class="d-node" data-tip="res-route">
+      <rect x="220" y="224" width="160" height="56" rx="8" fill="var(--amber-dim)" stroke="var(--amber)" stroke-opacity=".5"/>
+      <text x="300" y="244" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="10">Route</text>
+      <text x="300" y="260" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">spec.to: {kind: Service}</text>
+      <text x="300" y="272" text-anchor="middle" fill="var(--text-dim)" font-size="7">host: app.apps.cluster.com</text>
     </g>
+    <path d="M220,252 Q190,252 170,248" fill="none" stroke="var(--amber)" stroke-width="1.2" marker-end="url(#aRes)"/>
+    <text x="188" y="248" fill="var(--amber)" font-size="6.5" font-weight="500">spec.to</text>
+
+    <!-- Right side: summary of the wiring -->
+    <rect x="430" y="10" width="380" height="278" rx="10" fill="var(--bg-surface)" stroke="var(--border)"/>
+    <text x="445" y="32" fill="var(--text-bright)" font-weight="700" font-size="10">Resource Wiring Cheat Sheet</text>
+
+    <text x="445" y="54" fill="var(--blue)" font-weight="600" font-size="9">Deployment</text>
+    <text x="445" y="68" fill="var(--text-muted)" font-size="8">.spec.template &rarr; creates Pods with embedded spec</text>
+    <text x="445" y="82" fill="var(--text-muted)" font-size="8">.spec.replicas &rarr; how many Pod copies to run</text>
+
+    <text x="445" y="104" fill="var(--green)" font-weight="600" font-size="9">Pod</text>
+    <text x="445" y="118" fill="var(--text-muted)" font-size="8">.spec.containers[].image &rarr; which container image</text>
+    <text x="445" y="132" fill="var(--text-muted)" font-size="8">.spec.containers[].envFrom &rarr; ConfigMap or Secret</text>
+    <text x="445" y="146" fill="var(--text-muted)" font-size="8">.spec.volumes[] &rarr; PVC, ConfigMap, Secret, emptyDir</text>
+
+    <text x="445" y="168" fill="var(--blue)" font-weight="600" font-size="9">Service</text>
+    <text x="445" y="182" fill="var(--text-muted)" font-size="8">.spec.selector &rarr; matches Pod labels (e.g. app: my-app)</text>
+    <text x="445" y="196" fill="var(--text-muted)" font-size="8">.spec.ports[].targetPort &rarr; container port number</text>
+
+    <text x="445" y="218" fill="var(--amber)" font-weight="600" font-size="9">Route</text>
+    <text x="445" y="232" fill="var(--text-muted)" font-size="8">.spec.to.name &rarr; references Service by name</text>
+    <text x="445" y="246" fill="var(--text-muted)" font-size="8">.spec.tls.termination &rarr; edge | passthrough | reencrypt</text>
+
+    <text x="445" y="268" fill="var(--purple)" font-weight="600" font-size="9">PVC</text>
+    <text x="445" y="282" fill="var(--text-muted)" font-size="8">.spec.storageClassName &rarr; which CSI driver provisions storage</text>
   </svg>
 </div>
 
@@ -2356,6 +2478,60 @@ html.dark code { color:#5b9cf5; }
     <g class="d-node" data-tip="wk-cron"><rect x="535" y="272" width="120" height="24" rx="6" fill="var(--bg-elevated)" stroke="var(--rose)" stroke-opacity=".3"/><text x="595" y="289" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">CronJob</text></g>
   </svg>
 </div>
+
+<h2>Deployment Sources</h2>
+<table>
+  <thead><tr><th>Source</th><th>What It Is</th><th>When to Use</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Git Repository</strong></td><td>Application source code in a git repo (GitHub, GitLab, Bitbucket). OpenShift can build directly from source using S2I or Dockerfile.</td><td>Developers pushing code. CI/CD pipelines. No pre-built image available.</td></tr>
+    <tr><td><strong>Container Image</strong></td><td>Pre-built OCI image from a registry (Quay, Docker Hub, internal registry). Already contains app + dependencies.</td><td>Most common. Image built externally by CI pipeline. Vendor-provided images.</td></tr>
+    <tr><td><strong>Helm Chart</strong></td><td>Package of templated Kubernetes YAML manifests with configurable <code>values.yaml</code>. Versioned, reusable, shareable.</td><td>Complex apps with many resources. Community-maintained charts. Parameterized deployments.</td></tr>
+    <tr><td><strong>YAML / Kustomize</strong></td><td>Raw Kubernetes manifests applied directly. Kustomize adds patching and overlay for environment-specific config.</td><td>Full control over resources. GitOps workflows. Environment overlays (dev/staging/prod).</td></tr>
+  </tbody>
+</table>
+
+<h2>Deployment Methods</h2>
+<table>
+  <thead><tr><th>Method</th><th>How It Works</th><th>Best For</th></tr></thead>
+  <tbody>
+    <tr><td><strong>oc new-app</strong></td><td>Auto-detects source type (git, image, template) and creates Deployment + Service + BuildConfig. One command to go from zero to running app.</td><td>Quick start. Dev/test environments. Learning OpenShift.</td></tr>
+    <tr><td><strong>Source-to-Image (S2I)</strong></td><td>OpenShift-specific build strategy. Combines source code + builder image (e.g., python-311) &rarr; produces runnable image. No Dockerfile needed.</td><td>Developers who don&rsquo;t want to write Dockerfiles. Standardized builds across teams.</td></tr>
+    <tr><td><strong>Helm Install</strong></td><td><code>helm install</code> renders chart templates with values and applies to cluster. Manages releases with upgrade/rollback.</td><td>Packaged applications. OperatorHub alternatives. Multi-environment deploys.</td></tr>
+    <tr><td><strong>GitOps (ArgoCD)</strong></td><td>OpenShift GitOps operator deploys ArgoCD. Watches git repo, auto-syncs cluster state to match repo. Declarative, auditable.</td><td>Production. Multi-cluster. Compliance. Audit trail. Team collaboration.</td></tr>
+    <tr><td><strong>oc apply -f</strong></td><td>Applies YAML manifests directly. Supports directories, URLs, kustomize overlays (<code>oc apply -k</code>).</td><td>CI/CD pipelines. Scripted deployments. Full manifest control.</td></tr>
+    <tr><td><strong>Tekton Pipelines</strong></td><td>OpenShift Pipelines operator. Kubernetes-native CI/CD. Tasks run as pods. Pipeline = ordered tasks (build, test, deploy).</td><td>Cloud-native CI/CD. Replace Jenkins. Reusable task catalog.</td></tr>
+  </tbody>
+</table>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># Deploy from container image</span>
+<span class="kw">oc</span> new-app --image=registry.example.com/team/my-app:v1.0 --name=my-app
+
+<span class="cmt"># Deploy from git repo (S2I auto-detect)</span>
+<span class="kw">oc</span> new-app https://github.com/team/my-app.git --name=my-app
+
+<span class="cmt"># Deploy from Helm chart</span>
+<span class="kw">helm</span> install my-app ./chart --set replicas=3
+
+<span class="cmt"># Deploy from YAML</span>
+<span class="kw">oc</span> apply -f deployment.yaml
+
+<span class="cmt"># Deploy with Kustomize overlays</span>
+<span class="kw">oc</span> apply -k overlays/production/
+
+<span class="cmt"># Expose app externally</span>
+<span class="kw">oc</span> expose svc/my-app</pre>
+
+<h2>Workload Controllers</h2>
+<table>
+  <thead><tr><th>Controller</th><th>Purpose</th><th>Use Case</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Deployment</strong></td><td>Manages stateless pods via ReplicaSets. Rolling updates, rollback, scaling.</td><td>Web apps, APIs, microservices &mdash; most workloads</td></tr>
+    <tr><td><strong>StatefulSet</strong></td><td>Ordered pod creation with stable network identity (pod-0, pod-1...) and per-pod PVCs.</td><td>Databases, Kafka, ZooKeeper, etcd &mdash; stateful apps</td></tr>
+    <tr><td><strong>DaemonSet</strong></td><td>Runs exactly one pod per node (or per matching node). Auto-scales with cluster.</td><td>Monitoring agents, log collectors, CSI drivers, CNI plugins</td></tr>
+    <tr><td><strong>Job</strong></td><td>Runs pod(s) to completion, then stops. Tracks success/failure count.</td><td>Batch processing, data migration, one-time tasks</td></tr>
+    <tr><td><strong>CronJob</strong></td><td>Creates Jobs on a cron schedule. Manages job history (successfulJobsHistoryLimit).</td><td>Scheduled reports, backups, cleanup tasks</td></tr>
+  </tbody>
+</table>
 
 <h2>Deployment Strategies</h2>
 <div class="card-grid">
@@ -4660,6 +4836,14 @@ const T = {
   'np-allow-be':{t:'allow-backend Policy',b:'Applied in the backend namespace. Allows ingress only from pods matching app=frontend label on port 8080 TCP. Combined with deny-all, only frontend pods can reach the backend API.'},
 
   // Core Resources
+  // Container Image Lifecycle
+  'img-source':{t:'Source Code + Dockerfile',b:'Application source code (Python, Go, Java, Node.js, etc.) plus a Dockerfile (or Containerfile) that defines how to build the image. The Dockerfile specifies the base image (FROM), copies source code (COPY), installs dependencies (RUN), exposes ports (EXPOSE), and sets the startup command (CMD/ENTRYPOINT).'},
+  'img-build':{t:'Build (podman build)',b:'Executes each Dockerfile instruction in order, creating a new layer for each step. Use podman build (rootless, daemonless) or buildah bud. OpenShift also supports in-cluster builds via BuildConfig: Source-to-Image (S2I) builds from git repo without Dockerfile, Docker strategy, or Custom strategy. Multi-stage builds reduce final image size by discarding build tools.'},
+  'img-layers':{t:'Container Image (OCI)',b:'An immutable, portable artifact in OCI (Open Container Initiative) format. Composed of stacked read-only layers: base OS at bottom, dependencies in middle, app code on top. Each layer is a diff from the previous one. Layers shared between images save disk space and download time. Image includes metadata: exposed ports, env vars, entrypoint, labels.'},
+  'img-tag':{t:'Tag (registry/repo:version)',b:'Names the image with a full registry path and version tag. Format: registry.example.com/namespace/image:tag. Use semantic versioning (v1.2.0) not :latest in production — latest is mutable and makes rollback impossible. OpenShift ImageStreams can track tags and trigger redeployments when new images are pushed.'},
+  'img-push':{t:'Push to Registry',b:'Uploads image layers to a container registry. Options: Red Hat Quay (enterprise), OpenShift internal registry (image-registry.openshift-image-registry.svc:5000), Docker Hub, or any OCI-compliant registry. Only new/changed layers are uploaded (deduplication). Registry stores images and serves them to nodes during pod creation.'},
+  'img-pull':{t:'Pod Pulls Image (CRI-O)',b:'When kubelet creates a pod, it instructs CRI-O to pull the container image from the registry. Pull policies: Always (check registry every time), IfNotPresent (use cached if exists), Never (must be pre-cached). For private registries, attach an ImagePullSecret to the pod or default ServiceAccount. Images are cached on the node after first pull.'},
+
   'res-container':{t:'Container',b:'A running process instance created from an image. Containers share the pod network namespace and can share volumes. Each has its own filesystem, resource limits, and lifecycle.'},
   'res-image':{t:'Image',b:'An immutable binary artifact in OCI format containing the application code, runtime, libraries, and dependencies. Stored in image registries. Referenced by digest (sha256) or tag.'},
   'res-registry':{t:'Image Registry',b:'Stores and distributes container images. OpenShift includes a built-in internal registry (image-registry.openshift-image-registry.svc:5000). External: Quay, Docker Hub, ECR, ACR, GCR.'},
