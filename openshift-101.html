@@ -705,6 +705,111 @@ html.dark code { color:#5b9cf5; }
   </svg>
 </div>
 
+<h2>Version Alignment &mdash; OCP, RHCOS, CRI-O &amp; Kubernetes</h2>
+<p>OpenShift versions are tightly coupled with RHCOS, CRI-O, and Kubernetes. They are <strong>tested, qualified, and shipped together</strong> as a matched set. You never mix versions &mdash; upgrading OCP upgrades everything in lock-step.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">OCP Version Lock-Step &mdash; All Components Move Together</div>
+  <svg width="820" height="330" viewBox="0 0 820 330" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs>
+      <marker id="aVer" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--blue)"/></marker>
+      <marker id="aVerG" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--green)"/></marker>
+    </defs>
+
+    <!-- ===== TOP: Version mapping table ===== -->
+    <rect x="10" y="10" width="800" height="150" rx="12" fill="var(--bg-surface)" stroke="var(--border)"/>
+    <text x="410" y="32" text-anchor="middle" fill="var(--text-bright)" font-weight="700" font-size="11">Version Mapping (each OCP release pins exact versions)</text>
+
+    <!-- Column headers -->
+    <text x="60" y="56" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="9.5">OCP</text>
+    <text x="210" y="56" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="9.5">RHCOS</text>
+    <text x="390" y="56" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="9.5">CRI-O</text>
+    <text x="570" y="56" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="9.5">Kubernetes</text>
+    <text x="740" y="56" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="9.5">RHEL Kernel</text>
+    <line x1="20" y1="62" x2="800" y2="62" stroke="var(--border)" stroke-width="1"/>
+
+    <!-- Row 1: OCP 4.21 -->
+    <g class="d-node" data-tip="ver-ocp421">
+      <rect x="15" y="68" width="90" height="24" rx="5" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".3"/>
+      <text x="60" y="84" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">4.21</text>
+    </g>
+    <text x="210" y="84" text-anchor="middle" fill="var(--text)" font-size="8.5">421.94.x</text>
+    <text x="390" y="84" text-anchor="middle" fill="var(--text)" font-size="8.5">1.34.x</text>
+    <text x="570" y="84" text-anchor="middle" fill="var(--text)" font-size="8.5">1.34</text>
+    <text x="740" y="84" text-anchor="middle" fill="var(--text)" font-size="8.5">RHEL 9.6</text>
+
+    <!-- Row 2: OCP 4.18 -->
+    <g class="d-node" data-tip="ver-ocp418">
+      <rect x="15" y="96" width="90" height="24" rx="5" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".2"/>
+      <text x="60" y="112" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">4.18</text>
+    </g>
+    <text x="210" y="112" text-anchor="middle" fill="var(--text)" font-size="8.5">418.94.x</text>
+    <text x="390" y="112" text-anchor="middle" fill="var(--text)" font-size="8.5">1.31.x</text>
+    <text x="570" y="112" text-anchor="middle" fill="var(--text)" font-size="8.5">1.31</text>
+    <text x="740" y="112" text-anchor="middle" fill="var(--text)" font-size="8.5">RHEL 9.4</text>
+
+    <!-- Row 3: OCP 4.16 -->
+    <g class="d-node" data-tip="ver-ocp416">
+      <rect x="15" y="124" width="90" height="24" rx="5" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".15"/>
+      <text x="60" y="140" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">4.16</text>
+    </g>
+    <text x="210" y="140" text-anchor="middle" fill="var(--text)" font-size="8.5">416.94.x</text>
+    <text x="390" y="140" text-anchor="middle" fill="var(--text)" font-size="8.5">1.29.x</text>
+    <text x="570" y="140" text-anchor="middle" fill="var(--text)" font-size="8.5">1.29</text>
+    <text x="740" y="140" text-anchor="middle" fill="var(--text)" font-size="8.5">RHEL 9.4</text>
+
+    <!-- ===== MIDDLE: Lock-step visual ===== -->
+    <rect x="10" y="174" width="800" height="92" rx="12" fill="rgba(26,115,232,.015)" stroke="var(--blue)" stroke-opacity=".2" stroke-dasharray="6"/>
+    <text x="410" y="194" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="10">How It Works &mdash; Single Upgrade Moves Everything</text>
+
+    <!-- OCP box -->
+    <g class="d-node" data-tip="ver-ocp-role">
+      <rect x="24" y="206" width="130" height="46" rx="8" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".5"/>
+      <text x="89" y="226" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="10">OpenShift 4.x</text>
+      <text x="89" y="242" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">CVO orchestrates</text>
+    </g>
+    <line x1="154" y1="229" x2="182" y2="229" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aVer)"/>
+
+    <!-- RHCOS box -->
+    <g class="d-node" data-tip="ver-rhcos-role">
+      <rect x="182" y="206" width="130" height="46" rx="8" fill="var(--amber-dim)" stroke="var(--amber)" stroke-opacity=".5"/>
+      <text x="247" y="226" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="10">RHCOS</text>
+      <text x="247" y="242" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">MCO applies OS update</text>
+    </g>
+    <line x1="312" y1="229" x2="340" y2="229" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aVer)"/>
+
+    <!-- CRI-O box -->
+    <g class="d-node" data-tip="ver-crio-role">
+      <rect x="340" y="206" width="130" height="46" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
+      <text x="405" y="226" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="10">CRI-O</text>
+      <text x="405" y="242" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Bundled in RHCOS</text>
+    </g>
+    <line x1="470" y1="229" x2="498" y2="229" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aVer)"/>
+
+    <!-- Kubernetes box -->
+    <g class="d-node" data-tip="ver-k8s-role">
+      <rect x="498" y="206" width="130" height="46" rx="8" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="563" y="226" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="10">Kubernetes</text>
+      <text x="563" y="242" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">API/kubelet version</text>
+    </g>
+    <line x1="628" y1="229" x2="656" y2="229" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aVer)"/>
+
+    <!-- Kernel box -->
+    <g class="d-node" data-tip="ver-kernel-role">
+      <rect x="656" y="206" width="140" height="46" rx="8" fill="var(--purple-dim)" stroke="var(--purple)" stroke-opacity=".5"/>
+      <text x="726" y="226" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="10">RHEL Kernel</text>
+      <text x="726" y="242" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Base OS kernel</text>
+    </g>
+
+    <!-- ===== BOTTOM: Key rules ===== -->
+    <rect x="10" y="278" width="800" height="42" rx="10" fill="var(--bg-surface)" stroke="var(--border)"/>
+    <text x="22" y="296" fill="var(--text-bright)" font-weight="700" font-size="9">Key Rules:</text>
+    <text x="22" y="312" fill="var(--text-muted)" font-size="8">&#8226; CRI-O major.minor always matches Kubernetes major.minor (e.g. CRI-O 1.34 = K8s 1.34)</text>
+    <text x="410" y="296" fill="var(--text-muted)" font-size="8">&#8226; RHCOS version embeds OCP version (e.g. 421.94 = OCP 4.21)</text>
+    <text x="410" y="312" fill="var(--text-muted)" font-size="8">&#8226; No mixing: CVO enforces version integrity across all components</text>
+  </svg>
+</div>
+
 <h2>RHCOS &mdash; Red Hat Enterprise Linux CoreOS</h2>
 <p>RHCOS is the immutable, container-optimized operating system that underpins every OpenShift node. It is <strong>versioned together with OpenShift</strong> &mdash; tested and shipped as a matched pair.</p>
 
@@ -2569,7 +2674,7 @@ html.dark code { color:#5b9cf5; }
       <text x="612" y="52" text-anchor="middle" fill="var(--text)" font-size="9">Recommended: <tspan fill="var(--teal)" font-weight="600">Agent-Based</tspan> or <tspan fill="var(--rose)" font-weight="600">Assisted Installer</tspan></text>
       <text x="612" y="68" text-anchor="middle" fill="var(--text-muted)" font-size="8">Agent-Based: CLI-driven, air-gapped native, single bootable ISO</text>
       <text x="612" y="82" text-anchor="middle" fill="var(--text-muted)" font-size="8">Assisted: Web UI, SaaS or on-prem hub, guided host discovery</text>
-      <text x="612" y="96" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">BM-IPI also supported (requires BMC/IPMI/Redfish + Metal3/Ironic stack)</text>
+      <text x="612" y="96" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">MachineSet scaling via MachineAPI for day-2 node management</text>
     </g>
     <!-- Cloud -->
     <g class="d-node" data-tip="plat-cloud">
@@ -2947,31 +3052,17 @@ html.dark code { color:#5b9cf5; }
     </g>
     <!-- Comparison -->
     <rect x="10" y="155" width="800" height="65" rx="8" fill="var(--bg-surface)" stroke="var(--border)"/>
-    <text x="410" y="174" text-anchor="middle" fill="var(--text-bright)" font-weight="700" font-size="10">Agent-Based vs Assisted vs Bare-Metal IPI</text>
+    <text x="410" y="174" text-anchor="middle" fill="var(--text-bright)" font-weight="700" font-size="10">Agent-Based vs Assisted Installer</text>
     <text x="18" y="192" fill="var(--text-dim)" font-size="7.5" font-weight="600">FEATURE</text>
-    <text x="190" y="192" fill="var(--blue)" font-size="7.5" font-weight="600">AGENT-BASED</text>
-    <text x="400" y="192" fill="var(--rose)" font-size="7.5" font-weight="600">ASSISTED</text>
-    <text x="610" y="192" fill="var(--amber)" font-size="7.5" font-weight="600">BARE-METAL IPI</text>
+    <text x="210" y="192" fill="var(--blue)" font-size="7.5" font-weight="600">AGENT-BASED</text>
+    <text x="530" y="192" fill="var(--rose)" font-size="7.5" font-weight="600">ASSISTED</text>
     <text x="18" y="206" fill="var(--text-muted)" font-size="7.5">Service</text>
-    <text x="190" y="206" fill="var(--text)" font-size="7.5">Embedded in ISO</text>
-    <text x="400" y="206" fill="var(--text)" font-size="7.5">SaaS or Hub cluster</text>
-    <text x="610" y="206" fill="var(--text)" font-size="7.5">Bootstrap VM + Ironic</text>
+    <text x="210" y="206" fill="var(--text)" font-size="7.5">Embedded in ISO (self-contained)</text>
+    <text x="530" y="206" fill="var(--text)" font-size="7.5">SaaS (console.redhat.com) or Hub cluster</text>
     <text x="18" y="218" fill="var(--text-muted)" font-size="7.5">Disconnected</text>
-    <text x="190" y="218" fill="var(--green)" font-size="7.5">Native</text>
-    <text x="400" y="218" fill="var(--amber)" font-size="7.5">On-prem only</text>
-    <text x="610" y="218" fill="var(--green)" font-size="7.5">Supported</text>
+    <text x="210" y="218" fill="var(--green)" font-size="7.5">Native (air-gapped by design)</text>
+    <text x="530" y="218" fill="var(--amber)" font-size="7.5">On-prem mode only (via Infrastructure Operator)</text>
   </svg>
-</div>
-
-<h2>Bare-Metal Specifics &mdash; Metal3 &amp; Ironic</h2>
-<div class="callout">
-  <strong>Bare-Metal IPI</strong> uses the Metal3 stack (Bare Metal Operator + Ironic) to manage physical servers. BMC access via IPMI, Redfish, or Redfish-VirtualMedia controls power and boots the RHCOS ISO. <strong>BareMetalHost</strong> CRD represents each physical server with its BMC address, boot MAC, and root device hints.
-</div>
-<div class="card-grid">
-  <div class="card-sm"><div class="card-icon">&#9881;</div><div class="card-title">IPMI</div><div class="card-desc">Legacy protocol (port 623). No virtual media. Suitable for dedicated management networks. <code>ipmi://&lt;bmc-ip&gt;</code></div></div>
-  <div class="card-sm"><div class="card-icon">&#127760;</div><div class="card-title">Redfish</div><div class="card-desc">Modern REST-based protocol with HTTPS. Supports virtual media boot (no PXE needed). <code>redfish-virtualmedia://&lt;bmc&gt;</code></div></div>
-  <div class="card-sm"><div class="card-icon">&#9741;</div><div class="card-title">Provisioning Modes</div><div class="card-desc"><strong>Managed</strong> (Ironic runs DHCP/PXE), <strong>Unmanaged</strong> (user manages DHCP), <strong>Disabled</strong> (virtual media only, no provisioning network).</div></div>
-  <div class="card-sm"><div class="card-icon">&#128187;</div><div class="card-title">BareMetalHost CRD</div><div class="card-desc">Represents a physical server. Fields: <code>bmc.address</code>, <code>bmc.credentialsName</code>, <code>bootMACAddress</code>, <code>rootDeviceHints</code>, <code>online</code>.</div></div>
 </div>
 
 <button class="mark-read" onclick="markRead(this,13)">&#10003; Mark section as read</button>
@@ -3243,9 +3334,9 @@ html.dark code { color:#5b9cf5; }
     <!-- Service YAML snippet -->
     <rect x="520" y="148" width="290" height="65" rx="8" fill="var(--bg-surface)" stroke="var(--border)"/>
     <text x="535" y="166" fill="var(--text-dim)" font-size="8" font-weight="600">Service YAML (key fields):</text>
-    <text x="535" y="182" fill="var(--key)" font-size="7.5">spec.selector: {app: backend}</text>
-    <text x="535" y="194" fill="var(--key)" font-size="7.5">spec.ports: [{port: 8080, targetPort: 8080}]</text>
-    <text x="535" y="206" fill="var(--key)" font-size="7.5">spec.type: ClusterIP (default)</text>
+    <text x="535" y="182" fill="var(--text)" font-size="7.5">spec.selector: {app: backend}</text>
+    <text x="535" y="194" fill="var(--text)" font-size="7.5">spec.ports: [{port: 8080, targetPort: 8080}]</text>
+    <text x="535" y="206" fill="var(--text)" font-size="7.5">spec.type: ClusterIP (default)</text>
     <!-- Internal consumer -->
     <g class="d-node" data-tip="svc-consumer">
       <rect x="10" y="130" width="220" height="50" rx="8" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".4"/>
@@ -3298,9 +3389,9 @@ html.dark code { color:#5b9cf5; }
     <!-- Route creation commands -->
     <rect x="10" y="105" width="800" height="80" rx="8" fill="var(--bg-surface)" stroke="var(--border)"/>
     <text x="410" y="124" text-anchor="middle" fill="var(--text-bright)" font-weight="700" font-size="10">Create Routes</text>
-    <text x="25" y="144" fill="var(--key)" font-size="8.5">oc expose svc/backend</text><text x="310" y="144" fill="var(--text-dim)" font-size="8">&mdash; HTTP route, auto hostname: backend-ns.apps.cluster.com</text>
-    <text x="25" y="160" fill="var(--key)" font-size="8.5">oc create route edge --service=backend --hostname=api.example.com</text><text x="540" y="160" fill="var(--text-dim)" font-size="8">&mdash; HTTPS edge, custom host</text>
-    <text x="25" y="176" fill="var(--key)" font-size="8.5">oc create route passthrough --service=backend --hostname=api.example.com</text><text x="560" y="176" fill="var(--text-dim)" font-size="8">&mdash; E2E TLS</text>
+    <text x="25" y="144" fill="var(--text)" font-size="8.5">oc expose svc/backend</text><text x="310" y="144" fill="var(--text-dim)" font-size="8">&mdash; HTTP route, auto hostname: backend-ns.apps.cluster.com</text>
+    <text x="25" y="160" fill="var(--text)" font-size="8.5">oc create route edge --service=backend --hostname=api.example.com</text><text x="540" y="160" fill="var(--text-dim)" font-size="8">&mdash; HTTPS edge, custom host</text>
+    <text x="25" y="176" fill="var(--text)" font-size="8.5">oc create route passthrough --service=backend --hostname=api.example.com</text><text x="560" y="176" fill="var(--text-dim)" font-size="8">&mdash; E2E TLS</text>
   </svg>
 </div>
 
@@ -4393,11 +4484,11 @@ EOF
     <!-- ClusterLogForwarder example -->
     <rect x="10" y="325" width="800" height="105" rx="8" fill="var(--bg-surface)" stroke="var(--border)"/>
     <text x="25" y="345" fill="var(--text-bright)" font-weight="700" font-size="9.5">ClusterLogForwarder Example</text>
-    <text x="25" y="365" fill="var(--key)" font-size="8">spec:</text>
-    <text x="45" y="380" fill="var(--key)" font-size="8">outputs:</text>
+    <text x="25" y="365" fill="var(--text)" font-size="8">spec:</text>
+    <text x="45" y="380" fill="var(--text)" font-size="8">outputs:</text>
     <text x="65" y="395" fill="var(--text)" font-size="8">- name: <tspan fill="var(--str)">loki-internal</tspan>  type: <tspan fill="var(--str)">lokiStack</tspan>  lokiStack: {target: {name: logging-loki, namespace: openshift-logging}}</text>
     <text x="65" y="410" fill="var(--text)" font-size="8">- name: <tspan fill="var(--str)">splunk-external</tspan>  type: <tspan fill="var(--str)">splunk</tspan>  url: <tspan fill="var(--str)">https://splunk.corp.com:8088</tspan>  secret: {name: splunk-token}</text>
-    <text x="45" y="425" fill="var(--key)" font-size="8">pipelines:</text>
+    <text x="45" y="425" fill="var(--text)" font-size="8">pipelines:</text>
     <text x="65" y="425" fill="var(--text)" font-size="8">  - inputRefs: [application, infrastructure]  outputRefs: [loki-internal]  |  - inputRefs: [audit]  outputRefs: [splunk-external]</text>
   </svg>
 </div>
@@ -4998,6 +5089,16 @@ const T = {
   'arch-rhcos':{t:'RHCOS',b:'Red Hat Enterprise Linux CoreOS. Immutable, container-optimized OS. Versioned with OpenShift — tested and shipped together. MCO manages CRI-O config, kubelet config, authorized registries, SSH config. RHCOS admins are responsible for: Nothing.'},
   'arch-olm':{t:'OLM',b:'Manages optional operator lifecycle: install, upgrade, RBAC, dependency resolution. OperatorHub provides 200+ curated operators.'},
 
+  // Version alignment
+  'ver-ocp421':{t:'OCP 4.21',b:'Latest release. Ships with Kubernetes 1.34, CRI-O 1.34, RHCOS 421.94.x, RHEL 9.6 kernel. All components tested and qualified together by Red Hat.'},
+  'ver-ocp418':{t:'OCP 4.18',b:'Ships with Kubernetes 1.31, CRI-O 1.31, RHCOS 418.94.x, RHEL 9.4 kernel. EUS (Extended Update Support) release with longer support lifecycle.'},
+  'ver-ocp416':{t:'OCP 4.16',b:'Ships with Kubernetes 1.29, CRI-O 1.29, RHCOS 416.94.x, RHEL 9.4 kernel. EUS release with longer support lifecycle.'},
+  'ver-ocp-role':{t:'OpenShift Platform',b:'The CVO (Cluster Version Operator) orchestrates the entire upgrade. It fetches the release image containing exact versions of every component, then drives operators to update in the correct order. One oc adm upgrade command triggers everything.'},
+  'ver-rhcos-role':{t:'RHCOS in Upgrade',b:'MCO (Machine Config Operator) handles RHCOS updates. It renders new MachineConfig, drains nodes one at a time per MachineConfigPool, applies the OS update via rpm-ostree, and reboots. Atomic and rollback-capable.'},
+  'ver-crio-role':{t:'CRI-O Version Lock',b:'CRI-O major.minor always matches Kubernetes major.minor (e.g. CRI-O 1.30 = K8s 1.30). CRI-O is bundled inside RHCOS — not installed or upgraded separately. It implements the Kubernetes CRI (Container Runtime Interface) spec for that exact K8s version.'},
+  'ver-k8s-role':{t:'Kubernetes Version',b:'Each OCP release embeds a specific Kubernetes version. OCP 4.x typically ships K8s 1.(x+13), e.g. OCP 4.21 = K8s 1.34. API server, kubelet, controller-manager, and scheduler all run this version. You cannot change the K8s version independently.'},
+  'ver-kernel-role':{t:'RHEL Kernel',b:'RHCOS uses the RHEL kernel — battle-tested, with backported security fixes and hardware enablement. The kernel version is tied to the RHEL minor release (e.g. RHEL 9.4). Includes SELinux enforcing, cgroups v2, and eBPF support.'},
+
   // Nodes
   'node-bootstrap':{t:'Bootstrap Node',b:'Temporary node used ONLY during installation. Bootstraps etcd and API server. Automatically removed after install completes.'},
   'node-control':{t:'Control Plane',b:'Runs API Server, etcd, Controller Manager, Scheduler, and OCP extensions. Must be RHCOS. Min 3 for HA. Not schedulable by default.'},
@@ -5198,7 +5299,7 @@ const T = {
   'svc-lb':{t:'LoadBalancer',b:'Extends NodePort. Provisions external LB (cloud or MetalLB). Gets external IP.'},
   'svc-headless':{t:'Headless',b:'clusterIP: None. DNS returns pod IPs directly. No load balancing. Used by StatefulSets.'},
   'plat-vmware':{t:'VMware vSphere',b:'Supports IPI (full automation — vCenter admin privilege, DHCP required, auto naming) and UPI (vCenter read-only OK, static IPs, custom naming, manual LB). Both support MachineSet scaling and MachineAPI for day-2 node management.'},
-  'plat-baremetal':{t:'Bare Metal',b:'Recommended: Agent-Based Installer (CLI, air-gapped, self-contained ISO) or Assisted Installer (Web UI, SaaS or on-prem hub). BM-IPI also supported but requires BMC/IPMI/Redfish + Metal3/Ironic stack.'},
+  'plat-baremetal':{t:'Bare Metal',b:'Recommended: Agent-Based Installer (CLI-driven, air-gapped native, single bootable ISO) or Assisted Installer (Web UI, SaaS or on-prem hub, guided host discovery). MachineSet scaling via MachineAPI for day-2 node management.'},
   'plat-cloud':{t:'Cloud (AWS/Azure/GCP)',b:'IPI recommended — full automation of VPC, subnets, load balancers, DNS, compute instances. UPI also supported for custom networking or compliance requirements.'},
   'plat-edge':{t:'Edge / SNO',b:'Agent-Based Installer recommended. Single Node OpenShift for edge locations. Scale with ACM Zero Touch Provisioning (ZTP) via SiteConfig CRDs + GitOps (ArgoCD).'},
   'plat-disconnected':{t:'Disconnected / Air-Gapped',b:'Agent-Based Installer recommended. ISO is self-contained. Use oc-mirror to mirror OCP release images to mirror registry. install-config.yaml references imageContentSources and mirror CA. No internet required at install time.'},
