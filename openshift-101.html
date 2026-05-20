@@ -2861,8 +2861,8 @@ html.dark code { color:#5b9cf5; }
     <text x="600" y="24" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="10">DISCONNECTED ENVIRONMENT (install)</text>
     <g class="d-node" data-tip="dc-local-reg">
       <rect x="395" y="35" width="150" height="48" rx="8" fill="var(--amber-dim)" stroke="var(--amber)" stroke-opacity=".4"/>
-      <text x="470" y="56" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="9.5">Local Registry</text>
-      <text x="470" y="72" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Mirrored OCP images</text>
+      <text x="470" y="56" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="9.5">Mirror Registry</text>
+      <text x="470" y="72" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Loaded from portable media</text>
     </g>
     <line x1="545" y1="59" x2="560" y2="59" stroke="var(--rose)" stroke-width="1.5" marker-end="url(#aDC)"/>
     <g class="d-node" data-tip="dc-boot-hosts">
@@ -2873,13 +2873,21 @@ html.dark code { color:#5b9cf5; }
     <g class="d-node" data-tip="dc-install">
       <rect x="395" y="95" width="410" height="42" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".4"/>
       <text x="600" y="112" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="10">Validate &rarr; Write RHCOS to disk &rarr; Cluster forms &rarr; Operators deploy</text>
-      <text x="600" y="130" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">All images pulled from local mirror registry &mdash; zero internet required</text>
+      <text x="600" y="130" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">All images pulled from mirror registry &mdash; zero internet required</text>
     </g>
     <g class="d-node" data-tip="dc-result">
       <rect x="395" y="148" width="410" height="38" rx="8" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".4"/>
       <text x="600" y="172" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="9.5">Running OCP Cluster (fully disconnected, telemetry disabled, internal catalog sources)</text>
     </g>
   </svg>
+</div>
+
+<div class="callout">
+  <strong>What is a Mirror Registry?</strong><br>
+  A mirror registry is an OCI-compliant container image registry that holds copies of images from external sources (Red Hat registries, Docker Hub, etc.). In disconnected environments, it replaces internet-based registries entirely &mdash; all nodes pull images from it instead of going online.<br><br>
+  <strong>How it works:</strong> On the connected side, <code>oc-mirror</code> downloads OCP release images, operator catalogs, and any additional images into the mirror registry. The registry data is then exported and transferred to the disconnected environment via portable media (USB, external disk). On the disconnected side, the same registry software is deployed and loaded with the transferred data. Both sides use the same concept &mdash; a <strong>mirror registry</strong> &mdash; just in different network zones.<br><br>
+  <strong>Registry options:</strong> Red Hat provides a lightweight <code>mirror-registry</code> tool (single binary, based on Quay, no subscription required) for quick setup. Alternatively, use Red Hat Quay, Harbor, Nexus, or any OCI-compliant registry. The key requirement is supporting <code>ImageContentSourcePolicy</code> (ICSP) or <code>ImageDigestMirrorSet</code> (IDMS, OCP 4.13+) to redirect image pulls from original sources to the mirror.<br><br>
+  <strong>Day-2:</strong> Ongoing updates also go through the mirror registry &mdash; run <code>oc-mirror</code> periodically to sync new release images and operator versions, then transfer to the disconnected side.
 </div>
 
 <h2>Bare Metal &mdash; Assisted Installer</h2>
@@ -3327,7 +3335,82 @@ html.dark code { color:#5b9cf5; }
 <p>By default, outbound traffic from pods uses the <strong>node IP</strong> as source. This is a problem when external firewalls need to whitelist your cluster — you'd need to allow ALL node IPs, and they change when nodes scale. <strong>EgressIP</strong> assigns a predictable, static source IP to all outbound traffic from a namespace.</p>
 
 <div class="diagram-box">
-  <div class="diagram-title">EgressIP &mdash; Predictable Source IP for Outbound Traffic</div>
+  <div class="diagram-title">Without EgressIP &mdash; Unpredictable Source IPs (Default Behavior)</div>
+  <svg width="820" height="210" viewBox="0 0 820 210" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs>
+      <marker id="aNoEgr" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--red)"/></marker>
+    </defs>
+
+    <!-- ===== LEFT: OpenShift Cluster ===== -->
+    <rect x="6" y="6" width="480" height="198" rx="12" fill="rgba(26,115,232,.015)" stroke="var(--blue)" stroke-opacity=".2" stroke-dasharray="6"/>
+    <text x="16" y="22" fill="var(--blue)" font-size="8" font-weight="600" letter-spacing=".06em">OPENSHIFT CLUSTER</text>
+
+    <!-- Worker 1 -->
+    <g class="d-node" data-tip="noegress-node1">
+      <rect x="18" y="32" width="145" height="74" rx="8" fill="var(--bg-surface)" stroke="var(--border)"/>
+      <text x="90" y="48" text-anchor="middle" fill="var(--text-bright)" font-weight="600" font-size="8.5">worker-1</text>
+      <text x="90" y="60" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="7.5">Node IP: 192.168.1.30</text>
+      <rect x="28" y="68" width="58" height="28" rx="5" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".4"/>
+      <text x="57" y="86" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="7.5">Pod A</text>
+      <rect x="94" y="68" width="58" height="28" rx="5" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".4"/>
+      <text x="123" y="86" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="7.5">Pod B</text>
+    </g>
+
+    <!-- Worker 2 -->
+    <g class="d-node" data-tip="noegress-node2">
+      <rect x="175" y="32" width="145" height="74" rx="8" fill="var(--bg-surface)" stroke="var(--border)"/>
+      <text x="247" y="48" text-anchor="middle" fill="var(--text-bright)" font-weight="600" font-size="8.5">worker-2</text>
+      <text x="247" y="60" text-anchor="middle" fill="var(--teal)" font-weight="600" font-size="7.5">Node IP: 192.168.1.31</text>
+      <rect x="205" y="68" width="58" height="28" rx="5" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".4"/>
+      <text x="234" y="86" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="7.5">Pod C</text>
+    </g>
+
+    <!-- Worker 3 -->
+    <g class="d-node" data-tip="noegress-node3">
+      <rect x="332" y="32" width="145" height="74" rx="8" fill="var(--bg-surface)" stroke="var(--border)"/>
+      <text x="404" y="48" text-anchor="middle" fill="var(--text-bright)" font-weight="600" font-size="8.5">worker-3</text>
+      <text x="404" y="60" text-anchor="middle" fill="var(--purple)" font-weight="600" font-size="7.5">Node IP: 192.168.1.32</text>
+      <rect x="342" y="68" width="58" height="28" rx="5" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".4"/>
+      <text x="371" y="86" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="7.5">Pod D</text>
+      <rect x="408" y="68" width="58" height="28" rx="5" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".4"/>
+      <text x="437" y="86" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="7.5">Pod E</text>
+    </g>
+
+    <!-- SNAT label -->
+    <text x="245" y="122" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Each pod outbound SNAT'd to its own node IP</text>
+
+    <!-- Arrows from each worker to external -->
+    <path d="M90,106 L90,140 Q90,150 100,155 L510,155" fill="none" stroke="var(--amber)" stroke-width="1.3" marker-end="url(#aNoEgr)"/>
+    <text x="440" y="150" fill="var(--amber)" font-size="7" font-weight="600">src: 192.168.1.30</text>
+
+    <path d="M247,106 L247,164 Q247,172 260,172 L510,172" fill="none" stroke="var(--teal)" stroke-width="1.3" marker-end="url(#aNoEgr)"/>
+    <text x="440" y="168" fill="var(--teal)" font-size="7" font-weight="600">src: 192.168.1.31</text>
+
+    <path d="M404,106 L404,182 Q404,190 414,190 L510,190" fill="none" stroke="var(--purple)" stroke-width="1.3" marker-end="url(#aNoEgr)"/>
+    <text x="440" y="186" fill="var(--purple)" font-size="7" font-weight="600">src: 192.168.1.32</text>
+
+    <!-- ===== RIGHT: External ===== -->
+    <rect x="518" y="6" width="296" height="198" rx="12" fill="none" stroke="var(--text-dim)" stroke-opacity=".2" stroke-dasharray="6"/>
+    <text x="528" y="22" fill="var(--text-dim)" font-size="8" font-weight="600" letter-spacing=".06em">EXTERNAL</text>
+
+    <g class="d-node" data-tip="noegress-external">
+      <rect x="534" y="34" width="264" height="72" rx="8" fill="var(--bg-surface)" stroke="var(--border)"/>
+      <text x="666" y="54" text-anchor="middle" fill="var(--text-bright)" font-weight="700" font-size="10">External Database / API</text>
+      <text x="666" y="72" text-anchor="middle" fill="var(--text-muted)" font-size="8">Firewall rules needed:</text>
+      <text x="666" y="90" text-anchor="middle" fill="var(--red)" font-weight="600" font-size="8">ALLOW .30 AND .31 AND .32 &#10007;</text>
+    </g>
+
+    <!-- Problem callout -->
+    <rect x="534" y="120" width="264" height="74" rx="8" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".3"/>
+    <text x="546" y="138" fill="var(--rose)" font-weight="700" font-size="9">Problems:</text>
+    <text x="546" y="154" fill="var(--text-muted)" font-size="8">&#10007; Must whitelist every node IP</text>
+    <text x="546" y="168" fill="var(--text-muted)" font-size="8">&#10007; New node = new IP = update firewall</text>
+    <text x="546" y="182" fill="var(--text-muted)" font-size="8">&#10007; Node scale-down = orphan rules</text>
+  </svg>
+</div>
+
+<div class="diagram-box">
+  <div class="diagram-title">With EgressIP &mdash; Predictable Source IP for Outbound Traffic</div>
   <svg width="820" height="240" viewBox="0 0 820 240" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
     <defs>
       <marker id="aEgr" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--blue)"/></marker>
@@ -5089,7 +5172,12 @@ const T = {
   'ai-onprem':{t:'On-Prem Mode',b:'Assisted Service deployed on existing hub cluster via Infrastructure Operator (part of MCE/RHACM). Create AgentServiceConfig CRD to deploy. Supports disconnected environments with mirror registry. GitOps integration for ZTP at scale.'},
 
   // Networking
-  // EgressIP
+  // EgressIP — Without (default behavior)
+  'noegress-node1':{t:'Worker-1 (Default SNAT)',b:'Without EgressIP, outbound traffic from Pod A and Pod B is SNAT\'d to this node\'s IP (192.168.1.30). The external system sees this node IP as the source. If pods are rescheduled to a different node, the source IP changes unpredictably.'},
+  'noegress-node2':{t:'Worker-2 (Default SNAT)',b:'Pod C runs on worker-2, so its outbound traffic appears as 192.168.1.31 to external systems. The external firewall must allow this IP separately from worker-1 and worker-3.'},
+  'noegress-node3':{t:'Worker-3 (Default SNAT)',b:'Pod D and Pod E run on worker-3, so outbound traffic uses 192.168.1.32. Three worker nodes = three different source IPs the external firewall must track. Adding or removing nodes means updating firewall rules.'},
+  'noegress-external':{t:'External System (Multiple IPs)',b:'Without EgressIP, the firewall must allow all node IPs (192.168.1.30, .31, .32). When the cluster scales up, new node IPs must be added. When nodes are replaced, old rules become stale. This is operationally painful and error-prone for security teams.'},
+  // EgressIP — With
   'egress-pod':{t:'Pod (EgressIP Source)',b:'Outbound traffic from this pod will be SNAT\'d to the EgressIP address instead of the node IP. The pod itself is unaware of EgressIP — OVN-Kubernetes handles the source NAT transparently at the OVS level. All pods in the matching namespace use the same EgressIP.'},
   'egress-ip':{t:'EgressIP Address',b:'A static IP address (from the node subnet) assigned to outbound traffic for a namespace. Defined in the EgressIP CR spec.egressIPs field. Multiple EgressIPs can be specified for load distribution. The IP must be in the same subnet as the node hosting it and must not conflict with existing IPs.'},
   'egress-node':{t:'Egress Node (Assignable)',b:'Node labeled k8s.ovn.org/egress-assignable="" that can host EgressIPs. OVN-Kubernetes binds the EgressIP as a secondary IP on this node\'s primary interface. All matching namespace traffic is routed through this node for SNAT. Multiple EgressIPs can be distributed across multiple assignable nodes.'},
@@ -5113,15 +5201,15 @@ const T = {
   'plat-baremetal':{t:'Bare Metal',b:'Recommended: Agent-Based Installer (CLI, air-gapped, self-contained ISO) or Assisted Installer (Web UI, SaaS or on-prem hub). BM-IPI also supported but requires BMC/IPMI/Redfish + Metal3/Ironic stack.'},
   'plat-cloud':{t:'Cloud (AWS/Azure/GCP)',b:'IPI recommended — full automation of VPC, subnets, load balancers, DNS, compute instances. UPI also supported for custom networking or compliance requirements.'},
   'plat-edge':{t:'Edge / SNO',b:'Agent-Based Installer recommended. Single Node OpenShift for edge locations. Scale with ACM Zero Touch Provisioning (ZTP) via SiteConfig CRDs + GitOps (ArgoCD).'},
-  'plat-disconnected':{t:'Disconnected / Air-Gapped',b:'Agent-Based Installer recommended. ISO is self-contained. Use oc-mirror to mirror OCP release images to local registry. install-config.yaml references imageContentSources and mirror CA. No internet required at install time.'},
-  'dc-mirror-cmd':{t:'oc-mirror',b:'CLI tool that mirrors OCP release images, operator catalog images, and additional images from Red Hat registries to a local mirror registry. Creates ImageContentSourcePolicy and CatalogSource manifests for disconnected install.'},
-  'dc-registry':{t:'Mirror Registry',b:'A container image registry in the connected environment that holds mirrored OCP images. Can be Quay, mirror-registry (Red Hat tool), or any OCI-compliant registry. Transferred to disconnected environment via portable media.'},
+  'plat-disconnected':{t:'Disconnected / Air-Gapped',b:'Agent-Based Installer recommended. ISO is self-contained. Use oc-mirror to mirror OCP release images to mirror registry. install-config.yaml references imageContentSources and mirror CA. No internet required at install time.'},
+  'dc-mirror-cmd':{t:'oc-mirror',b:'CLI tool that mirrors OCP release images, operator catalog images, and additional images from Red Hat registries to a mirror registry. Creates ImageContentSourcePolicy (or ImageDigestMirrorSet in OCP 4.13+) and CatalogSource manifests for disconnected install.'},
+  'dc-registry':{t:'Mirror Registry (Connected)',b:'A container image registry in the connected environment that receives mirrored images from Red Hat registries via oc-mirror. Can be Red Hat Quay, the lightweight mirror-registry tool (single-binary, no subscription needed), Harbor, Nexus, or any OCI-compliant registry. The registry data (images + metadata) is exported and transferred to the disconnected environment via portable media.'},
   'dc-iso-gen':{t:'Generate ISO (Disconnected)',b:'openshift-install agent create image generates the bootable ISO. install-config.yaml must include imageContentSources (mirror mappings) and additionalTrustBundle (mirror registry CA certificate) for disconnected mode.'},
   'dc-media':{t:'Transfer via Portable Media',b:'The generated ISO and mirror registry data are transferred to the disconnected environment via USB drives, portable storage, or secure media transfer. No network connection between environments.'},
-  'dc-local-reg':{t:'Local Mirror Registry',b:'The mirror registry deployed in the disconnected environment. Contains all OCP release images, operator images, and application images needed for installation and operation.'},
-  'dc-boot-hosts':{t:'Boot Hosts (Disconnected)',b:'All target hosts boot from the ISO. The rendezvous host starts the embedded Assisted Service. Other hosts register and provide hardware inventory. All images pulled from the local mirror registry.'},
-  'dc-install':{t:'Install (Disconnected)',b:'Standard Agent-Based installation flow: validate hosts, write RHCOS to disk, form cluster, deploy operators. All container images sourced from the local mirror registry. Zero internet connectivity required.'},
-  'dc-result':{t:'Disconnected Cluster',b:'Running OCP cluster with telemetry disabled, internal catalog sources (mirrored operator catalogs), and all images referencing the local mirror registry. oc-mirror used for ongoing updates.'},
+  'dc-local-reg':{t:'Mirror Registry (Disconnected)',b:'Same mirror registry concept as the connected side &mdash; an OCI-compliant registry holding mirrored images. In the disconnected environment, populated from portable media (USB/disk). Contains all OCP release images, operator catalog images, and application images needed for installation and Day-2 operation. Nodes pull all container images from this registry instead of the internet.'},
+  'dc-boot-hosts':{t:'Boot Hosts (Disconnected)',b:'All target hosts boot from the ISO. The rendezvous host starts the embedded Assisted Service. Other hosts register and provide hardware inventory. All images pulled from the mirror registry.'},
+  'dc-install':{t:'Install (Disconnected)',b:'Standard Agent-Based installation flow: validate hosts, write RHCOS to disk, form cluster, deploy operators. All container images sourced from the mirror registry. Zero internet connectivity required.'},
+  'dc-result':{t:'Disconnected Cluster',b:'Running OCP cluster with telemetry disabled, internal catalog sources (mirrored operator catalogs), and all images referencing the mirror registry. oc-mirror used for ongoing updates.'},
   'svc-detail':{t:'Service (ClusterIP)',b:'Provides stable VIP (e.g., 172.30.1.42) and DNS name (backend.my-app.svc.cluster.local). Uses label selector (e.g., app=backend) to discover matching pods. EndpointSlice tracks healthy pod IPs. OVN-Kubernetes load balances traffic across backends.'},
   'svc-pod-match':{t:'Matching Pod',b:'This pod has labels matching the Service selector (app=backend). It is included in the EndpointSlice and receives traffic from the Service. If the pod fails readiness probe, it is removed from endpoints.'},
   'svc-pod-nomatch':{t:'Non-Matching Pod',b:'This pod has different labels (app=frontend). It does NOT match the Service selector and receives no traffic from this Service. A separate Service with matching selector would be needed.'},
