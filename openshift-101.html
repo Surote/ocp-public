@@ -598,109 +598,137 @@ html.dark code { color:#5b9cf5; }
 <h2>Architecture Overview</h2>
 <div class="diagram-box">
   <div class="diagram-title">OpenShift Container Platform Architecture</div>
-  <svg width="820" height="500" viewBox="0 0 820 500" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
-    <!-- Control Plane -->
+  <svg width="820" height="540" viewBox="0 0 820 540" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+
+    <!-- ===== LEGEND ===== -->
+    <rect x="10" y="10" width="800" height="30" rx="6" fill="var(--bg-surface)" stroke="var(--border)"/>
+    <rect x="22" y="18" width="14" height="14" rx="3" fill="rgba(91,156,245,.08)" stroke="var(--blue)" stroke-opacity=".5"/>
+    <text x="42" y="29" fill="var(--text)" font-size="8.5">Kubernetes-native</text>
+    <rect x="150" y="18" width="14" height="14" rx="3" fill="rgba(225,29,72,.06)" stroke="var(--rose)" stroke-width="1.5" stroke-opacity=".7" stroke-dasharray="4 2"/>
+    <text x="170" y="29" fill="var(--rose)" font-weight="600" font-size="8.5">OpenShift adds (not in upstream K8s)</text>
+    <rect x="410" y="18" width="14" height="14" rx="3" fill="rgba(225,29,72,.06)" stroke="var(--rose)" stroke-width="1.5" stroke-opacity=".7"/>
+    <text x="430" y="29" fill="var(--rose)" font-weight="600" font-size="8.5">OpenShift replaces K8s default</text>
+
+    <!-- ===== CONTROL PLANE ===== -->
     <g class="d-node" data-tip="arch-cp">
-      <rect x="10" y="10" width="800" height="148" rx="12" fill="rgba(91,156,245,.05)" stroke="var(--blue)" stroke-width="1.5" stroke-opacity=".4"/>
-      <text x="410" y="34" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="13">CONTROL PLANE &mdash; 3x Master Nodes (RHCOS)</text>
+      <rect x="10" y="50" width="800" height="148" rx="12" fill="rgba(91,156,245,.05)" stroke="var(--blue)" stroke-width="1.5" stroke-opacity=".4"/>
+      <text x="410" y="74" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="13">CONTROL PLANE &mdash; 3x Master Nodes (RHCOS)</text>
+
+      <!-- K8s native -->
       <g class="d-node" data-tip="arch-api">
-        <rect x="28" y="50" width="140" height="48" rx="8" fill="rgba(251,113,133,.06)" stroke="var(--rose)" stroke-opacity=".6"/>
-        <text x="98" y="72" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="10">API Server</text>
-        <text x="98" y="87" text-anchor="middle" fill="var(--text-muted)" font-size="8">:6443 REST gateway</text>
+        <rect x="28" y="90" width="140" height="48" rx="8" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".4"/>
+        <text x="98" y="112" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="10">API Server</text>
+        <text x="98" y="127" text-anchor="middle" fill="var(--text-muted)" font-size="8">:6443 REST gateway</text>
       </g>
       <g class="d-node" data-tip="arch-etcd">
-        <rect x="180" y="50" width="140" height="48" rx="8" fill="rgba(245,166,35,.06)" stroke="var(--amber)" stroke-opacity=".6"/>
-        <text x="250" y="72" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="10">etcd (x3)</text>
-        <text x="250" y="87" text-anchor="middle" fill="var(--text-muted)" font-size="8">Raft consensus store</text>
+        <rect x="180" y="90" width="140" height="48" rx="8" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".4"/>
+        <text x="250" y="112" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="10">etcd (x3)</text>
+        <text x="250" y="127" text-anchor="middle" fill="var(--text-muted)" font-size="8">Raft consensus store</text>
       </g>
       <g class="d-node" data-tip="arch-ctrl">
-        <rect x="332" y="50" width="152" height="48" rx="8" fill="rgba(74,222,128,.06)" stroke="var(--green)" stroke-opacity=".6"/>
-        <text x="408" y="72" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="10">Controller Manager</text>
-        <text x="408" y="87" text-anchor="middle" fill="var(--text-muted)" font-size="8">Reconciliation loops</text>
+        <rect x="332" y="90" width="152" height="48" rx="8" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".4"/>
+        <text x="408" y="112" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="10">Controller Manager</text>
+        <text x="408" y="127" text-anchor="middle" fill="var(--text-muted)" font-size="8">Reconciliation loops</text>
       </g>
       <g class="d-node" data-tip="arch-sched">
-        <rect x="496" y="50" width="130" height="48" rx="8" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".6"/>
-        <text x="561" y="72" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="10">Scheduler</text>
-        <text x="561" y="87" text-anchor="middle" fill="var(--text-muted)" font-size="8">Pod to Node binding</text>
+        <rect x="496" y="90" width="130" height="48" rx="8" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".4"/>
+        <text x="561" y="112" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="10">Scheduler</text>
+        <text x="561" y="127" text-anchor="middle" fill="var(--text-muted)" font-size="8">Pod to Node binding</text>
       </g>
+
+      <!-- OCP adds -->
       <g class="d-node" data-tip="arch-oauth">
-        <rect x="638" y="50" width="158" height="48" rx="8" fill="rgba(167,139,250,.06)" stroke="var(--purple)" stroke-opacity=".6"/>
-        <text x="717" y="72" text-anchor="middle" fill="var(--purple)" font-weight="600" font-size="10">OAuth / Console</text>
-        <text x="717" y="87" text-anchor="middle" fill="var(--text-muted)" font-size="8">Identity + Web UI</text>
+        <rect x="638" y="90" width="158" height="48" rx="8" fill="rgba(225,29,72,.06)" stroke="var(--rose)" stroke-width="1.5" stroke-opacity=".7" stroke-dasharray="4 2"/>
+        <text x="717" y="108" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="10">OAuth / Console</text>
+        <text x="717" y="122" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">Identity + Web UI</text>
+        <text x="717" y="134" text-anchor="middle" fill="var(--rose)" font-size="6.5" font-weight="600">OCP adds</text>
       </g>
+
       <g class="d-node" data-tip="arch-operators">
-        <rect x="28" y="112" width="768" height="34" rx="6" fill="rgba(167,139,250,.04)" stroke="var(--border)"/>
-        <text x="410" y="134" text-anchor="middle" fill="var(--purple)" font-weight="500" font-size="9">CLUSTER OPERATORS: CVO | Ingress | Network | DNS | Registry | Monitoring | Console | MCO | Auth | Storage</text>
+        <rect x="28" y="152" width="768" height="34" rx="6" fill="rgba(225,29,72,.04)" stroke="var(--rose)" stroke-opacity=".3" stroke-dasharray="4 2"/>
+        <text x="410" y="174" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">CLUSTER OPERATORS (OCP adds): CVO | Ingress | Network | DNS | Registry | Monitoring | Console | MCO | Auth | Storage</text>
       </g>
     </g>
 
-    <!-- Worker Nodes -->
+    <!-- ===== WORKER NODES ===== -->
     <g class="d-node" data-tip="arch-worker">
-      <rect x="10" y="176" width="800" height="138" rx="12" fill="rgba(74,222,128,.04)" stroke="var(--green)" stroke-width="1.5" stroke-opacity=".3"/>
-      <text x="410" y="198" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="13">WORKER NODES &mdash; Nx scalable (RHCOS / RHEL)</text>
+      <rect x="10" y="216" width="800" height="138" rx="12" fill="rgba(74,222,128,.04)" stroke="var(--green)" stroke-width="1.5" stroke-opacity=".3"/>
+      <text x="410" y="238" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="13">WORKER NODES &mdash; Nx scalable (RHCOS / RHEL)</text>
+
+      <!-- OCP replaces: CRI-O -->
       <g class="d-node" data-tip="arch-crio">
-        <rect x="28" y="212" width="108" height="42" rx="8" fill="var(--bg-elevated)" stroke="var(--border)"/>
-        <text x="82" y="232" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="10">CRI-O</text>
-        <text x="82" y="246" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Container runtime</text>
+        <rect x="28" y="252" width="108" height="42" rx="8" fill="rgba(225,29,72,.06)" stroke="var(--rose)" stroke-width="1.5" stroke-opacity=".7"/>
+        <text x="82" y="268" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="10">CRI-O</text>
+        <text x="82" y="282" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">Replaces containerd</text>
       </g>
+
+      <!-- K8s native: kubelet -->
       <g class="d-node" data-tip="arch-kubelet">
-        <rect x="148" y="212" width="108" height="42" rx="8" fill="var(--bg-elevated)" stroke="var(--border)"/>
-        <text x="202" y="232" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="10">kubelet</text>
-        <text x="202" y="246" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Node agent</text>
+        <rect x="148" y="252" width="108" height="42" rx="8" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".4"/>
+        <text x="202" y="272" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="10">kubelet</text>
+        <text x="202" y="286" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Node agent</text>
       </g>
+
+      <!-- OCP replaces: OVN-K -->
       <g class="d-node" data-tip="arch-ovn">
-        <rect x="268" y="212" width="130" height="42" rx="8" fill="var(--bg-elevated)" stroke="var(--border)"/>
-        <text x="333" y="232" text-anchor="middle" fill="var(--teal)" font-weight="600" font-size="10">OVN-Kubernetes</text>
-        <text x="333" y="246" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">SDN / CNI plugin</text>
+        <rect x="268" y="252" width="130" height="42" rx="8" fill="rgba(225,29,72,.06)" stroke="var(--rose)" stroke-width="1.5" stroke-opacity=".7"/>
+        <text x="333" y="268" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="10">OVN-Kubernetes</text>
+        <text x="333" y="282" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">Replaces kube-proxy</text>
       </g>
+
+      <!-- K8s native: CSI -->
       <g class="d-node" data-tip="arch-csip">
-        <rect x="410" y="212" width="108" height="42" rx="8" fill="var(--bg-elevated)" stroke="var(--border)"/>
-        <text x="464" y="232" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="10">CSI Plugins</text>
-        <text x="464" y="246" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Storage drivers</text>
+        <rect x="410" y="252" width="108" height="42" rx="8" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".4"/>
+        <text x="464" y="272" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="10">CSI Plugins</text>
+        <text x="464" y="286" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Storage drivers</text>
       </g>
+
+      <!-- K8s native: Pods -->
       <g class="d-node" data-tip="arch-apps">
-        <rect x="530" y="212" width="266" height="42" rx="8" fill="rgba(251,113,133,.04)" stroke="var(--rose)" stroke-opacity=".4"/>
-        <text x="663" y="232" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="10">Application Pods</text>
-        <text x="663" y="246" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Deployments, StatefulSets, Jobs</text>
+        <rect x="530" y="252" width="266" height="42" rx="8" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".3"/>
+        <text x="663" y="272" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="10">Application Pods</text>
+        <text x="663" y="286" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Deployments, StatefulSets, Jobs</text>
       </g>
+
+      <!-- OCP adds: Platform Services -->
       <g class="d-node" data-tip="arch-platsvc">
-        <rect x="28" y="268" width="768" height="34" rx="6" fill="rgba(91,156,245,.04)" stroke="var(--border)"/>
-        <text x="410" y="290" text-anchor="middle" fill="var(--text-muted)" font-weight="500" font-size="9">PLATFORM SERVICES: HAProxy Router | Internal Registry | Prometheus | Alertmanager | Console UI | CoreDNS</text>
+        <rect x="28" y="308" width="768" height="34" rx="6" fill="rgba(225,29,72,.04)" stroke="var(--rose)" stroke-opacity=".3" stroke-dasharray="4 2"/>
+        <text x="410" y="330" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">PLATFORM SERVICES (OCP adds): HAProxy Router | Internal Registry | Prometheus | Alertmanager | Console UI | CoreDNS</text>
       </g>
     </g>
 
-    <!-- Red Hat Ecosystem -->
+    <!-- ===== RED HAT ECOSYSTEM ===== -->
     <g class="d-node" data-tip="arch-eco">
-      <rect x="10" y="332" width="800" height="76" rx="12" fill="rgba(167,139,250,.04)" stroke="var(--purple)" stroke-width="1.5" stroke-opacity=".3"/>
-      <text x="410" y="354" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="12">RED HAT ECOSYSTEM &mdash; Extends OpenShift</text>
+      <rect x="10" y="372" width="800" height="76" rx="12" fill="rgba(225,29,72,.03)" stroke="var(--rose)" stroke-width="1.5" stroke-opacity=".3" stroke-dasharray="4 2"/>
+      <text x="410" y="394" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="12">RED HAT ECOSYSTEM (OCP adds) &mdash; Extends OpenShift</text>
       <g class="d-node" data-tip="arch-acm">
-        <rect x="18" y="366" width="186" height="30" rx="6" fill="var(--bg-elevated)" stroke="var(--border)"/>
-        <text x="111" y="386" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="9">ACM &mdash; Multi-Cluster</text>
+        <rect x="18" y="406" width="186" height="30" rx="6" fill="rgba(225,29,72,.04)" stroke="var(--rose)" stroke-opacity=".2" stroke-dasharray="4 2"/>
+        <text x="111" y="426" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">ACM &mdash; Multi-Cluster</text>
       </g>
       <g class="d-node" data-tip="arch-acs">
-        <rect x="212" y="366" width="186" height="30" rx="6" fill="var(--bg-elevated)" stroke="var(--border)"/>
-        <text x="305" y="386" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="9">ACS &mdash; Security</text>
+        <rect x="212" y="406" width="186" height="30" rx="6" fill="rgba(225,29,72,.04)" stroke="var(--rose)" stroke-opacity=".2" stroke-dasharray="4 2"/>
+        <text x="305" y="426" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">ACS &mdash; Security</text>
       </g>
       <g class="d-node" data-tip="arch-odf">
-        <rect x="406" y="366" width="186" height="30" rx="6" fill="var(--bg-elevated)" stroke="var(--border)"/>
-        <text x="499" y="386" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9">ODF &mdash; Storage</text>
+        <rect x="406" y="406" width="186" height="30" rx="6" fill="rgba(225,29,72,.04)" stroke="var(--rose)" stroke-opacity=".2" stroke-dasharray="4 2"/>
+        <text x="499" y="426" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">ODF &mdash; Storage</text>
       </g>
       <g class="d-node" data-tip="arch-virt">
-        <rect x="600" y="366" width="200" height="30" rx="6" fill="var(--bg-elevated)" stroke="var(--border)"/>
-        <text x="700" y="386" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">Virtualization &mdash; Run VMs</text>
+        <rect x="600" y="406" width="200" height="30" rx="6" fill="rgba(225,29,72,.04)" stroke="var(--rose)" stroke-opacity=".2" stroke-dasharray="4 2"/>
+        <text x="700" y="426" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">Virtualization &mdash; Run VMs</text>
       </g>
     </g>
 
-    <!-- Foundation -->
+    <!-- ===== FOUNDATION ===== -->
     <g class="d-node" data-tip="arch-rhcos">
-      <rect x="10" y="426" width="394" height="60" rx="10" fill="rgba(245,166,35,.04)" stroke="var(--amber)" stroke-opacity=".3"/>
-      <text x="207" y="452" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="11.5">RHCOS &mdash; Immutable OS</text>
-      <text x="207" y="470" text-anchor="middle" fill="var(--text-dim)" font-size="8.5">ostree atomic updates | MCO | FIPS | SELinux enforcing</text>
+      <rect x="10" y="466" width="394" height="60" rx="10" fill="rgba(225,29,72,.04)" stroke="var(--rose)" stroke-opacity=".4" stroke-dasharray="4 2"/>
+      <text x="207" y="490" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="11.5">RHCOS &mdash; Immutable OS</text>
+      <text x="207" y="508" text-anchor="middle" fill="var(--text-dim)" font-size="8.5">OCP adds: ostree atomic updates | MCO managed</text>
     </g>
     <g class="d-node" data-tip="arch-olm">
-      <rect x="416" y="426" width="394" height="60" rx="10" fill="rgba(167,139,250,.04)" stroke="var(--purple)" stroke-opacity=".3"/>
-      <text x="613" y="452" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="11.5">Operator Lifecycle Manager</text>
-      <text x="613" y="470" text-anchor="middle" fill="var(--text-dim)" font-size="8.5">OperatorHub | 200+ operators | auto-upgrade channels</text>
+      <rect x="416" y="466" width="394" height="60" rx="10" fill="rgba(225,29,72,.04)" stroke="var(--rose)" stroke-opacity=".4" stroke-dasharray="4 2"/>
+      <text x="613" y="490" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="11.5">Operator Lifecycle Manager</text>
+      <text x="613" y="508" text-anchor="middle" fill="var(--text-dim)" font-size="8.5">OCP adds: OperatorHub | 200+ operators | auto-upgrade</text>
     </g>
   </svg>
 </div>
@@ -822,8 +850,6 @@ html.dark code { color:#5b9cf5; }
   <li><strong>Cluster-managed</strong> &mdash; MCO handles CRI-O configuration, kubelet configuration, authorized container registries, and SSH access configuration</li>
   <li><strong>CRI-O tracks Kubernetes</strong> &mdash; The CRI-O container runtime version is matched to the Kubernetes version in each OCP release</li>
   <li><strong>Immutable by design</strong> &mdash; Root filesystem is read-only via ostree. Changes are applied atomically and can be rolled back</li>
-  <li><strong>SELinux enforcing</strong> &mdash; Mandatory access control is always enabled, providing defense-in-depth against container breakouts</li>
-  <li><strong>FIPS capable</strong> &mdash; Can be installed in FIPS 140-2 mode for regulated workloads</li>
 </ul>
 
 <h2>High-Level Deployment Architecture</h2>
