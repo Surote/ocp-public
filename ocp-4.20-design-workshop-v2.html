@@ -3255,6 +3255,7 @@ hcp create cluster kubevirt \
   function wsCalcCidr(){
     const cidrInput = document.getElementById('cidr-cluster').value.trim();
     const hostPrefix = parseInt(document.getElementById('cidr-hostPrefix').value) || 0;
+    const machCidrInput = (document.querySelector('[data-field="net.machineCIDR"]').value||'').trim();
     const result = document.getElementById('cidr-result');
     const match = cidrInput.match(/\/(\d+)$/);
     if (!match || !hostPrefix) {
@@ -3268,15 +3269,28 @@ hcp create cluster kubevirt \
       result.innerHTML = '<span style="color:var(--rh-bad)">Host Prefix must be larger than the Cluster CIDR prefix (e.g. /23 > /14).</span>';
       return;
     }
-    const maxNodes = Math.pow(2, hostPrefix - cidrPrefix);
+    const maxNodesByCluster = Math.pow(2, hostPrefix - cidrPrefix);
     const podIPsPerNode = Math.pow(2, 32 - hostPrefix) - 2;
     const defaultMaxPods = 250;
     const effectiveMaxPods = Math.min(podIPsPerNode, defaultMaxPods);
-    const totalPodIPs = podIPsPerNode * maxNodes;
+
+    const machMatch = machCidrInput.match(/\/(\d+)$/);
+    let machMaxHosts = null;
+    let machPrefix = null;
+    if (machMatch) {
+      machPrefix = parseInt(machMatch[1]);
+      machMaxHosts = Math.pow(2, 32 - machPrefix) - 2;
+    }
+
+    const effectiveMaxNodes = machMaxHosts !== null ? Math.min(maxNodesByCluster, machMaxHosts) : maxNodesByCluster;
+    const totalPodIPs = podIPsPerNode * effectiveMaxNodes;
 
     const warnings = [];
     if (podIPsPerNode < defaultMaxPods) {
       warnings.push(`Pod IPs per node (${podIPsPerNode}) is less than the default maxPods (${defaultMaxPods}). Pods will fail to schedule once IPs are exhausted. Either use a smaller host prefix or lower maxPods in KubeletConfig.`);
+    }
+    if (machMaxHosts !== null && machMaxHosts < maxNodesByCluster) {
+      warnings.push(`Machine Network /${machPrefix} limits usable host IPs to ${machMaxHosts.toLocaleString()}, which is less than Cluster CIDR capacity of ${maxNodesByCluster.toLocaleString()} nodes. Effective max nodes constrained by Machine Network.`);
     }
     const reserved = ['100.64.0.0/16','100.88.0.0/16'];
     reserved.forEach(r => {
@@ -3285,15 +3299,22 @@ hcp create cluster kubevirt \
       }
     });
 
+    const machLine = machMaxHosts !== null
+      ? `<div>Machine Network: <strong>${machCidrInput}</strong> \u00b7 Usable host IPs: <strong>${machMaxHosts.toLocaleString()}</strong> <span style="font-size:12px;color:#555">(2<sup>(32\u2212${machPrefix})</sup> \u2212 2)</span></div>`
+      : '<div style="font-size:12px;color:#888">Machine Network CIDR not set \u2014 max nodes based on Cluster CIDR only</div>';
+
     result.style.display = 'block';
     result.innerHTML = `
       <div>Cluster CIDR: <strong>${cidrInput}</strong> \u00b7 Host Prefix: <strong>/${hostPrefix}</strong></div>
-      <span class="big">Max nodes: ${maxNodes.toLocaleString()}</span>
+      ${machLine}
+      <span class="big">Max nodes (Cluster CIDR): ${maxNodesByCluster.toLocaleString()}</span>
+      ${machMaxHosts !== null ? '<span class="big">Max nodes (Machine Network): ' + machMaxHosts.toLocaleString() + '</span>' : ''}
+      <span class="big" style="color:var(--rh-accent)">Effective max nodes: ${effectiveMaxNodes.toLocaleString()}</span>
       <span class="big">Pod IPs per node: ${podIPsPerNode.toLocaleString()}</span>
       <div>Effective maxPods per node: <strong>${effectiveMaxPods}</strong> <span style="font-size:12px;color:#555">(min of pod IPs and kubelet maxPods default ${defaultMaxPods})</span></div>
-      <div>Total pod IP capacity: <strong>${totalPodIPs.toLocaleString()}</strong></div>
+      <div>Total pod IP capacity: <strong>${totalPodIPs.toLocaleString()}</strong> <span style="font-size:12px;color:#555">(based on effective max nodes)</span></div>
       <div style="font-size:12px;color:#555;margin-top:6px">
-        Formula: max nodes = 2<sup>(hostPrefix \u2212 clusterPrefix)</sup> = 2<sup>(${hostPrefix}\u2212${cidrPrefix})</sup> = ${maxNodes} \u00b7
+        Formula: max nodes (cluster) = 2<sup>(hostPrefix \u2212 clusterPrefix)</sup> = 2<sup>(${hostPrefix}\u2212${cidrPrefix})</sup> = ${maxNodesByCluster}${machMaxHosts !== null ? ' \u00b7 max nodes (machine) = 2<sup>(32\u2212' + machPrefix + ')</sup> \u2212 2 = ' + machMaxHosts : ''} \u00b7
         pod IPs/node = 2<sup>(32 \u2212 hostPrefix)</sup> \u2212 2 = 2<sup>(32\u2212${hostPrefix})</sup> \u2212 2 = ${podIPsPerNode}
       </div>
       ${warnings.length ? '<div class="danger" style="margin-top:8px;font-size:13px"><strong>Warning:</strong> ' + warnings.join('<br>') + '</div>' : ''}`;
