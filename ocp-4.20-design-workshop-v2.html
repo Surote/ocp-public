@@ -252,6 +252,7 @@
     transition:var(--transition);
   }
   .ws-del:hover{background:#b91c1c;transform:scale(1.05)}
+  .role-custom{font-size:12px;padding:3px 6px;border:1px solid #d1d5db;border-radius:5px;width:100%;box-sizing:border-box}
   .ws-result{
     background:rgba(8,145,178,0.06);border:1px solid rgba(8,145,178,0.2);
     border-radius:12px;padding:16px 20px;margin:12px 0;font-size:14px;
@@ -506,6 +507,20 @@
         <div class="ws-field"><label>MTU</label><input data-field="net.mtu" placeholder="1500 or 9000"/><div class="hint">Geneve overhead ~100 bytes</div></div>
       </div>
 
+      <div class="warn" style="font-size:12px;margin-top:6px">
+        <strong>MTU in mixed environments (VM + Bare Metal):</strong> All nodes must have the <em>same</em> MTU on their primary interface — control-plane VMs and bare-metal workers alike. OVN-Kubernetes auto-detects the lowest MTU across nodes; a mismatch causes silent packet drops.<br><br>
+        <strong>Jumbo frames (9000) checklist:</strong>
+        <ul style="margin:4px 0 4px 18px;padding:0;line-height:1.5">
+          <li>vSwitch / Distributed vSwitch on ESXi hosts &rarr; MTU 9000</li>
+          <li>VM port group carrying OCP traffic &rarr; MTU 9000</li>
+          <li>Every physical switch &amp; router between VM hosts and bare-metal workers &rarr; MTU 9000</li>
+          <li>Bare-metal NIC, bond, and VLAN interfaces &rarr; MTU 9000 (see NMState section below)</li>
+        </ul>
+        <strong>Overlay overhead:</strong> OVN Geneve subtracts 100 bytes &rarr; set cluster network MTU to <strong>physical MTU &minus; 100</strong> (e.g., 9000 &rarr; 8900). With IPsec, subtract an additional 46 bytes.<br>
+        <strong>Best practice:</strong> If end-to-end jumbo frame support cannot be confirmed across all links, use MTU 1500 (overlay 1400).<br>
+        <strong>Post-install change is disruptive:</strong> MTU migration after install triggers <em>two</em> rolling reboots of all nodes &mdash; plan MTU at install time.
+      </div>
+
       <h3 style="font-size:15px;border-left:none;padding-left:0">Reserved IP Ranges (from Machine Network)</h3>
       <div class="note" style="font-size:12px;margin-bottom:8px">These ranges are carved out of the <strong>Machine Network</strong> and must not overlap with node IPs, VIPs, or each other. Document them here so the network team can reserve them.</div>
       <div class="ws-row">
@@ -603,12 +618,7 @@
       <div id="diagram-roles" style="display:flex;flex-wrap:wrap;gap:16px;margin:0 0 16px"></div>
       <div class="note" style="font-size:12px;margin:0 0 12px">Diagrams auto-update from the node table below. Nodes with Role containing <strong><span class="inline-code">master</span></strong> appear in the API diagram. *.apps traffic goes only to nodes with the <strong>Router</strong> checkbox enabled. When Role = <strong><span class="inline-code">master/worker</span></strong>, both diagrams combine into one. By default, router pods run as a DaemonSet on all workers — restrict with <span class="inline-code">IngressController.spec.nodePlacement</span>.</div>
 
-      <datalist id="role-list">
-        <option value="master"><option value="worker"><option value="master/worker"><option value="infra">
-        <option value="storage"><option value="bootstrap"><option value="bastion">
-        <option value="mirror-registry"><option value="dns"><option value="lb">
-        <option value="nfs"><option value="gpu">
-      </datalist>
+      <!-- Role options defined in JS: ROLE_OPTIONS -->
       <h3>Nodes (Hardware, IP, VLAN, FQDN)</h3>
       <div style="overflow-x:auto">
         <table class="ws-nodes">
@@ -638,6 +648,24 @@
             <option value="individual">Individual Node IPs</option>
           </select>
           <div class="hint">How to represent OCP node sources in firewall rules</div>
+        </div>
+      </div>
+      <div class="ws-row" style="margin-bottom:10px">
+        <div class="ws-field"><label>API LB Source</label>
+          <select id="fw-api-lb-src" data-field="fw.apiLbSrc" onchange="wsToggleLbSrc();wsUpdateFirewall()">
+            <option value="vip" selected>Use API VIP (frontend IP)</option>
+            <option value="snat">SNAT / Backend IP</option>
+          </select>
+          <input id="fw-api-lb-src-ip" data-field="fw.apiLbSrcIp" placeholder="e.g. 10.0.0.50 or 10.0.0.0/24" style="display:none;margin-top:4px" oninput="wsUpdateFirewall()"/>
+          <div class="hint">Source IP that control plane nodes see from the API load balancer</div>
+        </div>
+        <div class="ws-field"><label>Ingress LB Source</label>
+          <select id="fw-ing-lb-src" data-field="fw.ingLbSrc" onchange="wsToggleLbSrc();wsUpdateFirewall()">
+            <option value="vip" selected>Use Ingress VIP (frontend IP)</option>
+            <option value="snat">SNAT / Backend IP</option>
+          </select>
+          <input id="fw-ing-lb-src-ip" data-field="fw.ingLbSrcIp" placeholder="e.g. 10.0.0.51 or 10.0.0.0/24" style="display:none;margin-top:4px" oninput="wsUpdateFirewall()"/>
+          <div class="hint">Source IP that router nodes see from the Ingress load balancer</div>
         </div>
       </div>
       <div style="overflow-x:auto">
@@ -1929,7 +1957,7 @@ spec:
         </details>
 
         <div class="warn" style="font-size:12px;margin-top:10px"><strong>LACP timing:</strong> Use <span class="inline-code">lacp_rate: fast</span> (every 1s) for quicker failover detection. Some switches default to slow (30s). Ensure both sides match. Set <span class="inline-code">miimon: 100</span> for 100ms link monitoring.</div>
-        <div class="note" style="font-size:12px"><strong>MTU consistency:</strong> The MTU must be configured end-to-end — physical NICs, bond, VLAN interface, and all upstream switch ports. Mismatched MTU causes silent packet drops and degraded performance.</div>
+        <div class="note" style="font-size:12px"><strong>MTU consistency:</strong> The MTU must be configured end-to-end — physical NICs, bond, VLAN interface, and all upstream switch ports. In mixed environments, also verify that vSwitch / Distributed vSwitch and VM port groups on ESXi hosts match the bare-metal MTU. Mismatched MTU causes silent packet drops and degraded performance.</div>
 
         <details>
           <summary>Agent-based HCP create command</summary>
@@ -2140,12 +2168,35 @@ hcp create cluster kubevirt \
   const AGENT_PORT_COLS = PORT_COLS;
   const HCP_NODE_COLS = ['role','fqdn','cpu','ram','disk','ip','mask','vlan','gw'];
 
+  const ROLE_OPTIONS = ['master','worker','master/worker','master/infra','master/infra/worker','bastion','mirror-registry'];
+  function wsRoleHtml(val){
+    val = val || 'worker';
+    const isCustom = !ROLE_OPTIONS.includes(val);
+    let opts = ROLE_OPTIONS.map(r=>`<option value="${r}"${r===val?' selected':''}>${r}</option>`).join('');
+    opts += `<option value="__custom__"${isCustom?' selected':''}>Custom…</option>`;
+    return `<input type="hidden" data-nf="role" value="${val}"/>`
+      + `<select onchange="wsRoleChange(this)" style="min-width:100px">${opts}</select>`
+      + `<input class="role-custom" value="${isCustom?val:''}" placeholder="type role" style="min-width:80px;margin-top:3px;display:${isCustom?'block':'none'}" oninput="this.parentElement.querySelector('[data-nf=role]').value=this.value"/>`;
+  }
+  function wsRoleChange(sel){
+    const td = sel.closest('td');
+    const hidden = td.querySelector('[data-nf="role"]');
+    const custom = td.querySelector('.role-custom');
+    if(sel.value==='__custom__'){
+      custom.style.display='block'; custom.focus();
+      hidden.value = custom.value;
+    } else {
+      custom.style.display='none'; custom.value='';
+      hidden.value = sel.value;
+    }
+  }
+
   // ================ Row Builders ================
   function wsNodeRow(data={}){
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="idx"></td>
-      <td><input data-nf="role" list="role-list" value="${data.role||'worker'}" placeholder="worker" style="min-width:100px"/></td>
+      <td>${wsRoleHtml(data.role)}</td>
       <td><input data-nf="fqdn" placeholder="master-0.ocp.example.com" style="min-width:200px"/></td>
       <td><input data-nf="cpu" placeholder="16 vCPU" style="min-width:80px"/></td>
       <td><input data-nf="ram" placeholder="64 GB" style="min-width:80px"/></td>
@@ -2305,7 +2356,7 @@ hcp create cluster kubevirt \
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="idx"></td>
-      <td><input data-nf="role" list="role-list" value="${data.role||'worker'}" placeholder="worker" style="min-width:80px"/></td>
+      <td>${wsRoleHtml(data.role)}</td>
       <td><input data-nf="fqdn" placeholder="worker-0.hosted.example.com" style="min-width:200px"/></td>
       <td><input data-nf="cpu" placeholder="16 vCPU" style="min-width:70px"/></td>
       <td><input data-nf="ram" placeholder="64 GB" style="min-width:70px"/></td>
@@ -2439,6 +2490,13 @@ hcp create cluster kubevirt \
     activeHcp = 0;
     wsApplyHcp(data.hcps[0]);
     wsRenderHcpTabs();
+    wsToggleLbSrc();
+  }
+  function wsToggleLbSrc(){
+    const apiIp = document.getElementById('fw-api-lb-src-ip');
+    const ingIp = document.getElementById('fw-ing-lb-src-ip');
+    if (apiIp) apiIp.style.display = (document.getElementById('fw-api-lb-src')||{}).value === 'snat' ? '' : 'none';
+    if (ingIp) ingIp.style.display = (document.getElementById('fw-ing-lb-src')||{}).value === 'snat' ? '' : 'none';
   }
 
   // ================ Cluster Tabs ================
@@ -3406,13 +3464,17 @@ hcp create cluster kubevirt \
     }
     const apiDst = apiVip ? `${apiVip} (api.${d})` : `api.${d}`;
     const ingDst = ingVip ? `${ingVip} (*.apps.${d})` : `*.apps.${d}`;
+    const apiLbMode = (document.getElementById('fw-api-lb-src')||{}).value || 'vip';
+    const apiLbSrc = apiLbMode === 'snat' ? ((document.getElementById('fw-api-lb-src-ip')||{}).value||'').trim() || 'LB SNAT IP' : apiDst;
+    const ingLbMode = (document.getElementById('fw-ing-lb-src')||{}).value || 'vip';
+    const ingLbSrc = ingLbMode === 'snat' ? ((document.getElementById('fw-ing-lb-src-ip')||{}).value||'').trim() || 'LB SNAT IP' : ingDst;
     const c = 'inline-code';
     const r = (cat,src,dst,port,desc) => `<tr><td style="padding:6px 8px;border:1px solid var(--rh-border);white-space:nowrap;font-weight:600;color:#555">${cat}</td><td style="padding:6px 8px;border:1px solid var(--rh-border)"><span class="${c}">${src}</span></td><td style="padding:6px 8px;border:1px solid var(--rh-border)"><span class="${c}">${dst}</span></td><td style="padding:6px 8px;border:1px solid var(--rh-border);white-space:nowrap"><span class="${c}">${port}</span></td><td style="padding:6px 8px;border:1px solid var(--rh-border)">${desc}</td></tr>`;
     let h = '';
-    h += r('LB \u2192 CP', apiDst, masterIPs, 'TCP/6443', 'Kubernetes API server');
-    h += r('LB \u2192 CP', apiDst, masterIPs, 'TCP/22623', 'Machine Config Server (MCS) \u2014 ignition configs during bootstrap');
-    h += r('LB \u2192 Router', ingDst, routerIPs, 'TCP/80', 'HTTP Ingress (*.apps routes) \u2014 router pods');
-    h += r('LB \u2192 Router', ingDst, routerIPs, 'TCP/443', 'HTTPS Ingress (*.apps routes) \u2014 router pods');
+    h += r('LB \u2192 CP', apiLbSrc, masterIPs, 'TCP/6443', 'Kubernetes API server');
+    h += r('LB \u2192 CP', apiLbSrc, masterIPs, 'TCP/22623', 'Machine Config Server (MCS) \u2014 ignition configs during bootstrap');
+    h += r('LB \u2192 Router', ingLbSrc, routerIPs, 'TCP/80', 'HTTP Ingress (*.apps routes) \u2014 router pods');
+    h += r('LB \u2192 Router', ingLbSrc, routerIPs, 'TCP/443', 'HTTPS Ingress (*.apps routes) \u2014 router pods');
     h += r('Nodes \u2192 LB', fwSrc, apiDst, 'TCP/6443', 'Kubelet, pods \u2192 API server via LB VIP');
     h += r('Nodes \u2192 LB', fwSrc, apiDst, 'TCP/22623', 'Nodes \u2192 Machine Config Server via LB VIP');
     h += r('Nodes \u2192 LB', fwSrc, ingDst, 'TCP/80, 443', 'In-cluster traffic to Routes via Ingress VIP');
@@ -3669,7 +3731,7 @@ hcp create cluster kubevirt \
     svg += `<text x="${leftCx}" y="31" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">${apiTitle}</text>`;
     svg += `<text x="${leftCx}" y="56" text-anchor="middle" fill="#555" font-size="9" font-style="italic">:6443 / :22623</text>`;
     svg += `<rect x="${rightCx-appsTW/2}" y="10" width="${appsTW}" height="32" rx="4" fill="#1a5e1a"/>`;
-    svg += `<text x="${rightCx}" y="31" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">${escHtml(appsTitle)}</text>`;
+    svg += `<text x="${rightCx}" y="31" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">${appsTitle}</text>`;
     svg += `<text x="${rightCx}" y="56" text-anchor="middle" fill="#3e8635" font-size="9" font-style="italic">:80 / :443</text>`;
     svg += `<line x1="${leftCx}" y1="42" x2="${cx}" y2="80" stroke="#555" stroke-width="1.4" marker-end="url(#arrow)"/>`;
     svg += `<line x1="${rightCx}" y1="42" x2="${cx}" y2="80" stroke="#3e8635" stroke-width="1.4" marker-end="url(#arrow-green)"/>`;
