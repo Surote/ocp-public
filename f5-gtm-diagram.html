@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F5 GTM/DNS Architecture — OpenShift DC/DR Failover</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  :root {
+    --bg: #faf7f2;
+    --f5-border: #a7d7a9; --f5-fill: #eef7ee;
+    --gtm-fill: #ede5f7; --gtm-border: #c4aee0;
+    --dc-fill: #e0edfa; --dc-border: #96bde8;
+    --dr-fill: #fce4ec; --dr-border: #e8a0b4;
+    --client-fill: #fff7d6; --client-border: #e6cc6e;
+    --worker-fill: #f0f4f8; --worker-border: #b0bec5;
+    --active: #66bb6a; --active-glow: rgba(102,187,106,.35);
+    --standby: #cfd8dc; --standby-dash: #b0bec5;
+    --danger: #ef5350; --danger-glow: rgba(239,83,80,.3);
+    --monitor-fill: #fff3e0; --monitor-border: #ffb74d;
+    --text: #263238; --text-sub: #607d8b;
+    --shadow: 0 2px 12px rgba(0,0,0,.07);
+    --shadow-hover: 0 4px 24px rgba(0,0,0,.12);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:24px; }
+
+  h1 { font-size:1.5rem; font-weight:700; color:var(--text); letter-spacing:-.02em; }
+  h1 span { color:var(--active); }
+
+  .header { display:flex; align-items:center; justify-content:space-between; width:100%; max-width:1120px; margin-bottom:16px; flex-wrap:wrap; gap:12px; }
+  .header-left { display:flex; align-items:center; gap:12px; }
+  .badge { font-size:.7rem; font-weight:600; padding:3px 10px; border-radius:20px; letter-spacing:.03em; }
+  .badge-version { background:#e8f5e9; color:#2e7d32; }
+
+  /* Toggle switch */
+  .toggle-group { display:flex; align-items:center; gap:14px; background:#fff; padding:8px 18px; border-radius:14px; box-shadow:var(--shadow); }
+  .toggle-label { font-size:.78rem; font-weight:600; color:var(--text-sub); white-space:nowrap; }
+  .toggle-wrap { position:relative; width:52px; height:28px; cursor:pointer; }
+  .toggle-wrap input { display:none; }
+  .toggle-track { position:absolute; inset:0; background:var(--dc-border); border-radius:14px; transition:background .4s; }
+  .toggle-wrap input:checked + .toggle-track { background:var(--dr-border); }
+  .toggle-knob { position:absolute; top:3px; left:3px; width:22px; height:22px; background:#fff; border-radius:50%; box-shadow:0 1px 4px rgba(0,0,0,.18); transition:transform .4s cubic-bezier(.4,0,.2,1); }
+  .toggle-wrap input:checked ~ .toggle-knob { transform:translateX(24px); }
+  .state-label { font-size:.82rem; font-weight:600; min-width:200px; transition:color .3s; }
+  .state-dc { color:#2e7d32; }
+  .state-dr { color:#c62828; }
+
+  /* Diagram container */
+  .diagram { position:relative; width:1100px; height:870px; margin:0 auto; }
+
+  /* SVG layer */
+  .diagram svg { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
+
+  /* Connection paths */
+  .conn { fill:none; stroke-width:2.5; stroke-linecap:round; transition:stroke .5s, stroke-opacity .5s, stroke-dasharray .5s; }
+  .conn-active { stroke:var(--active); stroke-opacity:.85; }
+  .conn-standby { stroke:var(--standby-dash); stroke-opacity:.5; stroke-dasharray:8 6; }
+  .conn-internal { stroke:#b0bec5; stroke-opacity:.45; stroke-width:2; }
+  .conn-monitor { stroke:var(--monitor-border); stroke-opacity:.5; stroke-dasharray:4 4; stroke-width:1.8; }
+  .conn-fan { stroke-width:2; stroke-opacity:.6; transition:stroke .5s, stroke-opacity .5s; }
+  .conn-fan-active { stroke:var(--active); }
+  .conn-fan-standby { stroke:var(--standby); stroke-dasharray:5 4; }
+
+  /* Traffic dots */
+  .dot { fill:var(--active); opacity:0; transition:opacity .5s; }
+  .dot.visible { opacity:1; }
+  .dot-dr { fill:var(--dr-border); }
+
+  /* Pulse on monitor */
+  .pulse-ring { fill:none; stroke:var(--monitor-border); stroke-width:1.5; opacity:0; }
+  @keyframes pulseRing { 0%{r:8;opacity:.7} 100%{r:22;opacity:0} }
+  .pulse-ring.active { animation:pulseRing 2s ease-out infinite; }
+
+  /* Nodes */
+  .node { position:absolute; border-radius:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; cursor:pointer; transition:transform .25s, box-shadow .25s; z-index:2; user-select:none; }
+  .node:hover { transform:translateY(-2px); box-shadow:var(--shadow-hover); z-index:10; }
+  .node-label { font-size:.78rem; font-weight:700; line-height:1.2; }
+  .node-sub { font-size:.65rem; font-weight:500; color:var(--text-sub); margin-top:1px; line-height:1.2; }
+
+  /* Status dot on nodes */
+  .status-dot { position:absolute; top:6px; right:8px; width:10px; height:10px; border-radius:50%; border:2px solid #fff; transition:background .5s; }
+  .status-up { background:var(--active); }
+  .status-down { background:var(--danger); }
+  .status-standby { background:var(--standby); }
+
+  /* Node variants */
+  .node-client { background:var(--client-fill); border:2px solid var(--client-border); box-shadow:var(--shadow); }
+  .node-gtm { background:var(--gtm-fill); border:2px solid var(--gtm-border); box-shadow:var(--shadow); }
+  .node-monitor { background:var(--monitor-fill); border:2px solid var(--monitor-border); box-shadow:var(--shadow); border-radius:22px; }
+  .node-dc { background:var(--dc-fill); border:2px solid var(--dc-border); box-shadow:var(--shadow); }
+  .node-dr { background:var(--dr-fill); border:2px solid var(--dr-border); box-shadow:var(--shadow); }
+  .node-worker { background:var(--worker-fill); border:1.5px solid var(--worker-border); box-shadow:var(--shadow); border-radius:10px; }
+
+  /* Zone backgrounds */
+  .zone { position:absolute; border-radius:18px; z-index:0; }
+  .zone-f5 { background:var(--f5-fill); border:2px dashed var(--f5-border); }
+  .zone-dc { background:rgba(224,237,250,.35); border:2px solid var(--dc-border); border-style:dashed; }
+  .zone-dr { background:rgba(252,228,236,.3); border:2px solid var(--dr-border); border-style:dashed; }
+  .zone-label { position:absolute; top:10px; left:16px; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+  .zone-label-f5 { color:#4caf50; }
+  .zone-label-dc { color:var(--dc-border); }
+  .zone-label-dr { color:var(--dr-border); }
+  .zone-sublabel { font-size:.62rem; font-weight:500; text-transform:none; letter-spacing:0; color:var(--text-sub); display:block; margin-top:1px; }
+
+  /* Order badge */
+  .order-badge { display:inline-block; font-size:.58rem; font-weight:700; padding:1px 7px; border-radius:8px; margin-top:2px; letter-spacing:.02em; }
+  .order-primary { background:rgba(102,187,106,.2); color:#2e7d32; }
+  .order-standby { background:rgba(207,216,220,.4); color:#78909c; }
+
+  /* Tooltip */
+  .tooltip { position:absolute; background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:14px 18px; box-shadow:0 8px 32px rgba(0,0,0,.12); font-size:.75rem; line-height:1.5; z-index:100; pointer-events:none; opacity:0; transform:translateY(6px); transition:opacity .2s, transform .2s; max-width:300px; }
+  .tooltip.show { opacity:1; transform:translateY(0); }
+  .tooltip-title { font-weight:700; font-size:.82rem; margin-bottom:4px; color:var(--text); }
+  .tooltip-row { display:flex; gap:6px; }
+  .tooltip-key { color:var(--text-sub); font-weight:600; min-width:60px; }
+  .tooltip-val { color:var(--text); }
+
+  /* Legend */
+  .legend { display:flex; gap:20px; align-items:center; margin-top:16px; flex-wrap:wrap; justify-content:center; }
+  .legend-item { display:flex; align-items:center; gap:6px; font-size:.72rem; color:var(--text-sub); font-weight:500; }
+  .legend-line { width:28px; height:3px; border-radius:2px; }
+  .legend-line-active { background:var(--active); }
+  .legend-line-standby { background:var(--standby); background:repeating-linear-gradient(90deg,var(--standby-dash) 0 6px,transparent 6px 10px); }
+  .legend-line-monitor { background:repeating-linear-gradient(90deg,var(--monitor-border) 0 4px,transparent 4px 7px); }
+  .legend-dot { width:10px; height:10px; border-radius:50%; }
+  .legend-dot-up { background:var(--active); }
+  .legend-dot-down { background:var(--danger); }
+  .legend-dot-standby { background:var(--standby); }
+
+  /* Info bar */
+  .info-bar { width:100%; max-width:1120px; margin-top:14px; background:#fff; border-radius:14px; padding:14px 22px; box-shadow:var(--shadow); display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .info-icon { font-size:1.1rem; }
+  .info-text { font-size:.78rem; color:var(--text-sub); line-height:1.5; }
+  .info-text strong { color:var(--text); }
+
+  @keyframes flowDot { 0%{offset-distance:0%} 100%{offset-distance:100%} }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>F5 GTM/DNS <span>Architecture</span></h1>
+    <span class="badge badge-version">BIG-IP 17.5.1</span>
+  </div>
+  <div class="toggle-group">
+    <span class="toggle-label">Failover Simulation</span>
+    <label class="toggle-wrap">
+      <input type="checkbox" id="failoverToggle">
+      <div class="toggle-track"></div>
+      <div class="toggle-knob"></div>
+    </label>
+    <span class="state-label state-dc" id="stateLabel">DC Active &mdash; DR Standby</span>
+  </div>
+</div>
+
+<div class="diagram" id="diagram">
+
+  <!-- SVG connections layer -->
+  <svg viewBox="0 0 1100 870" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arrowActive" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L8,3 L0,6" fill="var(--active)" opacity=".7"/>
+      </marker>
+      <marker id="arrowStandby" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L8,3 L0,6" fill="var(--standby-dash)" opacity=".5"/>
+      </marker>
+      <marker id="arrowGray" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+        <path d="M0,0 L7,2.5 L0,5" fill="#b0bec5" opacity=".5"/>
+      </marker>
+    </defs>
+
+    <!-- Internal connections (always visible) -->
+    <path id="connClientListener" class="conn conn-internal" d="M 550,68 C 550,82 550,110 550,126" marker-end="url(#arrowGray)"/>
+    <path id="connListenerWideip" class="conn conn-internal" d="M 550,178 L 550,212" marker-end="url(#arrowGray)"/>
+    <path id="connWideipPool" class="conn conn-internal" d="M 550,264 L 550,298" marker-end="url(#arrowGray)"/>
+
+    <!-- GTM Pool → DC VS (main curve) -->
+    <path id="connPoolDC" class="conn conn-active" d="M 550,350 C 550,430 290,440 290,505" marker-end="url(#arrowActive)"/>
+
+    <!-- GTM Pool → DR VS (main curve) -->
+    <path id="connPoolDR" class="conn conn-standby" d="M 550,350 C 550,430 810,440 810,505" marker-end="url(#arrowStandby)"/>
+
+    <!-- DC VS → DC Pool -->
+    <path id="connDCvsPool" class="conn conn-active" d="M 290,562 L 290,608"/>
+    <!-- DR VS → DR Pool -->
+    <path id="connDRvsPool" class="conn conn-standby" d="M 810,562 L 810,608"/>
+
+    <!-- DC Pool → Workers (fan) -->
+    <path id="connDCw1" class="conn conn-fan conn-fan-active" d="M 290,656 C 290,675 175,685 175,700"/>
+    <path id="connDCw2" class="conn conn-fan conn-fan-active" d="M 290,656 L 290,700"/>
+    <path id="connDCw3" class="conn conn-fan conn-fan-active" d="M 290,656 C 290,675 405,685 405,700"/>
+    <!-- DR Pool → Workers (fan) -->
+    <path id="connDRw1" class="conn conn-fan conn-fan-standby" d="M 810,656 C 810,675 695,685 695,700"/>
+    <path id="connDRw2" class="conn conn-fan conn-fan-standby" d="M 810,656 L 810,700"/>
+    <path id="connDRw3" class="conn conn-fan conn-fan-standby" d="M 810,656 C 810,675 925,685 925,700"/>
+
+    <!-- Monitor health check lines -->
+    <path id="connMonDC" class="conn conn-monitor" d="M 838,342 C 838,420 340,440 320,505"/>
+    <path id="connMonDR" class="conn conn-monitor" d="M 880,342 C 880,420 840,440 830,505"/>
+
+    <!-- Monitor pulse rings -->
+    <circle class="pulse-ring active" cx="858" cy="318" r="8"/>
+    <circle class="pulse-ring active" cx="858" cy="318" r="8" style="animation-delay:.7s"/>
+
+    <!-- Traffic dots on DC path -->
+    <circle class="dot dc-dot visible" r="5" opacity=".9">
+      <animateMotion dur="2.2s" repeatCount="indefinite" rotate="auto">
+        <mpath href="#connPoolDC"/>
+      </animateMotion>
+    </circle>
+    <circle class="dot dc-dot visible" r="4" opacity=".6">
+      <animateMotion dur="2.2s" repeatCount="indefinite" rotate="auto" begin="0.7s">
+        <mpath href="#connPoolDC"/>
+      </animateMotion>
+    </circle>
+    <circle class="dot dc-dot visible" r="3.5" opacity=".45">
+      <animateMotion dur="2.2s" repeatCount="indefinite" rotate="auto" begin="1.4s">
+        <mpath href="#connPoolDC"/>
+      </animateMotion>
+    </circle>
+
+    <!-- Traffic dots on DR path (hidden by default) -->
+    <circle class="dot dot-dr dr-dot" r="5" opacity=".9">
+      <animateMotion dur="2.2s" repeatCount="indefinite" rotate="auto">
+        <mpath href="#connPoolDR"/>
+      </animateMotion>
+    </circle>
+    <circle class="dot dot-dr dr-dot" r="4" opacity=".6">
+      <animateMotion dur="2.2s" repeatCount="indefinite" rotate="auto" begin="0.7s">
+        <mpath href="#connPoolDR"/>
+      </animateMotion>
+    </circle>
+    <circle class="dot dot-dr dr-dot" r="3.5" opacity=".45">
+      <animateMotion dur="2.2s" repeatCount="indefinite" rotate="auto" begin="1.4s">
+        <mpath href="#connPoolDR"/>
+      </animateMotion>
+    </circle>
+  </svg>
+
+  <!-- Zone backgrounds -->
+  <div class="zone zone-f5" style="left:125px;top:95px;width:850px;height:345px;">
+    <span class="zone-label zone-label-f5">F5 BIG-IP 17.5.1 &mdash; 172.16.28.28<span class="zone-sublabel">LTM + DNS/GTM Modules</span></span>
+  </div>
+  <div class="zone zone-dc" id="zoneDC" style="left:45px;top:470px;width:490px;height:370px;">
+    <span class="zone-label zone-label-dc">DC_Lab &mdash; Primary Site<span class="zone-sublabel">VLAN 2026 &bull; 172.16.26.0/24</span></span>
+  </div>
+  <div class="zone zone-dr" id="zoneDR" style="left:565px;top:470px;width:490px;height:370px;">
+    <span class="zone-label zone-label-dr">DR_Lab &mdash; Standby Site<span class="zone-sublabel">VLAN 2025 &bull; 172.16.25.0/24</span></span>
+  </div>
+
+  <!-- Client -->
+  <div class="node node-client" style="left:440px;top:16px;width:220px;height:52px;"
+       data-tip="client">
+    <div class="node-label">Client / DNS Resolver</div>
+    <div class="node-sub">dig @172.16.28.28 *.swongpai-gtm.rhdemo.local</div>
+  </div>
+
+  <!-- DNS Listener -->
+  <div class="node node-gtm" style="left:415px;top:126px;width:270px;height:52px;"
+       data-tip="listener">
+    <div class="node-label">DNS Listener</div>
+    <div class="node-sub">172.16.28.28:53 &bull; UDP</div>
+  </div>
+
+  <!-- Wide IP -->
+  <div class="node node-gtm" style="left:365px;top:212px;width:370px;height:52px;"
+       data-tip="wideip">
+    <div class="node-label">Wide IP (Type A)</div>
+    <div class="node-sub">*.swongpai-gtm.rhdemo.local</div>
+  </div>
+
+  <!-- GTM Pool -->
+  <div class="node node-gtm" style="left:385px;top:298px;width:330px;height:52px;"
+       data-tip="pool">
+    <div class="node-label">GTM Pool &mdash; POOL_GTM_OCP_APPS</div>
+    <div class="node-sub">LB: global-availability (Active-Standby)</div>
+  </div>
+
+  <!-- Monitor -->
+  <div class="node node-monitor" style="left:788px;top:296px;width:170px;height:44px;"
+       data-tip="monitor">
+    <div class="node-label" style="font-size:.72rem;">mon_gtm_https_ocp</div>
+    <div class="node-sub">HTTPS :443 &bull; 10s/31s</div>
+  </div>
+
+  <!-- DC Virtual Server -->
+  <div class="node node-dc" id="nodeDCvs" style="left:150px;top:505px;width:280px;height:57px;"
+       data-tip="dcvs">
+    <div class="status-dot status-up" id="dotDC"></div>
+    <div class="node-label">VS_OCP_HCP_LAB</div>
+    <div class="node-sub">172.16.26.150:443</div>
+    <span class="order-badge order-primary" id="badgeDC">Order 0 &bull; Primary</span>
+  </div>
+
+  <!-- DR Virtual Server -->
+  <div class="node node-dr" id="nodeDRvs" style="left:670px;top:505px;width:280px;height:57px;"
+       data-tip="drvs">
+    <div class="status-dot status-standby" id="dotDR"></div>
+    <div class="node-label">VS_OCP_HCP2_LAB</div>
+    <div class="node-sub">172.16.25.220:443</div>
+    <span class="order-badge order-standby" id="badgeDR">Order 1 &bull; Standby</span>
+  </div>
+
+  <!-- DC LTM Pool -->
+  <div class="node node-dc" id="nodeDCpool" style="left:170px;top:608px;width:240px;height:48px;"
+       data-tip="dcpool">
+    <div class="node-label" style="font-size:.72rem;">POOL_OCP_HCP_ING</div>
+    <div class="node-sub">least-connections &bull; mon: https_443</div>
+  </div>
+
+  <!-- DR LTM Pool -->
+  <div class="node node-dr" id="nodeDRpool" style="left:690px;top:608px;width:240px;height:48px;"
+       data-tip="drpool">
+    <div class="node-label" style="font-size:.72rem;">POOL_OCP_HCP2_ING</div>
+    <div class="node-sub">round-robin &bull; mon: https_443</div>
+  </div>
+
+  <!-- DC Workers -->
+  <div class="node node-worker" id="dcW1" style="left:120px;top:700px;width:110px;height:60px;" data-tip="dcw1">
+    <div class="status-dot status-up" style="width:7px;height:7px;top:4px;right:5px;"></div>
+    <div class="node-label" style="font-size:.66rem;">bmwrk02-01</div>
+    <div class="node-sub" style="font-size:.58rem;">172.16.26.151</div>
+    <div class="node-sub" style="font-size:.55rem;color:var(--active);">UP</div>
+  </div>
+  <div class="node node-worker" id="dcW2" style="left:235px;top:700px;width:110px;height:60px;" data-tip="dcw2">
+    <div class="status-dot status-down" style="width:7px;height:7px;top:4px;right:5px;"></div>
+    <div class="node-label" style="font-size:.66rem;">bmwrk02-02</div>
+    <div class="node-sub" style="font-size:.58rem;">172.16.26.152</div>
+    <div class="node-sub" style="font-size:.55rem;color:var(--danger);">DOWN</div>
+  </div>
+  <div class="node node-worker" id="dcW3" style="left:350px;top:700px;width:110px;height:60px;" data-tip="dcw3">
+    <div class="status-dot status-down" style="width:7px;height:7px;top:4px;right:5px;"></div>
+    <div class="node-label" style="font-size:.66rem;">bmwrk02-03</div>
+    <div class="node-sub" style="font-size:.58rem;">172.16.26.153</div>
+    <div class="node-sub" style="font-size:.55rem;color:var(--danger);">DOWN</div>
+  </div>
+
+  <!-- DR Workers -->
+  <div class="node node-worker" id="drW1" style="left:640px;top:700px;width:110px;height:60px;" data-tip="drw1">
+    <div class="status-dot status-up" style="width:7px;height:7px;top:4px;right:5px;"></div>
+    <div class="node-label" style="font-size:.66rem;">bmwrk-dr-01</div>
+    <div class="node-sub" style="font-size:.58rem;">172.16.25.231</div>
+    <div class="node-sub" style="font-size:.55rem;color:var(--active);">UP</div>
+  </div>
+  <div class="node node-worker" id="drW2" style="left:755px;top:700px;width:110px;height:60px;" data-tip="drw2">
+    <div class="status-dot status-down" style="width:7px;height:7px;top:4px;right:5px;"></div>
+    <div class="node-label" style="font-size:.66rem;">bmwrk-dr-02</div>
+    <div class="node-sub" style="font-size:.58rem;">172.16.25.232</div>
+    <div class="node-sub" style="font-size:.55rem;color:var(--danger);">DISABLED</div>
+  </div>
+  <div class="node node-worker" id="drW3" style="left:870px;top:700px;width:110px;height:60px;" data-tip="drw3">
+    <div class="status-dot status-down" style="width:7px;height:7px;top:4px;right:5px;"></div>
+    <div class="node-label" style="font-size:.66rem;">bmwrk-dr-03</div>
+    <div class="node-sub" style="font-size:.58rem;">172.16.25.233</div>
+    <div class="node-sub" style="font-size:.55rem;color:var(--danger);">DOWN</div>
+  </div>
+
+  <!-- OpenShift cluster labels -->
+  <div style="position:absolute;left:155px;top:775px;width:260px;text-align:center;font-size:.68rem;font-weight:600;color:var(--dc-border);letter-spacing:.03em;z-index:1;">
+    OpenShift HCP Cluster &bull; apps.hcp.rhdemo.local
+  </div>
+  <div style="position:absolute;left:665px;top:775px;width:280px;text-align:center;font-size:.68rem;font-weight:600;color:var(--dr-border);letter-spacing:.03em;z-index:1;">
+    OpenShift HCP2 Cluster &bull; apps.hcp2.rhdemo.local
+  </div>
+
+  <!-- DNS response label -->
+  <div id="dnsResponse" style="position:absolute;left:128px;top:40px;background:#fff;border:1.5px solid var(--active);border-radius:10px;padding:5px 14px;font-size:.68rem;font-weight:600;color:var(--active);box-shadow:var(--shadow);z-index:5;transition:all .4s;">
+    DNS Response: 172.16.26.150 (DC)
+  </div>
+
+  <!-- Tooltip element -->
+  <div class="tooltip" id="tooltip"></div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-line legend-line-active"></div>Active traffic path</div>
+  <div class="legend-item"><div class="legend-line legend-line-standby"></div>Standby path</div>
+  <div class="legend-item"><div class="legend-line legend-line-monitor"></div>Health monitor</div>
+  <div class="legend-item"><div class="legend-dot legend-dot-up"></div>Healthy</div>
+  <div class="legend-item"><div class="legend-dot legend-dot-down"></div>Down</div>
+  <div class="legend-item"><div class="legend-dot legend-dot-standby"></div>Standby</div>
+</div>
+
+<div class="info-bar" id="infoBar">
+  <span class="info-icon">&#9432;</span>
+  <span class="info-text">
+    <strong>Active-Standby Failover:</strong> DNS queries resolve to DC VIP (172.16.26.150) while healthy.
+    If DC VS fails health check, GTM automatically returns DR VIP (172.16.25.220). Toggle the switch above to simulate.
+  </span>
+</div>
+
+<script>
+const tips = {
+  client: { title:'Client / DNS Resolver', rows:[['Role','Sends DNS A-record query for *.swongpai-gtm.rhdemo.local'],['Target','172.16.28.28:53 (F5 DNS Listener)'],['Tool','dig @172.16.28.28 test.swongpai-gtm.rhdemo.local']] },
+  listener: { title:'GTM DNS Listener', rows:[['Name','listener_dns_gtm'],['Address','172.16.28.28:53 UDP'],['VLAN','VL2028 (self IP)'],['Function','Receives DNS queries and forwards to GTM engine']] },
+  wideip: { title:'GTM Wide IP (Type A)', rows:[['Name','*.swongpai-gtm.rhdemo.local'],['Pool LB','global-availability (active-standby)'],['Pool','POOL_GTM_OCP_APPS'],['Wildcard','Matches any hostname under the subdomain']] },
+  pool: { title:'GTM Pool — POOL_GTM_OCP_APPS', rows:[['LB Mode','global-availability'],['Monitor','mon_gtm_https_ocp'],['Member 0','VS_OCP_HCP_LAB (DC) — primary'],['Member 1','VS_OCP_HCP2_LAB (DR) — standby'],['Behavior','Returns first available member in order']] },
+  monitor: { title:'GTM HTTPS Monitor', rows:[['Name','mon_gtm_https_ocp'],['Type','HTTPS'],['Destination','*:443'],['Interval','10 seconds'],['Timeout','31 seconds'],['Recv','any response (recv empty)']] },
+  dcvs: { title:'DC Virtual Server', rows:[['Name','VS_OCP_HCP_LAB'],['VIP','172.16.26.150:443'],['LTM Pool','POOL_OCP_HCP_ING'],['GTM Order','0 (primary)'],['Protocol','TCP / HTTPS passthrough']] },
+  drvs: { title:'DR Virtual Server', rows:[['Name','VS_OCP_HCP2_LAB'],['VIP','172.16.25.220:443'],['LTM Pool','POOL_OCP_HCP2_ING'],['GTM Order','1 (standby)'],['Protocol','TCP / HTTPS passthrough']] },
+  dcpool: { title:'DC LTM Pool', rows:[['Name','POOL_OCP_HCP_ING'],['LB Mode','least-connections-member'],['Monitor','https_443'],['Members','3 (1 up, 2 down)']] },
+  drpool: { title:'DR LTM Pool', rows:[['Name','POOL_OCP_HCP2_ING'],['LB Mode','round-robin'],['Monitor','https_443'],['Members','3 (1 up, 1 disabled, 1 down)']] },
+  dcw1: { title:'DC Worker 1', rows:[['Node','bmwrk02-01'],['IP','172.16.26.151:443'],['State','UP'],['Pool','POOL_OCP_HCP_ING']] },
+  dcw2: { title:'DC Worker 2', rows:[['Node','bmwrk02-02'],['IP','172.16.26.152:443'],['State','DOWN'],['Pool','POOL_OCP_HCP_ING']] },
+  dcw3: { title:'DC Worker 3', rows:[['Node','bmwrk02-03'],['IP','172.16.26.153:443'],['State','DOWN'],['Pool','POOL_OCP_HCP_ING']] },
+  drw1: { title:'DR Worker 1', rows:[['Node','bmwrk-dr-01'],['IP','172.16.25.231:443'],['State','UP'],['Pool','POOL_OCP_HCP2_ING']] },
+  drw2: { title:'DR Worker 2', rows:[['Node','bmwrk-dr-02'],['IP','172.16.25.232:443'],['State','DISABLED (user-down)'],['Pool','POOL_OCP_HCP2_ING']] },
+  drw3: { title:'DR Worker 3', rows:[['Node','bmwrk-dr-03'],['IP','172.16.25.233:443'],['State','DOWN'],['Pool','POOL_OCP_HCP2_ING']] },
+};
+
+const tooltip = document.getElementById('tooltip');
+const diagram = document.getElementById('diagram');
+
+document.querySelectorAll('.node[data-tip]').forEach(el => {
+  el.addEventListener('mouseenter', e => {
+    const key = el.dataset.tip;
+    const t = tips[key];
+    if (!t) return;
+    let html = `<div class="tooltip-title">${t.title}</div>`;
+    t.rows.forEach(([k,v]) => {
+      html += `<div class="tooltip-row"><span class="tooltip-key">${k}</span><span class="tooltip-val">${v}</span></div>`;
+    });
+    tooltip.innerHTML = html;
+    const r = el.getBoundingClientRect();
+    const dr = diagram.getBoundingClientRect();
+    let left = r.right - dr.left + 12;
+    let top = r.top - dr.top;
+    if (left + 280 > dr.width) left = r.left - dr.left - 280;
+    if (top + 200 > dr.height) top = dr.height - 220;
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+    tooltip.classList.add('show');
+  });
+  el.addEventListener('mouseleave', () => {
+    tooltip.classList.remove('show');
+  });
+});
+
+// Failover toggle
+const toggle = document.getElementById('failoverToggle');
+const stateLabel = document.getElementById('stateLabel');
+const dnsResp = document.getElementById('dnsResponse');
+
+const connPoolDC = document.getElementById('connPoolDC');
+const connPoolDR = document.getElementById('connPoolDR');
+const connDCvsPool = document.getElementById('connDCvsPool');
+const connDRvsPool = document.getElementById('connDRvsPool');
+const connDCw1 = document.getElementById('connDCw1');
+const connDCw2 = document.getElementById('connDCw2');
+const connDCw3 = document.getElementById('connDCw3');
+const connDRw1 = document.getElementById('connDRw1');
+const connDRw2 = document.getElementById('connDRw2');
+const connDRw3 = document.getElementById('connDRw3');
+
+const dcDots = document.querySelectorAll('.dc-dot');
+const drDots = document.querySelectorAll('.dr-dot');
+const dotDC = document.getElementById('dotDC');
+const dotDR = document.getElementById('dotDR');
+const badgeDC = document.getElementById('badgeDC');
+const badgeDR = document.getElementById('badgeDR');
+const zoneDC = document.getElementById('zoneDC');
+const zoneDR = document.getElementById('zoneDR');
+
+function setMode(drActive) {
+  // Main curve paths
+  connPoolDC.className.baseVal = `conn ${drActive ? 'conn-standby' : 'conn-active'}`;
+  connPoolDC.setAttribute('marker-end', drActive ? 'url(#arrowStandby)' : 'url(#arrowActive)');
+  connPoolDR.className.baseVal = `conn ${drActive ? 'conn-active' : 'conn-standby'}`;
+  connPoolDR.setAttribute('marker-end', drActive ? 'url(#arrowActive)' : 'url(#arrowStandby)');
+
+  // VS to Pool connections
+  connDCvsPool.className.baseVal = `conn ${drActive ? 'conn-standby' : 'conn-active'}`;
+  connDRvsPool.className.baseVal = `conn ${drActive ? 'conn-active' : 'conn-standby'}`;
+
+  // Fan connections
+  [connDCw1, connDCw2, connDCw3].forEach(p => {
+    p.className.baseVal = `conn conn-fan ${drActive ? 'conn-fan-standby' : 'conn-fan-active'}`;
+  });
+  [connDRw1, connDRw2, connDRw3].forEach(p => {
+    p.className.baseVal = `conn conn-fan ${drActive ? 'conn-fan-active' : 'conn-fan-standby'}`;
+  });
+
+  // Traffic dots
+  dcDots.forEach(d => d.classList.toggle('visible', !drActive));
+  drDots.forEach(d => d.classList.toggle('visible', drActive));
+
+  // Status dots
+  dotDC.className = `status-dot ${drActive ? 'status-down' : 'status-up'}`;
+  dotDR.className = `status-dot ${drActive ? 'status-up' : 'status-standby'}`;
+
+  // Order badges
+  badgeDC.className = `order-badge ${drActive ? 'order-standby' : 'order-primary'}`;
+  badgeDC.innerHTML = drActive ? 'Order 0 &bull; DOWN' : 'Order 0 &bull; Primary';
+  badgeDR.className = `order-badge ${drActive ? 'order-primary' : 'order-standby'}`;
+  badgeDR.innerHTML = drActive ? 'Order 1 &bull; Active' : 'Order 1 &bull; Standby';
+
+  // State label
+  stateLabel.className = `state-label ${drActive ? 'state-dr' : 'state-dc'}`;
+  stateLabel.innerHTML = drActive
+    ? 'DC Down &mdash; DR Active'
+    : 'DC Active &mdash; DR Standby';
+
+  // DNS response
+  dnsResp.style.borderColor = drActive ? 'var(--dr-border)' : 'var(--active)';
+  dnsResp.style.color = drActive ? '#c62828' : 'var(--active)';
+  dnsResp.textContent = drActive
+    ? 'DNS Response: 172.16.25.220 (DR)'
+    : 'DNS Response: 172.16.26.150 (DC)';
+
+  // Zone emphasis
+  zoneDC.style.background = drActive ? 'rgba(224,237,250,.15)' : 'rgba(224,237,250,.35)';
+  zoneDC.style.opacity = drActive ? '.6' : '1';
+  zoneDR.style.background = drActive ? 'rgba(252,228,236,.45)' : 'rgba(252,228,236,.3)';
+  zoneDR.style.opacity = drActive ? '1' : '.75';
+
+  // Info bar
+  document.getElementById('infoBar').querySelector('.info-text').innerHTML = drActive
+    ? '<strong>Failover Active:</strong> DC VS_OCP_HCP_LAB is down. GTM returns DR VIP (172.16.25.220). All new DNS queries resolve to DR site.'
+    : '<strong>Active-Standby Failover:</strong> DNS queries resolve to DC VIP (172.16.26.150) while healthy. If DC VS fails health check, GTM automatically returns DR VIP (172.16.25.220). Toggle the switch above to simulate.';
+}
+
+toggle.addEventListener('change', () => setMode(toggle.checked));
+setMode(false);
+</script>
+</body>
+</html>
