@@ -1,0 +1,2859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenShift Cluster Manage Network - VIP and LB Architecture</title>
+<meta name="description" content="Combined Architecture + Component Flow Diagrams">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root, [data-theme="dark"] {
+    --bg-deep: #0a0b0f;
+    --bg-mid: #12131a;
+    --bg-card: #181a24;
+    --bg-card-hover: #1e2030;
+    --border: #2a2d3e;
+    --border-bright: #3d4160;
+    --text: #e2e4f0;
+    --text-dim: #8890b0;
+    --text-muted: #5a6080;
+    --api-blue: #4da6ff;
+    --api-blue-dim: #2a6ab0;
+    --api-blue-glow: rgba(77, 166, 255, 0.25);
+    --app-orange: #ff8a4c;
+    --app-orange-dim: #b05a2a;
+    --app-orange-glow: rgba(255, 138, 76, 0.25);
+    --active-green: #4cdf8a;
+    --active-green-dim: #2a7a4a;
+    --standby-gray: #4a4d60;
+    --vip-purple: #b07aff;
+    --danger-red: #ff5a6a;
+    --node-master: #1a2540;
+    --node-worker: #1a1a30;
+    --code-bg: #0d0e14;
+    --overlay-bg: rgba(0,0,0,0.4);
+    --grid-opacity: 0.08;
+    --grain-opacity: 0.03;
+    --card-alpha: rgba(255,255,255,0.02);
+    --card-hover-alpha: rgba(255,255,255,0.05);
+    --green-glow: rgba(76,223,138,0.5);
+    --green-glow-strong: rgba(76,223,138,0.8);
+    --title-grad-end: var(--text-dim);
+  }
+
+  [data-theme="light"] {
+    --bg-deep: #f4f5f8;
+    --bg-mid: #ffffff;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f0f1f5;
+    --border: #d4d7e0;
+    --border-bright: #b8bcc8;
+    --text: #1a1d2e;
+    --text-dim: #4a5070;
+    --text-muted: #8890a8;
+    --api-blue: #1a73e8;
+    --api-blue-dim: #a0c4f0;
+    --api-blue-glow: rgba(26, 115, 232, 0.12);
+    --app-orange: #d4600a;
+    --app-orange-dim: #f0c8a0;
+    --app-orange-glow: rgba(212, 96, 10, 0.12);
+    --active-green: #1a8a4a;
+    --active-green-dim: #a0d4b8;
+    --standby-gray: #b0b4c0;
+    --vip-purple: #7c3aed;
+    --danger-red: #dc2626;
+    --node-master: #e8ecf8;
+    --node-worker: #f0ece8;
+    --code-bg: #f0f1f5;
+    --overlay-bg: rgba(0,0,0,0.15);
+    --grid-opacity: 0.05;
+    --grain-opacity: 0.01;
+    --card-alpha: rgba(0,0,0,0.02);
+    --card-hover-alpha: rgba(0,0,0,0.04);
+    --green-glow: rgba(26,138,74,0.3);
+    --green-glow-strong: rgba(26,138,74,0.5);
+    --title-grad-end: #4a5070;
+  }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: var(--grain-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: var(--grid-opacity);
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 30px 40px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .title-block h1 {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--text) 0%, var(--title-grad-end) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .title-block .subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  .controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .toggle-group {
+    display: flex;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .toggle-btn {
+    padding: 10px 20px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    letter-spacing: 0.3px;
+  }
+
+  .toggle-btn.api {
+    background: transparent;
+    color: var(--text-muted);
+  }
+  .toggle-btn.api.active {
+    background: linear-gradient(135deg, rgba(77,166,255,0.15), rgba(77,166,255,0.05));
+    color: var(--api-blue);
+    box-shadow: inset 0 0 20px rgba(77,166,255,0.1);
+  }
+  .toggle-btn.app {
+    background: transparent;
+    color: var(--text-muted);
+  }
+  .toggle-btn.app.active {
+    background: linear-gradient(135deg, rgba(255,138,76,0.15), rgba(255,138,76,0.05));
+    color: var(--app-orange);
+    box-shadow: inset 0 0 20px rgba(255,138,76,0.1);
+  }
+  .toggle-btn.both {
+    background: transparent;
+    color: var(--text-muted);
+  }
+  .toggle-btn.both.active {
+    background: linear-gradient(135deg, rgba(176,122,255,0.15), rgba(176,122,255,0.05));
+    color: var(--vip-purple);
+    box-shadow: inset 0 0 20px rgba(176,122,255,0.1);
+  }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-dim);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .diagram-area {
+    position: relative;
+    width: 100%;
+    min-height: 750px;
+  }
+
+  svg.connections {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .entry-zone {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 3;
+  }
+
+  .entry-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 24px;
+    text-align: center;
+    transition: all 0.4s ease;
+    cursor: pointer;
+    position: relative;
+    min-width: 200px;
+  }
+
+  .entry-card::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 12px;
+    padding: 1px;
+    background: transparent;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    transition: background 0.4s ease;
+  }
+
+  .entry-card.highlight-api::before {
+    background: linear-gradient(135deg, var(--api-blue), transparent);
+  }
+  .entry-card.highlight-app::before {
+    background: linear-gradient(135deg, var(--app-orange), transparent);
+  }
+
+  .entry-card .icon {
+    font-size: 24px;
+    margin-bottom: 6px;
+  }
+
+  .entry-card .label {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+
+  .entry-card .sublabel {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .vip-zone {
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 3;
+  }
+
+  .vip-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 22px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    position: relative;
+  }
+
+  .vip-card .vip-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .vip-card .vip-detail {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .vip-card .vip-holder {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    margin-top: 6px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-block;
+  }
+
+  .vip-card.api-vip .vip-badge { color: var(--api-blue); }
+  .vip-card.api-vip .vip-holder {
+    background: rgba(77,166,255,0.1);
+    color: var(--api-blue);
+    border: 1px solid rgba(77,166,255,0.2);
+  }
+  .vip-card.ingress-vip .vip-badge { color: var(--app-orange); }
+  .vip-card.ingress-vip .vip-holder {
+    background: rgba(255,138,76,0.1);
+    color: var(--app-orange);
+    border: 1px solid rgba(255,138,76,0.2);
+  }
+
+  .vip-card.highlight-api {
+    border-color: var(--api-blue-dim);
+    box-shadow: 0 0 30px var(--api-blue-glow);
+  }
+  .vip-card.highlight-app {
+    border-color: var(--app-orange-dim);
+    box-shadow: 0 0 30px var(--app-orange-glow);
+  }
+
+  .nodes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 3;
+  }
+
+  .nodes-grid.workers {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 66.666%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    padding-left: 4px;
+  }
+
+  .node-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .node-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--border);
+    transition: background 0.4s ease;
+  }
+
+  .node-card.master::after { background: linear-gradient(90deg, var(--api-blue-dim), var(--border)); }
+  .node-card.worker::after { background: linear-gradient(90deg, var(--app-orange-dim), var(--border)); }
+
+  .node-card.vip-active {
+    border-color: var(--active-green-dim);
+  }
+  .node-card.vip-active::after {
+    background: linear-gradient(90deg, var(--active-green), var(--active-green-dim)) !important;
+  }
+
+  .node-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .node-name {
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  .node-ip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .node-role {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+
+  .node-role.master-role {
+    background: rgba(77,166,255,0.1);
+    color: var(--api-blue);
+    border: 1px solid rgba(77,166,255,0.15);
+  }
+
+  .node-role.worker-role {
+    background: rgba(255,138,76,0.1);
+    color: var(--app-orange);
+    border: 1px solid rgba(255,138,76,0.15);
+  }
+
+  .components {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .component {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--card-alpha);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 12px;
+  }
+
+  .component:hover {
+    background: var(--card-hover-alpha);
+    border-color: var(--border);
+  }
+
+  .component .comp-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .component .comp-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .component .comp-name {
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  .component .comp-detail {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .component .comp-status {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .comp-status.active {
+    background: var(--active-green);
+    box-shadow: 0 0 8px var(--green-glow);
+    animation: pulse-green 2s ease-in-out infinite;
+  }
+
+  .comp-status.standby {
+    background: var(--standby-gray);
+  }
+
+  .component.highlight-api {
+    border-color: rgba(77,166,255,0.3);
+    background: rgba(77,166,255,0.05);
+  }
+  .component.highlight-app {
+    border-color: rgba(255,138,76,0.3);
+    background: rgba(255,138,76,0.05);
+  }
+  .component.dimmed {
+    opacity: 0.3;
+  }
+
+  .comp-icon.keepalived-icon {
+    background: linear-gradient(135deg, rgba(176,122,255,0.2), rgba(176,122,255,0.05));
+    color: var(--vip-purple);
+    font-size: 11px;
+  }
+  .comp-icon.haproxy-kni-icon {
+    background: linear-gradient(135deg, rgba(77,166,255,0.2), rgba(77,166,255,0.05));
+    color: var(--api-blue);
+    font-size: 11px;
+  }
+  .comp-icon.router-icon {
+    background: linear-gradient(135deg, rgba(255,138,76,0.2), rgba(255,138,76,0.05));
+    color: var(--app-orange);
+    font-size: 11px;
+  }
+  .comp-icon.dns-icon {
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
+    color: var(--text-dim);
+    font-size: 11px;
+  }
+  .comp-icon.api-icon {
+    background: linear-gradient(135deg, rgba(77,166,255,0.25), rgba(77,166,255,0.05));
+    color: var(--api-blue);
+    font-size: 10px;
+  }
+
+  @keyframes pulse-green {
+    0%, 100% { box-shadow: 0 0 8px var(--green-glow); }
+    50% { box-shadow: 0 0 16px var(--green-glow-strong); }
+  }
+
+  .detail-panel {
+    position: fixed;
+    top: 0;
+    right: -560px;
+    width: 540px;
+    height: 100vh;
+    background: var(--bg-mid);
+    border-left: 1px solid var(--border);
+    z-index: 100;
+    transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    padding: 30px 24px;
+    box-shadow: -10px 0 40px rgba(0,0,0,0.5);
+  }
+
+  .detail-panel.open {
+    right: 0;
+  }
+
+  .detail-panel .close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-dim);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .detail-panel .close-btn:hover {
+    background: var(--bg-card-hover);
+    color: var(--text);
+  }
+
+  .detail-panel h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .detail-panel .detail-subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+  }
+
+  .detail-section {
+    margin-bottom: 20px;
+  }
+
+  .detail-section h3 {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .detail-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .detail-table tr {
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .detail-table td {
+    padding: 8px 0;
+    font-size: 13px;
+  }
+
+  .detail-table td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    width: 45%;
+  }
+
+  .detail-table td:last-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .detail-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .detail-tag.blue {
+    background: rgba(77,166,255,0.1);
+    color: var(--api-blue);
+  }
+  .detail-tag.orange {
+    background: rgba(255,138,76,0.1);
+    color: var(--app-orange);
+  }
+  .detail-tag.green {
+    background: rgba(76,223,138,0.1);
+    color: var(--active-green);
+  }
+  .detail-tag.purple {
+    background: rgba(176,122,255,0.1);
+    color: var(--vip-purple);
+  }
+
+  .insight-box {
+    background: rgba(255,138,76,0.05);
+    border: 1px solid rgba(255,138,76,0.15);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-top: 20px;
+    position: relative;
+    z-index: 3;
+  }
+
+  .insight-box .insight-title {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--app-orange);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .insight-box p {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .stats-bar {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 3;
+  }
+
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .stat-card .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .stat-card .stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .stat-card.blue .stat-value { color: var(--api-blue); }
+  .stat-card.orange .stat-value { color: var(--app-orange); }
+  .stat-card.green .stat-value { color: var(--active-green); }
+  .stat-card.purple .stat-value { color: var(--vip-purple); }
+
+  .flow-arrow {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 18px;
+    margin: 8px 0;
+    position: relative;
+    z-index: 3;
+    transition: color 0.4s;
+  }
+
+  .flow-arrow.highlight-api { color: var(--api-blue); }
+  .flow-arrow.highlight-app { color: var(--app-orange); }
+
+  .flow-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    display: block;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+  }
+
+  @keyframes dash-flow-api {
+    to { stroke-dashoffset: -30; }
+  }
+  @keyframes dash-flow-app {
+    to { stroke-dashoffset: -30; }
+  }
+
+  .flow-line-api {
+    stroke: var(--api-blue);
+    stroke-width: 2;
+    fill: none;
+    stroke-dasharray: 8 6;
+    animation: dash-flow-api 1s linear infinite;
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .flow-line-api.visible { opacity: 0.7; }
+
+  .flow-line-app {
+    stroke: var(--app-orange);
+    stroke-width: 2;
+    fill: none;
+    stroke-dasharray: 8 6;
+    animation: dash-flow-app 1s linear infinite;
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .flow-line-app.visible { opacity: 0.7; }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--overlay-bg);
+    z-index: 99;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .app-pods-zone {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 12px;
+    position: relative;
+    z-index: 3;
+  }
+
+  .app-pod {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    transition: all 0.4s;
+  }
+  .app-pod.highlight-app {
+    border-color: rgba(255,138,76,0.3);
+    color: var(--app-orange);
+    background: rgba(255,138,76,0.05);
+  }
+
+  .topology-hint {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    position: relative;
+    z-index: 3;
+  }
+
+  .config-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 8px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .config-block pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--text-dim);
+    white-space: pre;
+    margin: 0;
+  }
+
+  .config-block pre .cfg-keyword {
+    color: var(--api-blue);
+  }
+
+  .config-block pre .cfg-value {
+    color: var(--active-green);
+  }
+
+  .config-block pre .cfg-comment {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .config-block pre .cfg-section {
+    color: var(--app-orange);
+    font-weight: 600;
+  }
+
+  .config-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 4px;
+    margin-bottom: 4px;
+  }
+
+  .config-toggle:hover {
+    background: var(--bg-card-hover);
+    color: var(--text);
+    border-color: var(--border-bright);
+  }
+
+  .config-toggle .arrow {
+    transition: transform 0.2s;
+    font-size: 9px;
+  }
+
+  .config-toggle.open .arrow {
+    transform: rotate(90deg);
+  }
+
+  .config-source {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    padding: 4px 8px;
+    background: var(--card-alpha);
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  .explain-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-top: 16px;
+    position: relative;
+    z-index: 3;
+    overflow: hidden;
+  }
+  .explain-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 22px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .explain-header:hover {
+    background: var(--card-hover-alpha);
+  }
+  .explain-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--api-blue);
+  }
+  .explain-arrow {
+    color: var(--text-muted);
+    font-size: 12px;
+    transition: transform 0.3s;
+  }
+  .explain-arrow.open {
+    transform: rotate(90deg);
+  }
+  .explain-body {
+    padding: 0 22px 22px;
+  }
+  .explain-section {
+    margin-bottom: 18px;
+  }
+  .explain-subtitle {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .explain-body p {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+  .explain-body code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--text);
+  }
+  .explain-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .explain-compare-col {
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .explain-compare-col.bad {
+    background: rgba(255,90,106,0.05);
+    border: 1px solid rgba(255,90,106,0.15);
+  }
+  .explain-compare-col.good {
+    background: rgba(76,223,138,0.05);
+    border: 1px solid rgba(76,223,138,0.15);
+  }
+  [data-theme="light"] .explain-compare-col.bad {
+    background: rgba(220,38,38,0.04);
+    border-color: rgba(220,38,38,0.15);
+  }
+  [data-theme="light"] .explain-compare-col.good {
+    background: rgba(26,138,74,0.04);
+    border-color: rgba(26,138,74,0.15);
+  }
+  .explain-col-header {
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .bad .explain-col-header {
+    color: var(--danger-red);
+  }
+  .good .explain-col-header {
+    color: var(--active-green);
+  }
+  .explain-compare-col ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .explain-compare-col li {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    padding-left: 14px;
+    position: relative;
+  }
+  .explain-compare-col li::before {
+    content: '·';
+    position: absolute;
+    left: 4px;
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+  .explain-flow-diagram {
+    text-align: center;
+    margin-bottom: 14px;
+    padding: 10px;
+    border-radius: 8px;
+    background: var(--card-alpha);
+  }
+  .efd-step {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    padding: 5px 8px;
+    border-radius: 5px;
+    display: inline-block;
+  }
+  .efd-arrow {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.2;
+  }
+  .efd-bad {
+    background: rgba(255,90,106,0.1);
+    color: var(--danger-red);
+    font-weight: 600;
+  }
+  .efd-nft {
+    background: rgba(77,166,255,0.1);
+    color: var(--api-blue);
+    font-weight: 600;
+  }
+  .efd-good {
+    background: rgba(76,223,138,0.1);
+    color: var(--active-green);
+    font-weight: 600;
+  }
+  [data-theme="light"] .efd-bad {
+    background: rgba(220,38,38,0.08);
+  }
+  [data-theme="light"] .efd-nft {
+    background: rgba(26,115,232,0.08);
+  }
+  [data-theme="light"] .efd-good {
+    background: rgba(26,138,74,0.08);
+  }
+
+  .theme-toggle {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-dim);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    margin-left: 8px;
+  }
+  .theme-toggle:hover {
+    background: var(--bg-card-hover);
+    color: var(--text);
+    border-color: var(--border-bright);
+  }
+
+  .nftables-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-top: 20px;
+    position: relative;
+    z-index: 3;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .nftables-box:hover {
+    border-color: var(--border-bright);
+  }
+  .nftables-box .nft-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--api-blue);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .nftables-box .nft-title .nft-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(77,166,255,0.1);
+    color: var(--api-blue);
+  }
+  [data-theme="light"] .nftables-box .nft-badge {
+    background: rgba(26,115,232,0.08);
+  }
+  .nftables-box .nft-flow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.8;
+  }
+  .nftables-box .nft-flow .nft-arrow {
+    color: var(--text-muted);
+  }
+  .nftables-box .nft-flow .nft-highlight {
+    color: var(--api-blue);
+    font-weight: 600;
+  }
+  .nftables-box .nft-flow .nft-port {
+    color: var(--active-green);
+    font-weight: 600;
+  }
+  .nftables-box .nft-counters {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  [data-theme="light"] .node-card {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  [data-theme="light"] .entry-card,
+  [data-theme="light"] .vip-card,
+  [data-theme="light"] .stat-card,
+  [data-theme="light"] .nftables-box {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  [data-theme="light"] .detail-panel {
+    box-shadow: -10px 0 40px rgba(0,0,0,0.12);
+  }
+  [data-theme="light"] .component.highlight-api {
+    border-color: rgba(26,115,232,0.3);
+    background: rgba(26,115,232,0.04);
+  }
+  [data-theme="light"] .component.highlight-app {
+    border-color: rgba(212,96,10,0.3);
+    background: rgba(212,96,10,0.04);
+  }
+  [data-theme="light"] .insight-box {
+    background: rgba(212,96,10,0.04);
+    border-color: rgba(212,96,10,0.15);
+  }
+  [data-theme="light"] .app-pod.highlight-app {
+    border-color: rgba(212,96,10,0.3);
+    background: rgba(212,96,10,0.04);
+  }
+
+  @media (max-width: 1100px) {
+    .nodes-grid { grid-template-columns: 1fr; }
+    .nodes-grid.workers { max-width: 100%; grid-template-columns: 1fr; }
+    .entry-zone, .vip-zone { flex-direction: column; align-items: center; }
+    .container { padding: 20px; }
+  }
+
+  /* ===== PAGE SWITCHING ===== */
+  .page { display: none; animation: pageFadeIn 0.3s ease; }
+  .page.active { display: block; }
+  @keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .page-nav { display: flex; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-right: 8px; }
+  .page-nav-btn {
+    padding: 10px 20px; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600;
+    border: none; cursor: pointer; background: transparent; color: var(--text-muted); transition: all 0.3s; letter-spacing: 0.3px;
+  }
+  .page-nav-btn.active {
+    background: linear-gradient(135deg, rgba(176,122,255,0.15), rgba(176,122,255,0.05));
+    color: var(--vip-purple); box-shadow: inset 0 0 20px rgba(176,122,255,0.1);
+  }
+
+  /* ===== FLOW DIAGRAMS (Tab 2) ===== */
+  .flow-tab-bar { display: flex; gap: 4px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 3px; overflow-x: auto; margin-bottom: 16px; }
+  .flow-tab-btn { padding: 8px 16px; font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 600; border: none; cursor: pointer; border-radius: 7px; white-space: nowrap; background: transparent; color: var(--text-muted); transition: all 0.3s; }
+  .flow-tab-btn.active { background: var(--bg-card-hover); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+  .flow-tab-btn:hover:not(.active) { color: var(--text-dim); }
+
+  .diagram-tab { display: none; animation: pageFadeIn 0.3s ease; }
+  .diagram-tab.active { display: block; }
+  @keyframes dashMove { to { stroke-dashoffset: -26; } }
+
+  .diagram-canvas { position: relative; width: 100%; overflow: visible; }
+  .diagram-canvas svg.flow-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+
+  .comp-box { position: absolute; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; z-index: 2; transition: all 0.4s; cursor: default; text-align: center; }
+  .comp-box:hover { border-color: var(--border-bright); background: var(--bg-card-hover); }
+  .comp-box .cb-icon { font-size: 20px; margin-bottom: 4px; }
+  .comp-box .cb-name { font-weight: 700; font-size: 13px; line-height: 1.3; }
+  .comp-box .cb-detail { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+  .comp-box .cb-badge { font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 4px; margin-top: 4px; display: inline-block; }
+  .comp-box.client { border-color: var(--text-muted); }
+  .comp-box.dns { border-color: var(--text-muted); }
+  .comp-box.vip-api { border-color: var(--api-blue-dim); }
+  .comp-box.vip-api .cb-name { color: var(--api-blue); }
+  .comp-box.vip-ingress { border-color: var(--app-orange-dim); }
+  .comp-box.vip-ingress .cb-name { color: var(--app-orange); }
+  .comp-box.nft { border-color: var(--vip-purple); }
+  .comp-box.nft .cb-name { color: var(--vip-purple); }
+  .comp-box.haproxy-kni { border-color: var(--api-blue-dim); }
+  .comp-box.haproxy-kni .cb-name { color: var(--api-blue); }
+  .comp-box.router { border-color: var(--app-orange-dim); }
+  .comp-box.router .cb-name { color: var(--app-orange); }
+  .comp-box.apiserver { border-color: var(--api-blue-dim); }
+  .comp-box.apiserver .cb-badge { background: rgba(77,166,255,0.1); color: var(--api-blue); }
+  .comp-box.pod { border-color: var(--active-green-dim); }
+  .comp-box.pod .cb-name { color: var(--active-green); }
+  .comp-box.keepalived { border-color: var(--vip-purple); }
+  .comp-box.keepalived .cb-name { color: var(--vip-purple); }
+  .comp-box.coredns-box { border-color: var(--text-muted); }
+  .comp-box.svc { border-color: var(--active-green-dim); }
+  .comp-box.svc .cb-name { color: var(--active-green); }
+  .comp-box.ovn { border-color: var(--vip-purple); }
+  .comp-box.ovn .cb-name { color: var(--vip-purple); }
+  .comp-box.active-vip { box-shadow: 0 0 20px rgba(76,223,138,0.2); border-color: var(--active-green); }
+  .comp-box.standby-vip { opacity: 0.5; }
+
+  .node-group { position: absolute; border: 1px dashed var(--border); border-radius: 14px; background: rgba(255,255,255,0.02); z-index: 0; }
+  .node-group .ng-label { position: absolute; top: -10px; left: 16px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: var(--text-muted); background: var(--bg-deep); padding: 0 8px; text-transform: uppercase; letter-spacing: 1px; }
+  [data-theme="light"] .node-group .ng-label { background: var(--bg-deep); }
+  [data-theme="light"] .node-group { background: rgba(0,0,0,0.02); }
+  .node-group.master-group { border-color: rgba(77,166,255,0.2); }
+  .node-group.worker-group { border-color: rgba(255,138,76,0.2); }
+
+  .port-label { position: absolute; z-index: 3; font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 4px; pointer-events: none; }
+  .port-label.blue { background: rgba(77,166,255,0.15); color: var(--api-blue); }
+  .port-label.orange { background: rgba(255,138,76,0.15); color: var(--app-orange); }
+  .port-label.purple { background: rgba(176,122,255,0.15); color: var(--vip-purple); }
+  .port-label.green { background: rgba(76,223,138,0.15); color: var(--active-green); }
+
+  .info-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; margin-top: 16px; }
+  .info-panel .ip-title { font-weight: 700; font-size: 13px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .info-panel .ip-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .info-panel .ip-body { font-size: 12px; color: var(--text-dim); line-height: 1.7; }
+  .info-panel code { font-family: 'JetBrains Mono', monospace; font-size: 10px; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; color: var(--text); }
+
+  .legend-bar { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim); }
+  .legend-bar .lb-item { display: flex; align-items: center; gap: 6px; }
+  .legend-bar .lb-line { width: 24px; height: 3px; border-radius: 2px; }
+  .legend-bar .lb-line.dashed { background: repeating-linear-gradient(90deg, var(--text-muted) 0 6px, transparent 6px 10px); height: 2px; }
+
+  [data-theme="light"] .comp-box { box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+<div class="bg-grid"></div>
+
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+<div class="detail-panel" id="detailPanel">
+  <button class="close-btn" onclick="closePanel()">&times;</button>
+  <div id="detailContent"></div>
+</div>
+
+<div class="container">
+  <header>
+    <div class="title-block">
+      <h1>OpenShift Cluster Manage Network - VIP and LB Architecture</h1>
+      <div class="subtitle">hj4h5.dynamic2.redhatworkshops.io &mdash; OCP 4.20 &mdash; Bare Metal IPI</div>
+    </div>
+    <div class="controls">
+      <div class="page-nav">
+        <button class="page-nav-btn active" onclick="showPage('arch')">Architecture</button>
+        <button class="page-nav-btn" onclick="showPage('flow')">Flow Diagrams</button>
+      </div>
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark theme">&#9788;</button>
+    </div>
+  </header>
+
+  <!-- ==================== PAGE 1: ARCHITECTURE ==================== -->
+  <div id="page-arch" class="page active">
+  <div class="controls" style="margin-bottom:16px;">
+    <div class="toggle-group">
+      <button class="toggle-btn api active" onclick="setView('api')">API Traffic</button>
+      <button class="toggle-btn app" onclick="setView('app')">App Traffic</button>
+      <button class="toggle-btn both" onclick="setView('both')">Both</button>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--api-blue)"></div> API path</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--app-orange)"></div> App path</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--active-green)"></div> Active</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--standby-gray)"></div> Standby</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--vip-purple)"></div> VIP / keepalived</div>
+  </div>
+
+  <div class="diagram-area">
+    <!-- Entry: Client + DNS -->
+    <div class="entry-zone">
+      <div class="entry-card" id="entry-client" data-detail="client" onclick="showDetail('client')">
+        <div class="icon">&#9729;</div>
+        <div class="label">Client</div>
+        <div class="sublabel">External Traffic</div>
+      </div>
+      <div class="entry-card" id="entry-dns-api" data-path="api" onclick="showDetail('dns-api')">
+        <div class="icon">&#9778;</div>
+        <div class="label">DNS &rarr; NAT</div>
+        <div class="sublabel">api.hj4h5...redhatworkshops.io</div>
+      </div>
+      <div class="entry-card" id="entry-dns-app" data-path="app" onclick="showDetail('dns-app')">
+        <div class="icon">&#9778;</div>
+        <div class="label">DNS &rarr; NAT</div>
+        <div class="sublabel">*.apps.hj4h5...redhatworkshops.io</div>
+      </div>
+    </div>
+
+    <div class="flow-arrow" id="arrow1">&#8595;<span class="flow-label"></span></div>
+
+    <!-- VIP Zone -->
+    <div class="vip-zone">
+      <div class="vip-card api-vip" id="vip-api" data-path="api" onclick="showDetail('api-vip')">
+        <div class="vip-badge">API VIP</div>
+        <div class="vip-detail">192.168.37.201</div>
+        <div class="vip-holder">&#9679; master2 (active)</div>
+      </div>
+      <div class="vip-card ingress-vip" id="vip-ingress" data-path="app" onclick="showDetail('ingress-vip')">
+        <div class="vip-badge">Ingress VIP</div>
+        <div class="vip-detail">192.168.37.202</div>
+        <div class="vip-holder">&#9679; master2 (active)</div>
+      </div>
+    </div>
+
+    <!-- nftables DNAT box -->
+    <div class="nftables-box" id="nftables-box" onclick="showDetail('nftables')">
+      <div class="nft-title">
+        nftables DNAT <span class="nft-badge">on VIP holder</span>
+      </div>
+      <div class="nft-flow">
+        <strong>prerouting:</strong> <span class="nft-highlight">192.168.37.201</span>:<span class="nft-port">6443</span> <span class="nft-arrow">&rarr;</span> dnat to <span class="nft-highlight">192.168.37.201</span>:<span class="nft-port">9445</span><br>
+        <strong>output:</strong>&nbsp;&nbsp;&nbsp;&nbsp; <span class="nft-highlight">192.168.37.201</span>:<span class="nft-port">6443</span> <span class="nft-arrow">&rarr;</span> redirect to :<span class="nft-port">9445</span>
+      </div>
+      <div class="nft-counters">
+        14,936 external packets + 2,899 local packets redirected &mdash; click for full nft rules
+      </div>
+    </div>
+
+    <div class="flow-arrow" id="arrow2">&#8595;<span class="flow-label"></span></div>
+
+    <!-- Master Nodes -->
+    <div class="section-label">Control Plane Nodes</div>
+    <div class="nodes-grid" id="mastersGrid">
+
+      <!-- Master 0 -->
+      <div class="node-card master" id="node-master0">
+        <div class="node-header">
+          <div>
+            <div class="node-name">master0</div>
+            <div class="node-ip">192.168.37.21</div>
+          </div>
+          <span class="node-role master-role">master</span>
+        </div>
+        <div class="components">
+          <div class="component" data-comp="keepalived" data-node="master0" data-path="both" onclick="showDetail('keepalived-master')">
+            <div class="comp-icon keepalived-icon">KA</div>
+            <div class="comp-info">
+              <div class="comp-name">keepalived</div>
+              <div class="comp-detail">API + Ingress VRRP</div>
+            </div>
+            <div class="comp-status standby"></div>
+          </div>
+          <div class="component" data-comp="haproxy-kni" data-node="master0" data-path="api" onclick="showDetail('haproxy-kni')">
+            <div class="comp-icon haproxy-kni-icon">HA</div>
+            <div class="comp-info">
+              <div class="comp-name">KNI HAProxy</div>
+              <div class="comp-detail">:9445 &rarr; :6443</div>
+            </div>
+            <div class="comp-status active"></div>
+          </div>
+          <div class="component" data-comp="router" data-node="master0" data-path="app" onclick="showDetail('router')">
+            <div class="comp-icon router-icon">RT</div>
+            <div class="comp-info">
+              <div class="comp-name">Router HAProxy</div>
+              <div class="comp-detail">:80/:443 HostNetwork</div>
+            </div>
+            <div class="comp-status standby"></div>
+          </div>
+          <div class="component" data-comp="apiserver" data-node="master0" data-path="api" onclick="showDetail('apiserver')">
+            <div class="comp-icon api-icon">AS</div>
+            <div class="comp-info">
+              <div class="comp-name">kube-apiserver</div>
+              <div class="comp-detail">:6443</div>
+            </div>
+            <div class="comp-status active"></div>
+          </div>
+          <div class="component" data-comp="coredns" data-node="master0" onclick="showDetail('coredns')">
+            <div class="comp-icon dns-icon">DN</div>
+            <div class="comp-info">
+              <div class="comp-name">CoreDNS</div>
+              <div class="comp-detail">:53</div>
+            </div>
+            <div class="comp-status active"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Master 1 -->
+      <div class="node-card master" id="node-master1">
+        <div class="node-header">
+          <div>
+            <div class="node-name">master1</div>
+            <div class="node-ip">192.168.37.22</div>
+          </div>
+          <span class="node-role master-role">master</span>
+        </div>
+        <div class="components">
+          <div class="component" data-comp="keepalived" data-node="master1" data-path="both" onclick="showDetail('keepalived-master')">
+            <div class="comp-icon keepalived-icon">KA</div>
+            <div class="comp-info">
+              <div class="comp-name">keepalived</div>
+              <div class="comp-detail">API + Ingress VRRP</div>
+            </div>
+            <div class="comp-status standby"></div>
+          </div>
+          <div class="component" data-comp="haproxy-kni" data-node="master1" data-path="api" onclick="showDetail('haproxy-kni')">
+            <div class="comp-icon haproxy-kni-icon">HA</div>
+            <div class="comp-info">
+              <div class="comp-name">KNI HAProxy</div>
+              <div class="comp-detail">:9445 &rarr; :6443</div>
+            </div>
+            <div class="comp-status active"></div>
+          </div>
+          <div class="component" data-comp="router" data-node="master1" data-path="app" onclick="showDetail('router')">
+            <div class="comp-icon router-icon">RT</div>
+            <div class="comp-info">
+              <div class="comp-name">Router HAProxy</div>
+              <div class="comp-detail">:80/:443 HostNetwork</div>
+            </div>
+            <div class="comp-status standby"></div>
+          </div>
+          <div class="component" data-comp="apiserver" data-node="master1" data-path="api" onclick="showDetail('apiserver')">
+            <div class="comp-icon api-icon">AS</div>
+            <div class="comp-info">
+              <div class="comp-name">kube-apiserver</div>
+              <div class="comp-detail">:6443</div>
+            </div>
+            <div class="comp-status active"></div>
+          </div>
+          <div class="component" data-comp="coredns" data-node="master1" onclick="showDetail('coredns')">
+            <div class="comp-icon dns-icon">DN</div>
+            <div class="comp-info">
+              <div class="comp-name">CoreDNS</div>
+              <div class="comp-detail">:53</div>
+            </div>
+            <div class="comp-status active"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Master 2 (VIP active) -->
+      <div class="node-card master vip-active" id="node-master2">
+        <div class="node-header">
+          <div>
+            <div class="node-name">master2</div>
+            <div class="node-ip">192.168.37.23</div>
+          </div>
+          <span class="node-role master-role">master</span>
+        </div>
+        <div class="components">
+          <div class="component" data-comp="keepalived" data-node="master2" data-path="both" onclick="showDetail('keepalived-master')">
+            <div class="comp-icon keepalived-icon">KA</div>
+            <div class="comp-info">
+              <div class="comp-name">keepalived</div>
+              <div class="comp-detail">API + Ingress VRRP</div>
+            </div>
+            <div class="comp-status active"></div>
+          </div>
+          <div class="component" data-comp="haproxy-kni" data-node="master2" data-path="api" onclick="showDetail('haproxy-kni')">
+            <div class="comp-icon haproxy-kni-icon">HA</div>
+            <div class="comp-info">
+              <div class="comp-name">KNI HAProxy</div>
+              <div class="comp-detail">:9445 &rarr; :6443</div>
+            </div>
+            <div class="comp-status active"></div>
+          </div>
+          <div class="component" data-comp="router" data-node="master2" data-path="app" onclick="showDetail('router')">
+            <div class="comp-icon router-icon">RT</div>
+            <div class="comp-info">
+              <div class="comp-name">Router HAProxy</div>
+              <div class="comp-detail">:80/:443 HostNetwork</div>
+            </div>
+            <div class="comp-status active"></div>
+          </div>
+          <div class="component" data-comp="apiserver" data-node="master2" data-path="api" onclick="showDetail('apiserver')">
+            <div class="comp-icon api-icon">AS</div>
+            <div class="comp-info">
+              <div class="comp-name">kube-apiserver</div>
+              <div class="comp-detail">:6443</div>
+            </div>
+            <div class="comp-status active"></div>
+          </div>
+          <div class="component" data-comp="coredns" data-node="master2" onclick="showDetail('coredns')">
+            <div class="comp-icon dns-icon">DN</div>
+            <div class="comp-info">
+              <div class="comp-name">CoreDNS</div>
+              <div class="comp-detail">:53</div>
+            </div>
+            <div class="comp-status active"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Worker Nodes -->
+    <div class="section-label" style="margin-top: 16px;">Worker Nodes</div>
+    <div class="nodes-grid workers">
+
+      <!-- Worker 0 -->
+      <div class="node-card worker" id="node-worker0">
+        <div class="node-header">
+          <div>
+            <div class="node-name">worker0</div>
+            <div class="node-ip">192.168.37.24</div>
+          </div>
+          <span class="node-role worker-role">worker</span>
+        </div>
+        <div class="components">
+          <div class="component" data-comp="keepalived" data-node="worker0" data-path="app" onclick="showDetail('keepalived-worker')">
+            <div class="comp-icon keepalived-icon">KA</div>
+            <div class="comp-info">
+              <div class="comp-name">keepalived</div>
+              <div class="comp-detail">Ingress VRRP only</div>
+            </div>
+            <div class="comp-status standby"></div>
+          </div>
+          <div class="component" data-comp="coredns" data-node="worker0" onclick="showDetail('coredns')">
+            <div class="comp-icon dns-icon">DN</div>
+            <div class="comp-info">
+              <div class="comp-name">CoreDNS</div>
+              <div class="comp-detail">:53</div>
+            </div>
+            <div class="comp-status active"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Worker 1 -->
+      <div class="node-card worker" id="node-worker1">
+        <div class="node-header">
+          <div>
+            <div class="node-name">worker1</div>
+            <div class="node-ip">192.168.37.25</div>
+          </div>
+          <span class="node-role worker-role">worker</span>
+        </div>
+        <div class="components">
+          <div class="component" data-comp="keepalived" data-node="worker1" data-path="app" onclick="showDetail('keepalived-worker')">
+            <div class="comp-icon keepalived-icon">KA</div>
+            <div class="comp-info">
+              <div class="comp-name">keepalived</div>
+              <div class="comp-detail">Ingress VRRP only</div>
+            </div>
+            <div class="comp-status standby"></div>
+          </div>
+          <div class="component" data-comp="coredns" data-node="worker1" onclick="showDetail('coredns')">
+            <div class="comp-icon dns-icon">DN</div>
+            <div class="comp-info">
+              <div class="comp-name">CoreDNS</div>
+              <div class="comp-detail">:53</div>
+            </div>
+            <div class="comp-status active"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- App pods -->
+    <div class="flow-arrow" id="arrow3">&#8595;<span class="flow-label">backend pods</span></div>
+    <div class="app-pods-zone">
+      <div class="app-pod" data-path="app">pod/app-1</div>
+      <div class="app-pod" data-path="app">pod/app-2</div>
+      <div class="app-pod" data-path="app">pod/app-3</div>
+    </div>
+  </div>
+
+  <!-- Insight Box -->
+  <div class="insight-box">
+    <div class="insight-title">&#9888; Throughput Insight</div>
+    <p>
+      Ingress VIP is <strong>active/passive</strong> via keepalived. Only <strong>1 of 3 router pods</strong> receives traffic at any time.
+      Effective app throughput: <strong>maxconn 50,000</strong> (single pod), not 150,000.
+      Other 2 router pods are hot standby. API traffic is different &mdash; KNI HAProxy on VIP holder
+      round-robins across <strong>all 3 apiservers</strong>.
+    </p>
+  </div>
+
+  <!-- nftables Explanation -->
+  <div class="explain-box" id="nft-explain">
+    <div class="explain-header" onclick="toggleExplain('nft-explain-body', this)">
+      <div class="explain-title">Why nftables DNAT? Why not use port 6443 directly?</div>
+      <span class="explain-arrow">&#9654;</span>
+    </div>
+    <div class="explain-body" id="nft-explain-body" style="display:none">
+
+      <div class="explain-section">
+        <div class="explain-subtitle">The Problem</div>
+        <p>kube-apiserver binds on <code>*:6443</code> (all interfaces). The API VIP <code>192.168.37.201</code> lives on <code>br-ex</code> on the VIP holder node. Without nftables, traffic to VIP:6443 hits the <strong>local apiserver directly</strong> &mdash; only 1 of 3.</p>
+      </div>
+
+      <div class="explain-compare">
+        <div class="explain-compare-col bad">
+          <div class="explain-col-header">&#10007; Without DNAT</div>
+          <div class="explain-flow-diagram">
+            <div class="efd-step">Client &rarr; VIP:6443</div>
+            <div class="efd-arrow">&darr;</div>
+            <div class="efd-step efd-bad">kube-apiserver (1 node only)</div>
+          </div>
+          <ul>
+            <li>No load balancing &mdash; 1 apiserver handles everything</li>
+            <li>No health checking &mdash; degraded apiserver still gets traffic</li>
+            <li>Other 2 apiservers sit idle</li>
+          </ul>
+        </div>
+        <div class="explain-compare-col good">
+          <div class="explain-col-header">&#10003; With DNAT (current setup)</div>
+          <div class="explain-flow-diagram">
+            <div class="efd-step">Client &rarr; VIP:6443</div>
+            <div class="efd-arrow">&darr;</div>
+            <div class="efd-step efd-nft">nftables: 6443 &rarr; 9445</div>
+            <div class="efd-arrow">&darr;</div>
+            <div class="efd-step efd-good">HAProxy &rarr; 3 apiservers</div>
+          </div>
+          <ul>
+            <li><strong>Load balanced</strong> &mdash; roundrobin across all 3</li>
+            <li><strong>Health-aware</strong> &mdash; checks <code>/readyz</code> every 5s</li>
+            <li>Transparent &mdash; clients still use standard port 6443</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="explain-section">
+        <div class="explain-subtitle">Two Failure Domains</div>
+        <table class="detail-table">
+          <tr><td>keepalived</td><td>Detects <strong>node-level</strong> failure &rarr; moves VIP to another node</td></tr>
+          <tr><td>HAProxy</td><td>Detects <strong>apiserver-level</strong> failure &rarr; stops sending traffic to unhealthy backend</td></tr>
+        </table>
+        <p style="margin-top:8px">A node can be healthy (keepalived happy) while its apiserver is degraded (accepting connections but returning errors). HAProxy catches this; direct 6443 does not.</p>
+      </div>
+
+      <div class="explain-section">
+        <div class="explain-subtitle">The nftables Rules</div>
+        <div class="config-block"><pre># External traffic (arriving from network)
+chain prerouting {
+  type nat hook prerouting priority dstnat;
+  ip daddr 192.168.37.201 tcp dport 6443
+    dnat to 192.168.37.201:9445
+    # counter: 14,936 packets / 898,175 bytes
+}
+
+# Local traffic (kubelet, controllers on same node)
+chain output {
+  type nat hook output priority dstnat;
+  ip daddr 192.168.37.201 oifname "lo" tcp dport 6443
+    redirect to :9445
+    # counter: 2,899 packets / 173,940 bytes
+}</pre></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Ingress LB Explanation -->
+  <div class="explain-box" id="ingress-explain">
+    <div class="explain-header" onclick="toggleExplain('ingress-explain-body', this)">
+      <div class="explain-title" style="color:var(--app-orange)">Why no HAProxy in front of Ingress Router?</div>
+      <span class="explain-arrow">&#9654;</span>
+    </div>
+    <div class="explain-body" id="ingress-explain-body" style="display:none">
+
+      <div class="explain-section">
+        <div class="explain-subtitle">The Router IS Already HAProxy</div>
+        <p>Putting HAProxy in front of HAProxy = double proxy. Every app request would traverse two proxy hops, adding latency to all user-facing traffic. For API this is acceptable (low volume, latency-tolerant control plane). For app traffic serving thousands of requests/sec, it hurts.</p>
+      </div>
+
+      <div class="explain-compare">
+        <div class="explain-compare-col bad">
+          <div class="explain-col-header">&#10007; If HAProxy added in front</div>
+          <div class="explain-flow-diagram">
+            <div class="efd-step">Client &rarr; VIP:443</div>
+            <div class="efd-arrow">&darr;</div>
+            <div class="efd-step efd-bad">HAProxy (L4 LB)</div>
+            <div class="efd-arrow">&darr;</div>
+            <div class="efd-step efd-nft">Router HAProxy (L7)</div>
+            <div class="efd-arrow">&darr;</div>
+            <div class="efd-step">app pod</div>
+          </div>
+          <ul>
+            <li>Double proxy &mdash; extra latency on every request</li>
+            <li>Extra TCP connection setup &amp; TLS overhead</li>
+            <li>Marginal gain &mdash; just picks which router</li>
+            <li>Router still does full L7 routing to pods</li>
+          </ul>
+        </div>
+        <div class="explain-compare-col good">
+          <div class="explain-col-header">&#10003; Current setup (VIP direct)</div>
+          <div class="explain-flow-diagram">
+            <div class="efd-step">Client &rarr; VIP:443</div>
+            <div class="efd-arrow">&darr;</div>
+            <div class="efd-step efd-good">Router HAProxy (L7)</div>
+            <div class="efd-arrow">&darr;</div>
+            <div class="efd-step">app pod</div>
+          </div>
+          <ul>
+            <li>Single proxy hop &mdash; minimal latency</li>
+            <li>Simple &mdash; fewer failure points</li>
+            <li>Trade-off: only 1 router active (VIP)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="explain-section">
+        <div class="explain-subtitle">Why API Gets HAProxy But Ingress Doesn't</div>
+        <table class="detail-table">
+          <tr><td>Traffic type</td><td>API = control plane (low volume) vs Ingress = data plane (high volume)</td></tr>
+          <tr><td>Backend</td><td>kube-apiserver has no built-in LB. Router IS an LB &mdash; adding another is redundant</td></tr>
+          <tr><td>Double-proxy cost</td><td>API: acceptable (infrequent calls). Apps: every HTTP request pays the penalty</td></tr>
+          <tr><td>LB value</td><td>API: real gain (3 apiservers share load). Ingress: marginal (just picks which router does L7)</td></tr>
+        </table>
+      </div>
+
+      <div class="explain-section">
+        <div class="explain-subtitle">The Right Fix for Ingress HA on Bare Metal</div>
+        <p>Active/passive VIP is a known bare-metal limitation. Correct solutions eliminate proxy overhead entirely:</p>
+        <table class="detail-table">
+          <tr><td style="color:var(--active-green);font-weight:600">MetalLB + BGP/ECMP</td><td>Advertises VIP from multiple nodes. Upstream router distributes at L3. All 3 routers active. No extra proxy.</td></tr>
+          <tr><td style="color:var(--active-green);font-weight:600">External LB</td><td>F5, HAProxy, or nginx in front. Distributes to all router nodes on 80/443 directly.</td></tr>
+          <tr><td style="color:var(--active-green);font-weight:600">Sharded Ingress</td><td>Multiple IngressControllers with separate VIPs. Split traffic by domain.</td></tr>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-card blue">
+      <div class="stat-value">40,000</div>
+      <div class="stat-label">KNI HAProxy maxconn (API)</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-value">50,000</div>
+      <div class="stat-label">Router HAProxy maxconn (Apps)</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-value">3 + 2</div>
+      <div class="stat-label">Masters + Workers</div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-value">2</div>
+      <div class="stat-label">Floating VIPs</div>
+    </div>
+  </div>
+
+  <div class="topology-hint">Click any component for detailed configuration</div>
+  </div><!-- end page-arch -->
+
+  <!-- ==================== PAGE 2: FLOW DIAGRAMS ==================== -->
+  <div id="page-flow" class="page">
+    <div class="flow-tab-bar">
+      <button class="flow-tab-btn active" onclick="showFlowTab('api-flow')">API Request</button>
+      <button class="flow-tab-btn" onclick="showFlowTab('app-flow')">App Request</button>
+      <button class="flow-tab-btn" onclick="showFlowTab('internal-flow')">Internal (Pod &rarr; API)</button>
+      <button class="flow-tab-btn" onclick="showFlowTab('dns-flow')">DNS Resolution</button>
+      <button class="flow-tab-btn" onclick="showFlowTab('vrrp-flow')">VRRP Topology</button>
+      <button class="flow-tab-btn" onclick="showFlowTab('failover-flow')">Failover Sequence</button>
+    </div>
+
+    <!-- TAB: API REQUEST -->
+    <div class="diagram-tab active" id="tab-api-flow">
+      <div class="legend-bar"><div class="lb-item"><div class="lb-line" style="background:var(--api-blue)"></div> API traffic</div><div class="lb-item"><div class="lb-line" style="background:var(--vip-purple)"></div> DNAT</div></div>
+      <div class="diagram-canvas" style="min-height:920px;">
+        <svg class="flow-svg"></svg>
+        <div class="comp-box client" id="a-client" style="left:50%;top:0;transform:translateX(-50%);min-width:140px;"><div class="cb-icon">&#9729;</div><div class="cb-name">Client</div><div class="cb-detail">External request</div></div>
+        <div class="comp-box dns" id="a-dns" style="left:50%;top:120px;transform:translateX(-50%);min-width:180px;"><div class="cb-icon">&#9778;</div><div class="cb-name">DNS + NAT</div><div class="cb-detail">api.hj4h5...io &rarr; NAT &rarr; .201</div></div>
+        <div class="comp-box vip-api active-vip" id="a-vip" style="left:50%;top:260px;transform:translateX(-50%);min-width:200px;"><div class="cb-name">API VIP</div><div class="cb-detail">192.168.37.201:6443</div><div class="cb-badge" style="background:rgba(76,223,138,0.1);color:var(--active-green);">on master2 (br-ex)</div></div>
+        <div class="comp-box nft" id="a-nft" style="left:50%;top:400px;transform:translateX(-50%);min-width:220px;"><div class="cb-name">nftables DNAT</div><div class="cb-detail">:6443 &rarr; :9445 (prerouting chain)</div><div class="cb-badge" style="background:rgba(176,122,255,0.1);color:var(--vip-purple);">before userspace</div></div>
+        <div class="comp-box haproxy-kni" id="a-haproxy" style="left:50%;top:550px;transform:translateX(-50%);min-width:240px;"><div class="cb-name">KNI HAProxy</div><div class="cb-detail">:9445 &bull; TCP L4 &bull; roundrobin</div><div class="cb-badge" style="background:rgba(77,166,255,0.1);color:var(--api-blue);">maxconn 40,000 &bull; /readyz every 5s</div></div>
+        <div class="node-group master-group" style="left:5%;top:700px;right:5%;height:190px;"><span class="ng-label">Control Plane (3 masters)</span></div>
+        <div class="comp-box apiserver" id="a-api0" style="left:12%;top:745px;min-width:170px;"><div class="cb-name">kube-apiserver</div><div class="cb-detail">master0 &bull; .21:6443</div><div class="cb-badge">GET /readyz &#10003;</div></div>
+        <div class="comp-box apiserver" id="a-api1" style="left:50%;top:745px;transform:translateX(-50%);min-width:170px;"><div class="cb-name">kube-apiserver</div><div class="cb-detail">master1 &bull; .22:6443</div><div class="cb-badge">GET /readyz &#10003;</div></div>
+        <div class="comp-box apiserver" id="a-api2" style="right:12%;top:745px;min-width:170px;"><div class="cb-name">kube-apiserver</div><div class="cb-detail">master2 &bull; .23:6443</div><div class="cb-badge">GET /readyz &#10003;</div></div>
+      </div>
+      <div class="info-panel"><div class="ip-title"><div class="ip-dot" style="background:var(--api-blue)"></div> API Request Path</div><div class="ip-body">Client &rarr; DNS &rarr; NAT &rarr; API VIP <code>192.168.37.201:6443</code> on master2. nftables rewrites <code>6443</code> &rarr; <code>9445</code>. KNI HAProxy round-robins across <strong>all 3 apiservers</strong> with <code>/readyz</code> health checks.</div></div>
+    </div>
+
+    <!-- TAB: APP REQUEST -->
+    <div class="diagram-tab" id="tab-app-flow">
+      <div class="legend-bar"><div class="lb-item"><div class="lb-line" style="background:var(--app-orange)"></div> App traffic</div><div class="lb-item"><div class="lb-line" style="background:var(--active-green)"></div> To pod</div></div>
+      <div class="diagram-canvas" style="min-height:1050px;">
+        <svg class="flow-svg"></svg>
+        <div class="comp-box client" id="b-client" style="left:50%;top:0;transform:translateX(-50%);min-width:140px;"><div class="cb-icon">&#9729;</div><div class="cb-name">Client</div><div class="cb-detail">HTTPS request</div></div>
+        <div class="comp-box dns" id="b-dns" style="left:50%;top:120px;transform:translateX(-50%);min-width:200px;"><div class="cb-icon">&#9778;</div><div class="cb-name">DNS + NAT</div><div class="cb-detail">*.apps.hj4h5...io &rarr; NAT &rarr; .202</div></div>
+        <div class="comp-box vip-ingress active-vip" id="b-vip" style="left:50%;top:260px;transform:translateX(-50%);min-width:200px;"><div class="cb-name">Ingress VIP</div><div class="cb-detail">192.168.37.202:443</div><div class="cb-badge" style="background:rgba(76,223,138,0.1);color:var(--active-green);">on master2 (br-ex)</div></div>
+        <div class="node-group master-group" style="left:15%;top:380px;right:15%;height:150px;"><span class="ng-label">master2 (VIP holder) &mdash; HostNetwork</span></div>
+        <div class="comp-box router" id="b-router" style="left:50%;top:420px;transform:translateX(-50%);min-width:280px;"><div class="cb-name">Router HAProxy</div><div class="cb-detail">HostNetwork :443 &bull; L7 HTTP &bull; 4 threads</div><div class="cb-badge" style="background:rgba(255,138,76,0.1);color:var(--app-orange);">maxconn 50,000 &bull; balance random</div></div>
+        <div class="comp-box router standby-vip" style="left:3%;top:430px;min-width:130px;"><div class="cb-name" style="font-size:11px;">Router</div><div class="cb-detail">master0 (standby)</div></div>
+        <div class="comp-box router standby-vip" style="right:3%;top:430px;min-width:130px;"><div class="cb-name" style="font-size:11px;">Router</div><div class="cb-detail">master1 (standby)</div></div>
+        <div class="comp-box svc" id="b-route" style="left:50%;top:580px;transform:translateX(-50%);min-width:220px;"><div class="cb-name">Route / Service Match</div><div class="cb-detail">Host header &rarr; Route &rarr; Service endpoints</div><div class="cb-badge" style="background:rgba(76,223,138,0.1);color:var(--active-green);">TLS termination here</div></div>
+        <div class="comp-box ovn" id="b-ovn" style="left:50%;top:720px;transform:translateX(-50%);min-width:200px;"><div class="cb-name">OVN-Kubernetes</div><div class="cb-detail">Geneve overlay to pod IP</div></div>
+        <div class="node-group worker-group" style="left:12%;top:850px;right:12%;height:160px;"><span class="ng-label">Worker / Master Nodes</span></div>
+        <div class="comp-box pod" id="b-pod0" style="left:16%;top:895px;min-width:130px;"><div class="cb-name">pod/app-1</div><div class="cb-detail">10.128.x.x:8080</div></div>
+        <div class="comp-box pod" id="b-pod1" style="left:50%;top:895px;transform:translateX(-50%);min-width:130px;"><div class="cb-name">pod/app-2</div><div class="cb-detail">10.128.x.x:8080</div></div>
+        <div class="comp-box pod" id="b-pod2" style="right:16%;top:895px;min-width:130px;"><div class="cb-name">pod/app-3</div><div class="cb-detail">10.128.x.x:8080</div></div>
+      </div>
+      <div class="info-panel"><div class="ip-title"><div class="ip-dot" style="background:var(--app-orange)"></div> App Request Path</div><div class="ip-body">Client &rarr; wildcard DNS &rarr; NAT &rarr; Ingress VIP <code>192.168.37.202:443</code>. Router HAProxy via HostNetwork &mdash; <strong>no DNAT</strong>. L7 routing, TLS termination, OVN overlay to pods. <strong>Only 1 of 3 routers active</strong> (active/passive VIP).</div></div>
+    </div>
+
+    <!-- TAB: INTERNAL -->
+    <div class="diagram-tab" id="tab-internal-flow">
+      <div class="legend-bar"><div class="lb-item"><div class="lb-line" style="background:var(--active-green)"></div> Pod traffic (left)</div><div class="lb-item"><div class="lb-line" style="background:var(--api-blue)"></div> kubelet traffic (right)</div></div>
+      <div class="diagram-canvas" style="min-height:780px;">
+        <svg class="flow-svg"></svg>
+        <div class="node-group worker-group" style="left:3%;top:0;width:42%;height:110px;"><span class="ng-label">worker0 (192.168.37.24)</span></div>
+        <div class="comp-box pod" id="c-pod" style="left:14%;top:35px;min-width:130px;"><div class="cb-name">app pod</div><div class="cb-detail">10.128.2.x</div></div>
+        <div class="comp-box svc" id="c-svc" style="left:24%;top:170px;transform:translateX(-50%);min-width:240px;"><div class="cb-name">kubernetes.default.svc</div><div class="cb-detail">ClusterIP :443 &rarr; :6443</div></div>
+        <div class="comp-box ovn" id="c-ovn" style="left:24%;top:330px;transform:translateX(-50%);min-width:230px;"><div class="cb-name">OVN-Kubernetes LB</div><div class="cb-detail">DNAT ClusterIP:443 &rarr; endpoint:6443</div></div>
+        <div class="node-group master-group" style="right:3%;top:0;width:42%;height:110px;"><span class="ng-label">master2 (VIP holder)</span></div>
+        <div class="comp-box" id="c-kubelet" style="right:14%;top:35px;min-width:140px;border-color:var(--api-blue-dim);"><div class="cb-name" style="color:var(--api-blue);">kubelet</div><div class="cb-detail">connects to VIP:6443</div></div>
+        <div class="comp-box nft" id="c-nft" style="right:14%;top:190px;min-width:190px;"><div class="cb-name">nftables redirect</div><div class="cb-detail">output chain: VIP:6443 &rarr; :9445</div></div>
+        <div class="comp-box haproxy-kni" id="c-haproxy" style="right:14%;top:350px;min-width:190px;"><div class="cb-name">KNI HAProxy</div><div class="cb-detail">:9445 &rarr; roundrobin :6443</div></div>
+        <div class="node-group master-group" style="left:5%;top:510px;right:5%;height:220px;"><span class="ng-label">Control Plane</span></div>
+        <div class="comp-box apiserver" id="c-api0" style="left:12%;top:570px;min-width:160px;"><div class="cb-name">apiserver</div><div class="cb-detail">master0 .21:6443</div></div>
+        <div class="comp-box apiserver" id="c-api1" style="left:50%;top:570px;transform:translateX(-50%);min-width:160px;"><div class="cb-name">apiserver</div><div class="cb-detail">master1 .22:6443</div></div>
+        <div class="comp-box apiserver" id="c-api2" style="right:12%;top:570px;min-width:160px;"><div class="cb-name">apiserver</div><div class="cb-detail">master2 .23:6443</div></div>
+      </div>
+      <div class="info-panel"><div class="ip-title"><div class="ip-dot" style="background:var(--active-green)"></div> Two Different Internal Paths</div><div class="ip-body"><strong>Pod &rarr; apiserver (left):</strong> via <code>kubernetes.default.svc:443</code>, OVN LB DNATs to endpoint. Bypasses VIP/HAProxy.<br><strong>kubelet on VIP holder (right):</strong> <code>VIP:6443</code> &rarr; nftables redirect &rarr; <code>:9445</code> &rarr; KNI HAProxy &rarr; all 3 apiservers.</div></div>
+    </div>
+
+    <!-- TAB: DNS -->
+    <div class="diagram-tab" id="tab-dns-flow">
+      <div class="legend-bar"><div class="lb-item"><div class="lb-line" style="background:var(--api-blue)"></div> External DNS</div><div class="lb-item"><div class="lb-line" style="background:var(--active-green)"></div> Internal DNS</div></div>
+      <div class="diagram-canvas" style="min-height:620px;">
+        <svg class="flow-svg"></svg>
+        <div class="comp-box client" id="d-ext-client" style="left:22%;top:0;transform:translateX(-50%);min-width:140px;"><div class="cb-icon">&#9729;</div><div class="cb-name">External Client</div></div>
+        <div class="comp-box dns" id="d-ext-dns" style="left:22%;top:130px;transform:translateX(-50%);min-width:220px;"><div class="cb-name">Public DNS</div><div class="cb-detail">redhatworkshops.io nameservers</div></div>
+        <div class="comp-box" id="d-nat" style="left:22%;top:280px;transform:translateX(-50%);min-width:250px;border-color:var(--api-blue-dim);"><div class="cb-name" style="color:var(--api-blue);">NAT Gateway</div><div class="cb-detail">Public IP &rarr; internal VIPs</div></div>
+        <div class="comp-box vip-api" id="d-apivip" style="left:10%;top:440px;min-width:160px;"><div class="cb-name">API VIP</div><div class="cb-detail">192.168.37.201</div></div>
+        <div class="comp-box vip-ingress" id="d-ingvip" style="left:32%;top:440px;min-width:160px;"><div class="cb-name">Ingress VIP</div><div class="cb-detail">192.168.37.202</div></div>
+        <div class="comp-box pod" id="d-int-pod" style="right:22%;top:0;transform:translateX(50%);min-width:130px;"><div class="cb-name">Cluster Pod</div><div class="cb-detail">10.128.x.x</div></div>
+        <div class="comp-box coredns-box" id="d-cdns" style="right:22%;top:130px;transform:translateX(50%);min-width:240px;"><div class="cb-name">Cluster CoreDNS</div><div class="cb-detail">openshift-dns &bull; ClusterIP :53</div></div>
+        <div class="comp-box coredns-box" id="d-knidns" style="right:22%;top:280px;transform:translateX(50%);min-width:260px;"><div class="cb-name">Node CoreDNS (KNI)</div><div class="cb-detail">openshift-kni-infra &bull; :53 per node</div></div>
+        <div class="comp-box" id="d-svc" style="right:10%;top:440px;min-width:180px;border-color:var(--active-green-dim);"><div class="cb-name" style="color:var(--active-green);">svc.cluster.local</div><div class="cb-detail">myapp.ns.svc.cluster.local</div></div>
+        <div class="comp-box" id="d-apiint" style="right:38%;top:440px;min-width:180px;border-color:var(--api-blue-dim);"><div class="cb-name" style="color:var(--api-blue);">api-int record</div><div class="cb-detail">api-int.hj4h5...io &rarr; .201</div></div>
+      </div>
+      <div class="info-panel"><div class="ip-title"><div class="ip-dot" style="background:var(--api-blue)"></div> DNS &mdash; External vs Internal</div><div class="ip-body"><strong>External:</strong> Public DNS &rarr; NAT gateway &rarr; internal VIPs.<br><strong>Internal:</strong> Pods use cluster CoreDNS for <code>svc.cluster.local</code>. Node CoreDNS (KNI) resolves <code>api-int</code> and <code>*.apps</code> to VIPs.</div></div>
+    </div>
+
+    <!-- TAB: VRRP -->
+    <div class="diagram-tab" id="tab-vrrp-flow">
+      <div class="legend-bar"><div class="lb-item"><div class="lb-line" style="background:var(--api-blue)"></div> API VRRP (ID 206)</div><div class="lb-item"><div class="lb-line" style="background:var(--app-orange)"></div> Ingress VRRP (ID 45)</div></div>
+      <div class="diagram-canvas" style="min-height:820px;">
+        <svg class="flow-svg"></svg>
+        <div class="comp-box vip-api active-vip" id="e-apivip" style="left:30%;top:0;transform:translateX(-50%);min-width:170px;"><div class="cb-name">API VIP</div><div class="cb-detail">192.168.37.201</div><div class="cb-badge" style="background:rgba(77,166,255,0.1);color:var(--api-blue);">VRRP ID 206</div></div>
+        <div class="comp-box vip-ingress active-vip" id="e-ingvip" style="left:70%;top:0;transform:translateX(-50%);min-width:170px;"><div class="cb-name">Ingress VIP</div><div class="cb-detail">192.168.37.202</div><div class="cb-badge" style="background:rgba(255,138,76,0.1);color:var(--app-orange);">VRRP ID 45</div></div>
+        <div class="node-group master-group" style="left:3%;top:120px;right:3%;height:280px;"><span class="ng-label">Masters &mdash; API + Ingress VRRP</span></div>
+        <div class="comp-box keepalived standby-vip" id="e-m0" style="left:7%;top:165px;min-width:210px;"><div class="cb-name">keepalived (master0)</div><div class="cb-detail">192.168.37.21 &bull; BACKUP</div></div>
+        <div class="comp-box keepalived standby-vip" id="e-m1" style="left:50%;top:165px;transform:translateX(-50%);min-width:210px;"><div class="cb-name">keepalived (master1)</div><div class="cb-detail">192.168.37.22 &bull; BACKUP</div></div>
+        <div class="comp-box keepalived active-vip" id="e-m2" style="right:7%;top:165px;min-width:210px;"><div class="cb-name">keepalived (master2)</div><div class="cb-detail">192.168.37.23 &bull; MASTER (both VIPs)</div></div>
+        <div class="comp-box" style="left:10%;top:320px;min-width:210px;border-color:var(--api-blue-dim);"><div class="cb-name" style="font-size:11px;color:var(--api-blue);">API Health Checks</div><div class="cb-detail">chk_ocp_lb (+20) &bull; chk_ocp_both (+5) &bull; chk_mcs (+3)</div></div>
+        <div class="comp-box" style="left:50%;top:320px;transform:translateX(-50%);min-width:210px;border-color:var(--app-orange-dim);"><div class="cb-name" style="font-size:11px;color:var(--app-orange);">Ingress Health Checks</div><div class="cb-detail">chk_ingress (wt=0, FAULT) &bull; chk_ingress_ready (+10) &bull; chk_default_ingress (+50)</div></div>
+        <div class="node-group worker-group" style="left:12%;top:480px;right:12%;height:300px;"><span class="ng-label">Workers &mdash; Ingress VRRP only</span></div>
+        <div class="comp-box keepalived standby-vip" id="e-w0" style="left:20%;top:530px;min-width:220px;"><div class="cb-name">keepalived (worker0)</div><div class="cb-detail">192.168.37.24 &bull; FAULT (no router on :1936)</div></div>
+        <div class="comp-box keepalived standby-vip" id="e-w1" style="right:20%;top:530px;min-width:220px;"><div class="cb-name">keepalived (worker1)</div><div class="cb-detail">192.168.37.25 &bull; FAULT (no router on :1936)</div></div>
+        <div class="port-label purple" style="left:50%;top:460px;transform:translateX(-50%);">unicast VRRP adverts (1s on br-ex)</div>
+      </div>
+      <div class="info-panel"><div class="ip-title"><div class="ip-dot" style="background:var(--vip-purple)"></div> VRRP Topology</div><div class="ip-body"><strong>API VRRP (ID 206):</strong> 3 masters only. Priority 40 + weights (max 68).<br><strong>Ingress VRRP (ID 45):</strong> All 5 nodes, but <code>chk_ingress</code> (weight=0) &rarr; FAULT on workers. <strong>Workers can never hold VIP.</strong></div></div>
+    </div>
+
+    <!-- TAB: FAILOVER -->
+    <div class="diagram-tab" id="tab-failover-flow">
+      <div class="legend-bar"><div class="lb-item"><div class="lb-line" style="background:var(--danger-red)"></div> Failure</div><div class="lb-item"><div class="lb-line" style="background:var(--active-green)"></div> Recovery</div></div>
+      <div class="diagram-canvas" style="min-height:980px;">
+        <svg class="flow-svg"></svg>
+        <div style="position:absolute;left:0;top:0;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;">T+0s &mdash; Before Failure</div>
+        <div class="node-group master-group" style="left:0;top:24px;right:0;height:130px;"><span class="ng-label">Control Plane</span></div>
+        <div class="comp-box keepalived standby-vip" style="left:5%;top:60px;min-width:155px;"><div class="cb-name" style="font-size:12px;">master0</div><div class="cb-detail">.21 &bull; BACKUP</div></div>
+        <div class="comp-box keepalived standby-vip" style="left:50%;top:60px;transform:translateX(-50%);min-width:155px;"><div class="cb-name" style="font-size:12px;">master1</div><div class="cb-detail">.22 &bull; BACKUP</div></div>
+        <div class="comp-box keepalived active-vip" style="right:5%;top:60px;min-width:200px;"><div class="cb-name" style="font-size:12px;">master2 &#9679;</div><div class="cb-detail">.23 &bull; MASTER</div><div class="cb-badge" style="background:rgba(76,223,138,0.1);color:var(--active-green);">API VIP + Ingress VIP</div></div>
+        <div style="position:absolute;left:0;top:190px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--danger-red);text-transform:uppercase;letter-spacing:1.5px;">T+0s &mdash; master2 Fails</div>
+        <div class="comp-box" style="right:5%;top:220px;min-width:200px;border-color:var(--danger-red);opacity:0.6;"><div class="cb-name" style="color:var(--danger-red);font-size:12px;">master2 &#10007;</div><div class="cb-detail" style="color:var(--danger-red);">unreachable &bull; VIPs orphaned</div></div>
+        <div style="position:absolute;left:0;top:340px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--vip-purple);text-transform:uppercase;letter-spacing:1.5px;">T+3s &mdash; VRRP Election</div>
+        <div class="comp-box keepalived" style="left:5%;top:375px;min-width:210px;border-color:var(--vip-purple);"><div class="cb-name" style="font-size:12px;">master0</div><div class="cb-badge" style="background:rgba(77,166,255,0.1);color:var(--api-blue);">API: 68</div><div class="cb-badge" style="background:rgba(255,138,76,0.1);color:var(--app-orange);margin-left:4px;">Ingress: 80</div></div>
+        <div class="comp-box keepalived" style="left:50%;top:375px;transform:translateX(-50%);min-width:210px;border-color:var(--vip-purple);"><div class="cb-name" style="font-size:12px;">master1</div><div class="cb-badge" style="background:rgba(77,166,255,0.1);color:var(--api-blue);">API: 68</div><div class="cb-badge" style="background:rgba(255,138,76,0.1);color:var(--app-orange);margin-left:4px;">Ingress: 80</div></div>
+        <div class="comp-box" style="right:5%;top:385px;min-width:155px;border-color:var(--standby-gray);opacity:0.3;"><div class="cb-name" style="font-size:11px;color:var(--text-muted);">workers</div><div class="cb-detail">Ingress: FAULT</div></div>
+        <div style="position:absolute;left:0;top:510px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--active-green);text-transform:uppercase;letter-spacing:1.5px;">T+3.1s &mdash; New Master + GARP</div>
+        <div class="comp-box keepalived active-vip" style="left:5%;top:545px;min-width:240px;"><div class="cb-name" style="font-size:12px;">master0 &#9679; (new MASTER)</div><div class="cb-badge" style="background:rgba(76,223,138,0.1);color:var(--active-green);">API VIP .201 + Ingress VIP .202</div><div class="cb-detail" style="margin-top:4px;">GARP &rarr; switches update MAC</div></div>
+        <div class="comp-box" style="left:55%;top:545px;min-width:300px;border-color:var(--active-green-dim);"><div class="cb-name" style="font-size:11px;color:var(--active-green);">Already Running on master0</div><div class="cb-detail" style="line-height:1.8;text-align:left;">&#10003; KNI HAProxy (:9445)<br>&#10003; Router HAProxy (:80/:443)<br>&#10003; nftables rules<br>&#10003; kube-apiserver (:6443)</div></div>
+        <div style="position:absolute;left:0;top:720px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--app-orange);text-transform:uppercase;letter-spacing:1.5px;">T+18s &mdash; HAProxy Backend Update</div>
+        <div class="comp-box haproxy-kni" style="left:5%;top:755px;min-width:360px;"><div class="cb-name">KNI HAProxy on master0</div><div class="cb-detail" style="line-height:2;text-align:left;"><span style="color:var(--active-green);">&#10003; master0</span> .21:6443 UP<br><span style="color:var(--active-green);">&#10003; master1</span> .22:6443 UP<br><span style="color:var(--danger-red);">&#10007; master2</span> .23:6443 DOWN</div></div>
+        <div class="comp-box" style="right:5%;top:755px;min-width:280px;"><div class="cb-name" style="font-size:12px;">Recovery Timeline</div><div class="cb-detail" style="line-height:2.2;text-align:left;"><span style="color:var(--danger-red);">T+0s</span> master2 down<br><span style="color:var(--vip-purple);">T+3s</span> VRRP election<br><span style="color:var(--active-green);">T+3.1s</span> GARP &rarr; traffic resumes<br><span style="color:var(--app-orange);">T+18s</span> backend removed<br><span style="color:var(--text-muted);">T+60s</span> GARP refresh</div></div>
+      </div>
+      <div class="info-panel"><div class="ip-title"><div class="ip-dot" style="background:var(--danger-red)"></div> Failover</div><div class="ip-body"><strong>~3-5 seconds downtime.</strong> VRRP detects failure (3 missed adverts). New master GARPs. All components already running on standby. HAProxy removes dead backend after ~15s.</div></div>
+    </div>
+
+  </div><!-- end page-flow -->
+</div>
+
+<script>
+const rawConfigs = {
+  kniHaproxy: `global
+  stats socket /var/lib/haproxy/run/haproxy.sock  mode 600 level admin expose-fd listeners
+defaults
+  maxconn 40000
+  mode    tcp
+  log     /var/run/haproxy/haproxy-log.sock local0 notice alert
+  log-format "%ci:%cp -> %fi:%fp [%t] %ft %b/%s %Tw/%Tc/%Tt %B %ts %ac/%fc/%bc/%sc/%rc %sq/%bq"
+  option  dontlognull
+  retries 3
+  timeout http-request 30s
+  timeout queue        1m
+  timeout connect      10s
+  timeout client       86400s
+  timeout server       86400s
+  timeout tunnel       86400s
+  timeout client-fin   1s
+  timeout server-fin   1s
+frontend  main
+  bind :::9445 v4v6
+  default_backend masters
+listen health_check_http_url
+  bind :::9444 v4v6
+  mode http
+  monitor-uri /haproxy_ready
+  option dontlognull
+listen monitor_check_http_url
+  bind :::9454 v4v6
+  mode http
+  monitor-uri /haproxy_monitor
+  monitor fail if { nbsrv(masters) lt 1 }
+  option dontlognull
+listen stats
+  bind localhost:29445
+  mode http
+  stats enable
+  stats hide-version
+  stats uri /haproxy_stats
+  stats refresh 30s
+  stats auth Username:Password
+backend masters
+   timeout check 10s
+   option  httpchk GET /readyz HTTP/1.0
+   balance roundrobin
+   server master0 192.168.37.21:6443 weight 1 verify none check check-ssl inter 5s fall 3 rise 1
+   server master1 192.168.37.22:6443 weight 1 verify none check check-ssl inter 5s fall 3 rise 1
+   server master2 192.168.37.23:6443 weight 1 verify none check check-ssl inter 5s fall 3 rise 1`,
+
+  routerHaproxy: `global
+  no strict-limits
+  maxconn 50000
+  nbthread 4
+
+  daemon
+  ca-base /etc/ssl
+  crt-base /etc/ssl
+  stats socket /var/lib/haproxy/run/haproxy.sock mode 600 level admin expose-fd listeners
+  stats timeout 2m
+
+  tune.maxrewrite 8192
+  tune.bufsize 32768
+
+  ssl-default-bind-options ssl-min-ver TLSv1.2
+  tune.ssl.default-dh-param 2048
+  ssl-default-bind-ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
+  ssl-default-bind-ciphersuites TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256
+
+defaults
+  maxconn 50000
+  errorfile 503 /var/lib/haproxy/conf/error-page-503.http
+  errorfile 404 /var/lib/haproxy/conf/error-page-404.http
+
+  timeout connect 5s
+  timeout client 30s
+  timeout client-fin 1s
+  timeout server 30s
+  timeout server-fin 1s
+  timeout http-request 10s
+  timeout http-keep-alive 300s
+
+  # Long timeout for WebSocket connections.
+  timeout tunnel 1h
+
+frontend public
+  bind :80
+  mode http
+  tcp-request inspect-delay 5s
+  tcp-request content accept if HTTP
+  monitor-uri /_______internal_router_healthz
+
+  # Mitigate CVE-2023-40225
+  http-request deny if { hdr_len(content-length) 0 }
+
+  # Strip off Proxy headers to prevent HTTpoxy
+  http-request del-header Proxy
+
+  http-request set-header Host %[req.hdr(Host),lower]`,
+
+  keepalivedConf: `global_defs {
+    enable_script_security
+    script_user root
+    max_auto_priority -1
+    vrrp_garp_master_refresh 60
+}
+
+vrrp_script chk_ocp_lb {
+    script "/usr/bin/timeout 1.9 /etc/keepalived/chk_ocp_script.sh"
+    interval 2
+    weight 20
+    rise 3
+    fall 3
+}
+
+vrrp_script chk_ocp_both {
+    script "/usr/bin/timeout 1.9 /etc/keepalived/chk_ocp_script_both.sh"
+    interval 2
+    weight 5
+    rise 3
+    fall 3
+}
+
+vrrp_script chk_mcs {
+    script "/usr/bin/timeout 1.9 /etc/keepalived/chk_mcs_script.sh"
+    interval 2
+    weight 3
+    rise 3
+    fall 3
+}
+
+vrrp_script chk_ingress_ready {
+    script "/usr/bin/timeout 0.9 /usr/bin/curl -o /dev/null -Lfs http://localhost:1936/healthz/ready"
+    interval 1
+    weight 10
+    rise 3
+    fall 2
+}
+
+vrrp_script chk_ingress {
+    script "/usr/bin/timeout 0.9 /usr/bin/curl -o /dev/null -Lfs http://localhost:1936/healthz"
+    interval 1
+    rise 3
+    fall 2
+}
+
+vrrp_script chk_default_ingress {
+    script "/usr/bin/timeout 4.9 /etc/keepalived/chk_default_ingress.sh"
+    interval 5
+    weight 50
+    rise 3
+    fall 2
+}
+
+vrrp_instance hj4h5_API_0 {
+    state BACKUP
+    interface br-ex
+    virtual_router_id 206
+    priority 40
+    advert_int 1
+
+    unicast_src_ip 192.168.37.21
+    unicast_peer {
+        192.168.37.22
+        192.168.37.23
+    }
+
+    authentication {
+        auth_type PASS
+        auth_pass hj4h5_api_vip
+    }
+    virtual_ipaddress {
+        192.168.37.201/32 label vip
+    }
+    track_script {
+        chk_ocp_lb
+        chk_ocp_both
+        chk_mcs
+    }
+}
+
+vrrp_instance hj4h5_INGRESS_0 {
+    state BACKUP
+    interface br-ex
+    virtual_router_id 45
+    priority 20
+    advert_int 1
+
+    unicast_src_ip 192.168.37.21
+    unicast_peer {
+        192.168.37.22
+        192.168.37.23
+        192.168.37.24
+        192.168.37.25
+    }
+
+    authentication {
+        auth_type PASS
+        auth_pass hj4h5_ingress_vip
+    }
+    virtual_ipaddress {
+        192.168.37.202/32 label vip
+    }
+    track_script {
+        chk_ingress
+        chk_ingress_ready
+        chk_default_ingress
+    }
+}`,
+
+  ingressController: `apiVersion: operator.openshift.io/v1
+kind: IngressController
+metadata:
+  name: default
+  namespace: openshift-ingress-operator
+spec:
+  clientTLS:
+    clientCA:
+      name: ""
+    clientCertificatePolicy: ""
+  closedClientConnectionPolicy: Continue
+  httpCompression: {}
+  httpEmptyRequestsPolicy: Respond
+  idleConnectionTerminationPolicy: Immediate
+  nodePlacement:
+    nodeSelector:
+      matchLabels:
+        node-role.kubernetes.io/master: ""
+    tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/master
+      operator: Exists
+  replicas: 3
+  tuningOptions:
+    reloadInterval: 0s
+  unsupportedConfigOverrides: null
+status:
+  availableReplicas: 3
+  domain: apps.hj4h5.dynamic2.redhatworkshops.io
+  endpointPublishingStrategy:
+    hostNetwork:
+      httpPort: 80
+      httpsPort: 443
+      protocol: TCP
+      statsPort: 1936
+    type: HostNetwork
+  tlsProfile:
+    ciphers:
+    - ECDHE-ECDSA-AES128-GCM-SHA256
+    - ECDHE-RSA-AES128-GCM-SHA256
+    - ECDHE-ECDSA-AES256-GCM-SHA384
+    - ECDHE-RSA-AES256-GCM-SHA384
+    - ECDHE-ECDSA-CHACHA20-POLY1305
+    - ECDHE-RSA-CHACHA20-POLY1305
+    - DHE-RSA-AES128-GCM-SHA256
+    - DHE-RSA-AES256-GCM-SHA384
+    - TLS_AES_128_GCM_SHA256
+    - TLS_AES_256_GCM_SHA384
+    - TLS_CHACHA20_POLY1305_SHA256
+    minTLSVersion: VersionTLS12`,
+
+  routerEnvVars: `ROUTER_ALLOW_WILDCARD_ROUTES=false
+ROUTER_CANONICAL_HOSTNAME=router-default.apps.hj4h5.dynamic2.redhatworkshops.io
+ROUTER_CIPHERS=ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:...
+ROUTER_CIPHERSUITES=TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256
+ROUTER_DISABLE_HTTP2=true
+ROUTER_DISABLE_NAMESPACE_OWNERSHIP_CHECK=false
+ROUTER_DOMAIN=apps.hj4h5.dynamic2.redhatworkshops.io
+ROUTER_ENABLE_EXTERNAL_CERTIFICATE=true
+ROUTER_LOAD_BALANCE_ALGORITHM=random
+ROUTER_METRICS_TYPE=haproxy
+ROUTER_SERVICE_HTTP_PORT=80
+ROUTER_SERVICE_HTTPS_PORT=443
+ROUTER_SET_FORWARDED_HEADERS=append
+ROUTER_TCP_BALANCE_SCHEME=source
+ROUTER_THREADS=4`,
+
+  vipProof: `# Proof: VIP holder (ip addr show br-ex)
+# Captured: 2026-06-02
+
+master0: no VIP
+master1: no VIP
+master2:
+    inet 192.168.37.201/32 scope global vip    # API VIP
+    inet 192.168.37.202/32 scope global vip    # Ingress VIP
+worker0: no VIP
+worker1: no VIP`,
+
+  portProof: `# Proof: Process owning port 80/443 on master2 (ss -tlnp)
+# PID 35125 = router-default pod (openshift-ingress)
+# PID 3659  = KNI HAProxy pod (openshift-kni-infra)
+
+State  Local Address:Port  Process
+LISTEN 0.0.0.0:443         users:(("haproxy",pid=35125,fd=7))   ← Router HAProxy
+LISTEN 0.0.0.0:80          users:(("haproxy",pid=35125,fd=6))   ← Router HAProxy
+LISTEN *:9445              users:(("haproxy",pid=3659,fd=...))   ← KNI HAProxy
+LISTEN *:6443              kube-apiserver
+
+# PID 35125 config: /var/lib/haproxy/conf/haproxy.config  (Router)
+# PID 3659  config: /etc/haproxy/haproxy.cfg              (KNI)`,
+
+  podList: `# oc get pods -n openshift-kni-infra -o wide
+NAME                  READY  STATUS   NODE
+coredns-master0       2/2    Running  master0
+coredns-master1       2/2    Running  master1
+coredns-master2       2/2    Running  master2
+coredns-worker0       2/2    Running  worker0
+coredns-worker1       2/2    Running  worker1
+haproxy-master0       2/2    Running  master0
+haproxy-master1       2/2    Running  master1
+haproxy-master2       2/2    Running  master2
+keepalived-master0    2/2    Running  master0
+keepalived-master1    2/2    Running  master1
+keepalived-master2    2/2    Running  master2
+keepalived-worker0    2/2    Running  worker0
+keepalived-worker1    2/2    Running  worker1
+
+# oc get pods -n openshift-ingress -o wide
+NAME                            READY  STATUS   NODE
+router-default-775bd55f5-5qq5j  1/1    Running  master0
+router-default-775bd55f5-f8ljc  1/1    Running  master2
+router-default-775bd55f5-mtn4p  1/1    Running  master1`,
+
+  nftablesRules: `# nft list ruleset on master2 (VIP holder) — filtered for API VIP DNAT
+# Captured: 2026-06-02
+# Source: oc debug node/master2 -- chroot /host nft list ruleset | grep -A3 -B1 9445
+
+# Chain: nat / output (local processes connecting to VIP)
+type nat hook output priority dstnat; policy accept;
+ip daddr 192.168.37.201 oifname "lo" tcp dport 6443  counter packets 2899 bytes 173940 redirect to :9445
+
+# Chain: nat / prerouting (external traffic arriving at VIP)
+type nat hook prerouting priority dstnat; policy accept;
+ip daddr 192.168.37.201 tcp dport 6443  counter packets 14936 bytes 898175 dnat to 192.168.37.201:9445
+
+# Explanation:
+# kube-apiserver binds on *:6443 (all interfaces)
+# VIP 192.168.37.201 is on br-ex, so traffic to VIP:6443 would normally hit apiserver directly
+# nftables intercepts BEFORE userspace: VIP:6443 → VIP:9445 (HAProxy)
+# HAProxy then round-robins to all 3 apiservers on their real IPs:6443
+#
+# Two rules cover both paths:
+#   prerouting = external/remote clients arriving at VIP:6443
+#   output     = local processes (kubelet, controllers) connecting to VIP:6443 from same node`,
+
+  resourceLimits: `# oc get deployment router-default -n openshift-ingress -o jsonpath='{.spec.template.spec.containers[0].resources}'
+{"requests":{"cpu":"100m","memory":"256Mi"}}
+# No limits set — pods can burst to full node capacity
+
+# oc get pod haproxy-master0 -n openshift-kni-infra -o jsonpath='{.spec.containers[?(@.name=="haproxy")].resources}'
+{"requests":{"cpu":"100m","memory":"200Mi"}}
+# No limits set
+
+# Node capacity (oc get nodes):
+NAME      CPU   MEM
+master0   4     16372872Ki
+master1   4     16372876Ki
+master2   4     16372876Ki
+worker0   4     16372864Ki
+worker1   4     16372872Ki`,
+};
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function makeConfigSection(title, source, configKey) {
+  const id = 'cfg-' + configKey.replace(/[^a-zA-Z0-9]/g, '-');
+  return { type: 'config', title, source, configKey, id };
+}
+
+const detailData = {
+  'client': {
+    title: 'External Client',
+    subtitle: 'Inbound traffic origin',
+    sections: [
+      { heading: 'Traffic Paths', rows: [
+        ['API endpoint', 'api.hj4h5.dynamic2.redhatworkshops.io'],
+        ['App wildcard', '*.apps.hj4h5.dynamic2.redhatworkshops.io'],
+        ['API NAT target', '192.168.37.201'],
+        ['Apps NAT target', '192.168.37.202'],
+      ]}
+    ],
+    configs: [
+      makeConfigSection('Pod Inventory', 'oc get pods -n openshift-kni-infra + openshift-ingress', 'podList'),
+    ]
+  },
+  'dns-api': {
+    title: 'API DNS Resolution',
+    subtitle: 'api.hj4h5.dynamic2.redhatworkshops.io',
+    tag: { text: 'API Path', cls: 'blue' },
+    sections: [
+      { heading: 'Resolution', rows: [
+        ['Record', 'A record → NAT IP'],
+        ['NAT target', '192.168.37.201 (API VIP)'],
+        ['Port', '6443'],
+        ['Protocol', 'TCP / TLS'],
+      ]}
+    ]
+  },
+  'dns-app': {
+    title: 'App DNS Resolution',
+    subtitle: '*.apps.hj4h5.dynamic2.redhatworkshops.io',
+    tag: { text: 'App Path', cls: 'orange' },
+    sections: [
+      { heading: 'Resolution', rows: [
+        ['Record', 'Wildcard A → NAT IP'],
+        ['NAT target', '192.168.37.202 (Ingress VIP)'],
+        ['Ports', '80 (HTTP), 443 (HTTPS)'],
+        ['Protocol', 'HTTP / TLS'],
+      ]}
+    ]
+  },
+  'api-vip': {
+    title: 'API VIP',
+    subtitle: '192.168.37.201/32',
+    tag: { text: 'keepalived VRRP', cls: 'purple' },
+    sections: [
+      { heading: 'Configuration', rows: [
+        ['VIP Address', '192.168.37.201/32'],
+        ['VRRP ID', '206'],
+        ['Interface', 'br-ex'],
+        ['Advert interval', '1s'],
+        ['Current holder', 'master2'],
+        ['Eligible nodes', 'master0, master1, master2'],
+        ['Auth', 'PASS (hj4h5_api_vip)'],
+      ]},
+      { heading: 'Health Checks', rows: [
+        ['chk_ocp_lb', 'weight 20, interval 2s'],
+        ['chk_ocp_both', 'weight 5, interval 2s'],
+        ['chk_mcs', 'weight 3, interval 2s'],
+      ]}
+    ],
+    configs: [
+      makeConfigSection('keepalived.conf', 'oc rsh keepalived-master0 cat /etc/keepalived/keepalived.conf', 'keepalivedConf'),
+      makeConfigSection('VIP Proof', 'ip addr show br-ex on each node', 'vipProof'),
+    ]
+  },
+  'ingress-vip': {
+    title: 'Ingress VIP',
+    subtitle: '192.168.37.202/32',
+    tag: { text: 'keepalived VRRP', cls: 'purple' },
+    sections: [
+      { heading: 'Configuration', rows: [
+        ['VIP Address', '192.168.37.202/32'],
+        ['VRRP ID', '45'],
+        ['Interface', 'br-ex'],
+        ['Advert interval', '1s'],
+        ['Current holder', 'master2'],
+        ['Eligible nodes', 'All 5 nodes'],
+        ['Auth', 'PASS (hj4h5_ingress_vip)'],
+      ]},
+      { heading: 'Health Checks', rows: [
+        ['chk_ingress', 'rise 3, fall 2, interval 1s'],
+        ['chk_ingress_ready', 'weight 10, curl :1936/healthz/ready'],
+        ['chk_default_ingress', 'weight 50, interval 5s'],
+      ]},
+      { heading: 'Key Insight', rows: [
+        ['Active mode', 'Single node (active/passive)'],
+        ['Impact', 'Only 1 router pod receives traffic'],
+      ]}
+    ],
+    configs: [
+      makeConfigSection('keepalived.conf', 'oc rsh keepalived-master0 cat /etc/keepalived/keepalived.conf', 'keepalivedConf'),
+      makeConfigSection('VIP Proof', 'ip addr show br-ex on each node', 'vipProof'),
+      makeConfigSection('Port Ownership Proof', 'ss -tlnp on master2 (VIP holder)', 'portProof'),
+    ]
+  },
+  'keepalived-master': {
+    title: 'keepalived (Master)',
+    subtitle: 'openshift-kni-infra',
+    tag: { text: 'VRRP', cls: 'purple' },
+    sections: [
+      { heading: 'VRRP Instances', rows: [
+        ['API VRRP', 'ID 206, priority 40'],
+        ['Ingress VRRP', 'ID 45, priority 20'],
+        ['Protocol', 'Unicast between masters + workers'],
+      ]},
+      { heading: 'Failover Behavior', rows: [
+        ['API VIP', 'Floats between 3 masters only'],
+        ['Ingress VIP', 'Floats between all 5 nodes'],
+        ['GARP refresh', '60s'],
+      ]}
+    ],
+    configs: [
+      makeConfigSection('keepalived.conf (full)', 'oc rsh keepalived-master0 cat /etc/keepalived/keepalived.conf', 'keepalivedConf'),
+      makeConfigSection('VIP Proof', 'ip addr show br-ex on each node', 'vipProof'),
+    ]
+  },
+  'keepalived-worker': {
+    title: 'keepalived (Worker)',
+    subtitle: 'openshift-kni-infra',
+    tag: { text: 'VRRP', cls: 'purple' },
+    sections: [
+      { heading: 'VRRP Instances', rows: [
+        ['Ingress VRRP', 'ID 45 (Ingress VIP only)'],
+        ['API VRRP', 'Not present on workers'],
+      ]},
+      { heading: 'Notes', rows: [
+        ['Router pods', 'Not scheduled on workers (nodeSelector targets masters)'],
+        ['VIP protection', 'chk_ingress (weight=0) curls localhost:1936 — fails on workers → FAULT state → cannot hold VIP'],
+      ]}
+    ],
+    configs: [
+      makeConfigSection('keepalived.conf', 'oc rsh keepalived-master0 cat /etc/keepalived/keepalived.conf', 'keepalivedConf'),
+    ]
+  },
+  'nftables': {
+    title: 'nftables DNAT Rules',
+    subtitle: 'Port 6443 → 9445 redirect on VIP holder',
+    tag: { text: 'API Path', cls: 'blue' },
+    sections: [
+      { heading: 'Why Port 6443 Works', rows: [
+        ['kube-apiserver', 'Binds on *:6443 (all interfaces)'],
+        ['VIP 192.168.37.201', 'Lives on br-ex interface'],
+        ['Without DNAT', 'VIP:6443 → apiserver directly (no LB)'],
+        ['With DNAT', 'VIP:6443 → VIP:9445 → HAProxy → all 3 apiservers'],
+      ]},
+      { heading: 'Prerouting Rule (external traffic)', rows: [
+        ['Hook', 'nat / prerouting (priority dstnat)'],
+        ['Match', 'ip daddr 192.168.37.201 tcp dport 6443'],
+        ['Action', 'dnat to 192.168.37.201:9445'],
+        ['Counter', '14,936 packets / 898,175 bytes'],
+      ]},
+      { heading: 'Output Rule (local processes)', rows: [
+        ['Hook', 'nat / output (priority dstnat)'],
+        ['Match', 'ip daddr 192.168.37.201 oifname "lo" tcp dport 6443'],
+        ['Action', 'redirect to :9445'],
+        ['Counter', '2,899 packets / 173,940 bytes'],
+      ]},
+      { heading: 'Traffic Flow', rows: [
+        ['Step 1', 'Client → api.cluster:6443 → NAT → VIP:6443'],
+        ['Step 2', 'nftables DNAT → VIP:9445 (invisible)'],
+        ['Step 3', 'KNI HAProxy receives on :9445'],
+        ['Step 4', 'roundrobin → master0/1/2:6443'],
+      ]}
+    ],
+    configs: [
+      makeConfigSection('nft list ruleset (filtered)', 'oc debug node/master2 -- chroot /host nft list ruleset | grep 9445', 'nftablesRules'),
+      makeConfigSection('KNI HAProxy config', 'oc rsh haproxy-master0 cat /etc/haproxy/haproxy.cfg', 'kniHaproxy'),
+      makeConfigSection('Port Ownership Proof', 'ss -tlnp on master2', 'portProof'),
+    ]
+  },
+  'haproxy-kni': {
+    title: 'KNI HAProxy',
+    subtitle: 'openshift-kni-infra — API Load Balancer',
+    tag: { text: 'API Only', cls: 'blue' },
+    sections: [
+      { heading: 'Connection Limits', rows: [
+        ['maxconn', '40,000'],
+        ['Threads', '1 (default)'],
+        ['Mode', 'TCP (L4 passthrough)'],
+        ['Balance', 'roundrobin'],
+      ]},
+      { heading: 'Frontend', rows: [
+        ['Bind', ':::9445 v4v6'],
+        ['Backend', 'masters → :6443'],
+      ]},
+      { heading: 'Timeouts', rows: [
+        ['connect', '10s'],
+        ['client', '86400s (24h)'],
+        ['server', '86400s (24h)'],
+        ['tunnel', '86400s (24h)'],
+        ['http-request', '30s'],
+        ['queue', '1m'],
+      ]},
+      { heading: 'Resources', rows: [
+        ['CPU request', '100m (no limit)'],
+        ['Memory request', '200Mi (no limit)'],
+      ]},
+      { heading: 'Backend Servers', rows: [
+        ['master0', '192.168.37.21:6443'],
+        ['master1', '192.168.37.22:6443'],
+        ['master2', '192.168.37.23:6443'],
+        ['Health check', 'GET /readyz every 5s'],
+      ]}
+    ],
+    configs: [
+      makeConfigSection('haproxy.cfg (full)', 'oc rsh haproxy-master0 cat /etc/haproxy/haproxy.cfg', 'kniHaproxy'),
+      makeConfigSection('nftables DNAT (6443→9445)', 'nft list ruleset on master2', 'nftablesRules'),
+      makeConfigSection('Port Ownership Proof', 'ss -tlnp on master2', 'portProof'),
+      makeConfigSection('Resource Limits', 'oc get deployment/pod resources', 'resourceLimits'),
+    ]
+  },
+  'router': {
+    title: 'Router HAProxy',
+    subtitle: 'openshift-ingress — App Traffic',
+    tag: { text: 'App Traffic', cls: 'orange' },
+    sections: [
+      { heading: 'Connection Limits', rows: [
+        ['maxconn (global)', '50,000'],
+        ['maxconn (defaults)', '50,000'],
+        ['Threads', '4'],
+        ['Mode', 'HTTP (L7)'],
+        ['Balance', 'random'],
+        ['HTTP/2', 'Disabled'],
+      ]},
+      { heading: 'Networking', rows: [
+        ['Strategy', 'HostNetwork'],
+        ['HTTP port', '80'],
+        ['HTTPS port', '443'],
+        ['Stats port', '1936'],
+      ]},
+      { heading: 'Timeouts', rows: [
+        ['connect', '5s'],
+        ['client', '30s'],
+        ['server', '30s'],
+        ['http-request', '10s'],
+        ['http-keep-alive', '300s'],
+        ['tunnel (WS)', '1h'],
+      ]},
+      { heading: 'Buffer Tuning', rows: [
+        ['tune.bufsize', '32,768 (32KB)'],
+        ['tune.maxrewrite', '8,192 (8KB)'],
+        ['tune.ssl.default-dh-param', '2048'],
+      ]},
+      { heading: 'Resources', rows: [
+        ['CPU request', '100m (no limit)'],
+        ['Memory request', '256Mi (no limit)'],
+        ['Replicas', '3 (1 active via VIP)'],
+      ]},
+      { heading: 'TLS', rows: [
+        ['Min version', 'TLS 1.2'],
+        ['Ciphers', 'ECDHE-ECDSA/RSA-AES128/256-GCM-SHA256/384, CHACHA20-POLY1305, DHE-RSA'],
+      ]}
+    ],
+    configs: [
+      makeConfigSection('haproxy.config (global+defaults+frontend)', 'oc rsh router-default cat /var/lib/haproxy/conf/haproxy.config', 'routerHaproxy'),
+      makeConfigSection('Router Environment Variables', 'oc rsh router-default env | grep ROUTER_', 'routerEnvVars'),
+      makeConfigSection('IngressController YAML', 'oc get ingresscontroller default -n openshift-ingress-operator -o yaml', 'ingressController'),
+      makeConfigSection('Resource Limits', 'oc get deployment/pod resources + node capacity', 'resourceLimits'),
+      makeConfigSection('Port Ownership Proof', 'ss -tlnp on master2', 'portProof'),
+    ]
+  },
+  'apiserver': {
+    title: 'kube-apiserver',
+    subtitle: 'Kubernetes API Server',
+    tag: { text: 'API', cls: 'blue' },
+    sections: [
+      { heading: 'Configuration', rows: [
+        ['Port', '6443'],
+        ['Instances', '3 (one per master)'],
+        ['Protocol', 'HTTPS / TLS'],
+        ['Health endpoint', '/readyz'],
+      ]},
+      { heading: 'Access', rows: [
+        ['Via KNI HAProxy', ':9445 → roundrobin all 3'],
+        ['Direct', 'Each master :6443'],
+      ]}
+    ]
+  },
+  'coredns': {
+    title: 'CoreDNS',
+    subtitle: 'openshift-kni-infra',
+    sections: [
+      { heading: 'Configuration', rows: [
+        ['Port', '53'],
+        ['Instances', '5 (one per node)'],
+        ['Purpose', 'Internal cluster DNS'],
+      ]}
+    ],
+    configs: [
+      makeConfigSection('Pod Inventory', 'oc get pods -n openshift-kni-infra + openshift-ingress', 'podList'),
+    ]
+  },
+};
+
+// ===== PAGE SWITCHING =====
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const btns = document.querySelectorAll('.page-nav-btn');
+  if (page === 'arch' && btns[0]) btns[0].classList.add('active');
+  if (page === 'flow' && btns[1]) { btns[1].classList.add('active'); requestAnimationFrame(() => redrawActiveFlow()); }
+}
+
+// ===== ARCHITECTURE VIEW =====
+let currentView = 'api';
+
+function setView(view) {
+  currentView = view;
+  document.querySelectorAll('#page-arch .toggle-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`#page-arch .toggle-btn.${view}`);
+  if (btn) btn.classList.add('active');
+  applyHighlights();
+}
+
+function applyHighlights() {
+  const v = currentView;
+
+  // Entry cards
+  const dnsApi = document.getElementById('entry-dns-api');
+  const dnsApp = document.getElementById('entry-dns-app');
+  dnsApi.className = 'entry-card' + ((v === 'api' || v === 'both') ? ' highlight-api' : '');
+  dnsApp.className = 'entry-card' + ((v === 'app' || v === 'both') ? ' highlight-app' : '');
+
+  // VIP cards
+  const vipApi = document.getElementById('vip-api');
+  const vipIng = document.getElementById('vip-ingress');
+  vipApi.className = 'vip-card api-vip' + ((v === 'api' || v === 'both') ? ' highlight-api' : '');
+  vipIng.className = 'vip-card ingress-vip' + ((v === 'app' || v === 'both') ? ' highlight-app' : '');
+
+  // Arrows
+  const a1 = document.getElementById('arrow1');
+  const a2 = document.getElementById('arrow2');
+  const a3 = document.getElementById('arrow3');
+  a1.className = 'flow-arrow' + (v === 'api' ? ' highlight-api' : v === 'app' ? ' highlight-app' : '');
+  a2.className = 'flow-arrow' + (v === 'api' ? ' highlight-api' : v === 'app' ? ' highlight-app' : '');
+  a3.className = 'flow-arrow' + ((v === 'app' || v === 'both') ? ' highlight-app' : '');
+
+  // Components
+  document.querySelectorAll('.component').forEach(c => {
+    const path = c.dataset.path;
+    c.classList.remove('highlight-api', 'highlight-app', 'dimmed');
+    if (v === 'api') {
+      if (path === 'api' || path === 'both') c.classList.add('highlight-api');
+      else if (path === 'app') c.classList.add('dimmed');
+    } else if (v === 'app') {
+      if (path === 'app' || path === 'both') c.classList.add('highlight-app');
+      else if (path === 'api') c.classList.add('dimmed');
+    }
+  });
+
+  // App pods
+  document.querySelectorAll('.app-pod').forEach(p => {
+    p.classList.remove('highlight-app');
+    if (v === 'app' || v === 'both') p.classList.add('highlight-app');
+  });
+}
+
+function showDetail(key) {
+  const d = detailData[key];
+  if (!d) return;
+
+  let html = `<h2>${d.title}</h2>`;
+  html += `<div class="detail-subtitle">${d.subtitle}</div>`;
+  if (d.tag) {
+    html += `<div style="margin-bottom:16px"><span class="detail-tag ${d.tag.cls}">${d.tag.text}</span></div>`;
+  }
+  d.sections.forEach(s => {
+    html += `<div class="detail-section"><h3>${s.heading}</h3><table class="detail-table">`;
+    s.rows.forEach(r => {
+      html += `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`;
+    });
+    html += `</table></div>`;
+  });
+
+  if (d.configs && d.configs.length) {
+    html += `<div class="detail-section"><h3>Raw Configuration (Proof)</h3>`;
+    d.configs.forEach(cfg => {
+      const rawText = rawConfigs[cfg.configKey] || '';
+      html += `<button class="config-toggle" onclick="toggleConfig('${cfg.id}', this)"><span class="arrow">&#9654;</span> ${cfg.title}</button>`;
+      html += `<div id="${cfg.id}" style="display:none">`;
+      html += `<div class="config-source">$ ${escapeHtml(cfg.source)}</div>`;
+      html += `<div class="config-block"><pre>${escapeHtml(rawText)}</pre></div>`;
+      html += `</div>`;
+    });
+    html += `</div>`;
+  }
+
+  document.getElementById('detailContent').innerHTML = html;
+  document.getElementById('detailPanel').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+
+function toggleConfig(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const visible = el.style.display !== 'none';
+  el.style.display = visible ? 'none' : 'block';
+  btn.classList.toggle('open', !visible);
+}
+
+function toggleExplain(id, header) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const visible = el.style.display !== 'none';
+  el.style.display = visible ? 'none' : 'block';
+  header.querySelector('.explain-arrow').classList.toggle('open', !visible);
+}
+
+function closePanel() {
+  document.getElementById('detailPanel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePanel();
+});
+
+let currentTheme = 'dark';
+function toggleTheme() {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  document.getElementById('themeToggle').innerHTML = currentTheme === 'dark' ? '&#9788;' : '&#9790;';
+  redrawActiveFlow();
+}
+
+applyHighlights();
+
+// ===== FLOW DIAGRAMS WIRING =====
+const WIRING = {
+  'api-flow': [
+    ['a-client','a-dns','api-blue',true,100],['a-dns','a-vip','api-blue',true,250],
+    ['a-vip','a-nft','vip-purple',true,400],['a-nft','a-haproxy','api-blue',true,550],
+    ['a-haproxy','a-api0','api-blue',true,700],['a-haproxy','a-api1','api-blue',true,750],['a-haproxy','a-api2','api-blue',true,800],
+  ],
+  'app-flow': [
+    ['b-client','b-dns','app-orange',true,100],['b-dns','b-vip','app-orange',true,250],
+    ['b-vip','b-router','app-orange',true,400],['b-router','b-route','app-orange',true,550],
+    ['b-route','b-ovn','active-green',true,650],
+    ['b-ovn','b-pod0','active-green',true,800],['b-ovn','b-pod1','active-green',true,850],['b-ovn','b-pod2','active-green',true,900],
+  ],
+  'internal-flow': [
+    ['c-pod','c-svc','active-green',true,100],['c-svc','c-ovn','vip-purple',true,250],
+    ['c-ovn','c-api0','active-green',true,400],['c-ovn','c-api1','active-green',true,450],
+    ['c-kubelet','c-nft','api-blue',true,100],['c-nft','c-haproxy','api-blue',true,250],
+    ['c-haproxy','c-api1','api-blue',true,400],['c-haproxy','c-api2','api-blue',true,450],['c-haproxy','c-api0','api-blue',true,500],
+  ],
+  'dns-flow': [
+    ['d-ext-client','d-ext-dns','api-blue',true,100],['d-ext-dns','d-nat','api-blue',true,250],
+    ['d-nat','d-apivip','api-blue',true,400],['d-nat','d-ingvip','app-orange',true,450],
+    ['d-int-pod','d-cdns','active-green',true,100],['d-cdns','d-knidns','active-green',true,250],
+    ['d-knidns','d-svc','active-green',true,400],['d-knidns','d-apiint','api-blue',true,450],
+  ],
+  'vrrp-flow': [
+    ['e-apivip','e-m0','api-blue',false,100],['e-apivip','e-m1','api-blue',false,150],['e-apivip','e-m2','api-blue',false,200],
+    ['e-ingvip','e-m0','app-orange',false,300],['e-ingvip','e-m1','app-orange',false,350],['e-ingvip','e-m2','app-orange',false,400],
+    ['e-ingvip','e-w0','app-orange',false,500],['e-ingvip','e-w1','app-orange',false,550],
+  ],
+  'failover-flow': [],
+};
+
+function getEdge(el, canvas, side) {
+  const cr = el.getBoundingClientRect();
+  const pr = canvas.getBoundingClientRect();
+  const x = cr.left - pr.left, y = cr.top - pr.top, w = cr.width, h = cr.height;
+  if (side === 'bottom') return { x: x + w/2, y: y + h };
+  if (side === 'top')    return { x: x + w/2, y: y };
+  return { x: x + w/2, y: y + h/2 };
+}
+
+function drawWiring(tabId) {
+  const tab = document.getElementById('tab-' + tabId);
+  if (!tab) return;
+  const canvas = tab.querySelector('.diagram-canvas');
+  const svg = tab.querySelector('.flow-svg');
+  if (!canvas || !svg) return;
+  const cw = canvas.offsetWidth, ch = canvas.offsetHeight;
+  svg.setAttribute('viewBox', `0 0 ${cw} ${ch}`);
+  svg.innerHTML = '';
+  const cs = getComputedStyle(document.documentElement);
+  const colors = {
+    'api-blue': cs.getPropertyValue('--api-blue').trim(),
+    'app-orange': cs.getPropertyValue('--app-orange').trim(),
+    'active-green': cs.getPropertyValue('--active-green').trim(),
+    'vip-purple': cs.getPropertyValue('--vip-purple').trim(),
+    'danger-red': cs.getPropertyValue('--danger-red').trim(),
+    'text-muted': cs.getPropertyValue('--text-muted').trim(),
+  };
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  Object.entries(colors).forEach(([name, color]) => {
+    const m = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+    m.setAttribute('id', `ah-${name}`); m.setAttribute('viewBox', '0 0 10 8');
+    m.setAttribute('refX', '9'); m.setAttribute('refY', '4');
+    m.setAttribute('markerWidth', '8'); m.setAttribute('markerHeight', '6');
+    m.setAttribute('orient', 'auto-start-reverse');
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    p.setAttribute('points', '0 0, 10 4, 0 8'); p.setAttribute('fill', color);
+    m.appendChild(p); defs.appendChild(m);
+  });
+  svg.appendChild(defs);
+  (WIRING[tabId] || []).forEach(([fromId, toId, colorKey, animated, delay]) => {
+    const fromEl = document.getElementById(fromId), toEl = document.getElementById(toId);
+    if (!fromEl || !toEl) return;
+    const from = getEdge(fromEl, canvas, 'bottom'), to = getEdge(toEl, canvas, 'top');
+    const dx = Math.abs(to.x - from.x), dy = to.y - from.y;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    if (dx < 5) {
+      path.setAttribute('d', `M${from.x},${from.y} L${to.x},${to.y}`);
+    } else {
+      path.setAttribute('d', `M${from.x},${from.y} C${from.x},${from.y+dy*0.35} ${to.x},${to.y-dy*0.35} ${to.x},${to.y}`);
+    }
+    path.setAttribute('stroke', colors[colorKey] || colors['text-muted']);
+    path.setAttribute('stroke-width', '2'); path.setAttribute('fill', 'none');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('marker-end', `url(#ah-${colorKey})`);
+    if (animated) { path.setAttribute('stroke-dasharray', '7 5'); path.style.animation = 'dashMove 0.8s linear infinite'; }
+    else { path.setAttribute('stroke-dasharray', '5 4'); }
+    path.style.opacity = '0'; path.style.transition = 'opacity 0.5s';
+    svg.appendChild(path);
+    setTimeout(() => { path.style.opacity = animated ? '0.85' : '0.45'; }, delay || 0);
+  });
+}
+
+function showFlowTab(id) {
+  document.querySelectorAll('#page-flow .diagram-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#page-flow .flow-tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  const ids = ['api-flow','app-flow','internal-flow','dns-flow','vrrp-flow','failover-flow'];
+  const btns = document.querySelectorAll('#page-flow .flow-tab-btn');
+  const idx = ids.indexOf(id);
+  if (idx >= 0 && btns[idx]) btns[idx].classList.add('active');
+  requestAnimationFrame(() => drawWiring(id));
+}
+
+function redrawActiveFlow() {
+  const active = document.querySelector('#page-flow .diagram-tab.active');
+  if (active) drawWiring(active.id.replace('tab-', ''));
+}
+
+window.addEventListener('resize', redrawActiveFlow);
+</script>
+</body>
+</html>
