@@ -1557,7 +1557,7 @@ html.dark code { color:#5b9cf5; }
 <ul>
   <li><strong>node-exporter</strong> &mdash; Prometheus exporter that collects hardware and OS metrics: CPU usage, memory, disk I/O, filesystem space, network stats. Scraped by platform Prometheus</li>
   <li><strong>Vector</strong> (or Fluentd) &mdash; Log collector DaemonSet that reads container logs from <code>/var/log/containers/</code> and journal logs, then forwards to Loki or external log stores</li>
-  <li><strong>Collector (ACS)</strong> &mdash; If ACS is installed, eBPF-based DaemonSet monitors process execution, network connections, and file access on every node for runtime threat detection</li>
+  <li><strong>Collector (ACS)</strong> &mdash; If ACS is installed, CO-RE BPF-based DaemonSet monitors process execution, network connections, and file access on every node for runtime threat detection</li>
 </ul>
 
 <button class="mark-read" onclick="markRead(this,1)">&#10003; Mark section as read</button>
@@ -4901,6 +4901,10 @@ EOF
 <h2>What is ACM?</h2>
 <p><strong>Red Hat ACM</strong> provides multi-cluster lifecycle management: provision clusters, enforce governance policies, deliver applications, aggregate observability, and search resources across the fleet.</p>
 
+<div class="callout">
+<strong>MCE vs ACM</strong> &mdash; <strong>MultiClusterEngine (MCE)</strong> is the foundation operator handling cluster <em>lifecycle</em>: Hive (IPI provisioning), Assisted Installer, Hosted Control Planes (HyperShift), and the klusterlet registration. <strong>ACM (MultiClusterHub)</strong> installs MCE and layers fleet <em>management</em> on top: Governance (GRC), Application delivery, Observability, and Search. MCE ships standalone with every OpenShift subscription; the full ACM feature set requires an ACM subscription.
+</div>
+
 <h2>Hub &amp; Spoke Architecture</h2>
 <div class="diagram-box">
   <div class="diagram-title">ACM Hub-Spoke Model</div>
@@ -4909,8 +4913,8 @@ EOF
     <g class="d-node" data-tip="acm-hub">
       <rect x="290" y="15" width="240" height="85" rx="12" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".5" stroke-width="1.5"/>
       <text x="410" y="42" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="13">ACM HUB</text>
-      <text x="410" y="60" text-anchor="middle" fill="var(--text)" font-size="9">Hive | GRC | App Lifecycle</text>
-      <text x="410" y="76" text-anchor="middle" fill="var(--text)" font-size="9">Observability | Search</text>
+      <text x="410" y="60" text-anchor="middle" fill="var(--text)" font-size="9">GRC | App Lifecycle | Observability | Search</text>
+      <text x="410" y="76" text-anchor="middle" fill="var(--text)" font-size="9">MCE: Hive | HyperShift | Assisted Installer</text>
       <text x="410" y="92" text-anchor="middle" fill="var(--text-muted)" font-size="8">Management cluster</text>
     </g>
     <!-- Spokes -->
@@ -4951,15 +4955,18 @@ EOF
 
 <div class="diagram-box">
   <div class="diagram-title">ACM Console &mdash; Cluster Lifecycle</div>
-  <img src="images/acm-lifecycle.png" alt="ACM Clusters view — managed cluster list with status, infrastructure, OCP version, labels, and node counts" style="width:100%;border-radius:8px"/>
+  <img loading="lazy" src="images/acm-lifecycle.png" alt="ACM Clusters view — managed cluster list with status, infrastructure, OCP version, labels, and node counts" style="width:100%;border-radius:8px"/>
 </div>
+
+<h3>Hosted Control Planes (HyperShift)</h3>
+<p>Through MCE, the ACM hub can run <strong>Hosted Control Planes</strong>: spoke clusters whose control planes (API server, etcd, controllers) run as pods <em>on the hub</em>, while only worker nodes live at the spoke site. This cuts per-cluster cost (no 3 dedicated control-plane machines), speeds up cluster creation to minutes, and decouples control-plane and worker upgrades &mdash; widely used for fleet, edge, and telco deployments.</p>
 
 <h2>Governance &amp; Policy Framework</h2>
 <p>ACM&rsquo;s <strong>Governance, Risk &amp; Compliance (GRC)</strong> framework lets you define policies on the hub and distribute them to managed clusters. Each policy specifies <em>what</em> to check, <em>where</em> to apply it (via Placement), and <em>how</em> to respond (inform or enforce).</p>
 
 <div class="diagram-box">
   <div class="diagram-title">ACM Console &mdash; Governance Overview</div>
-  <img src="images/acm-gevernance.png" alt="ACM Governance dashboard — policy set violations, policy violations, cluster compliance, standards, categories, and controls" style="width:100%;border-radius:8px"/>
+  <img loading="lazy" src="images/acm-governance.png" alt="ACM Governance dashboard — policy set violations, policy violations, cluster compliance, standards, categories, and controls" style="width:100%;border-radius:8px"/>
 </div>
 
 <div class="diagram-box">
@@ -5014,7 +5021,7 @@ EOF
     <text x="245" y="120" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="8" letter-spacing=".06em">POLICY TEMPLATES</text>
     <g class="d-node" data-tip="acm-config-pol"><rect x="30" y="130" width="135" height="22" rx="5" fill="var(--bg-elevated)" stroke="var(--blue)" stroke-opacity=".3"/><text x="97" y="145" text-anchor="middle" fill="var(--blue)" font-size="8" font-weight="600">ConfigurationPolicy</text></g>
     <g class="d-node" data-tip="acm-cert-pol"><rect x="175" y="130" width="125" height="22" rx="5" fill="var(--bg-elevated)" stroke="var(--amber)" stroke-opacity=".3"/><text x="237" y="145" text-anchor="middle" fill="var(--amber)" font-size="8" font-weight="600">CertificatePolicy</text></g>
-    <g class="d-node" data-tip="acm-iam-pol"><rect x="310" y="130" width="100" height="22" rx="5" fill="var(--bg-elevated)" stroke="var(--purple)" stroke-opacity=".3"/><text x="360" y="145" text-anchor="middle" fill="var(--purple)" font-size="8" font-weight="600">IamPolicy</text></g>
+    <g class="d-node" data-tip="acm-gatekeeper-pol"><rect x="310" y="130" width="100" height="22" rx="5" fill="var(--bg-elevated)" stroke="var(--purple)" stroke-opacity=".3"/><text x="360" y="145" text-anchor="middle" fill="var(--purple)" font-size="8" font-weight="600">Gatekeeper</text></g>
     <g class="d-node" data-tip="acm-operator-pol"><rect x="420" y="130" width="115" height="22" rx="5" fill="var(--bg-elevated)" stroke="var(--teal)" stroke-opacity=".3"/><text x="477" y="145" text-anchor="middle" fill="var(--teal)" font-size="8" font-weight="600">OperatorPolicy</text></g>
 
     <!-- Arrows down to managed clusters -->
@@ -5063,14 +5070,31 @@ EOF
 <tbody>
 <tr><td><strong>ConfigurationPolicy</strong></td><td>Enforce or audit any K8s resource configuration</td><td>Require resource limits on all Deployments</td></tr>
 <tr><td><strong>CertificatePolicy</strong></td><td>Monitor certificate expiration</td><td>Alert when certs expire within 30 days</td></tr>
-<tr><td><strong>IamPolicy</strong></td><td>Limit privileged role bindings</td><td>Max 3 cluster-admin bindings per cluster</td></tr>
 <tr><td><strong>OperatorPolicy</strong></td><td>Ensure operators are installed &amp; configured</td><td>Require compliance-operator on all clusters</td></tr>
+<tr><td><strong>Gatekeeper constraint</strong></td><td>Admission-time enforcement via OPA (ACM deploys &amp; manages Gatekeeper)</td><td>Reject pods without required labels at admission</td></tr>
 </tbody>
 </table>
 
+<div class="callout warn">
+<strong>IamPolicy is removed.</strong> The legacy <code>IamPolicy</code> template (limit cluster-admin role bindings) is deprecated and removed in current ACM releases. Replace it with a Gatekeeper constraint or a <code>ConfigurationPolicy</code> that audits ClusterRoleBindings.
+</div>
+
+<h4>Live Example &mdash; CertificatePolicy Catching an Expiring Certificate</h4>
+<p>A <code>CertificatePolicy</code> named <strong>check-cert</strong> monitors TLS secrets in the <code>swongpai-helm</code> namespace with a minimum duration of 300 hours. When a certificate falls below that threshold, ACM flags it as <strong>NonCompliant</strong> and shows exactly which secret is about to expire.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">Step 1 &mdash; CertificatePolicy Configuration (minimum duration: 300h)</div>
+  <img loading="lazy" src="images/acm-govern-check-cert-0.png" alt="ACM Governance — Edit CertificatePolicy check-cert, minimum duration 300h, namespace swongpai-helm" style="width:100%;border-radius:8px"/>
+</div>
+
+<div class="diagram-box">
+  <div class="diagram-title">Step 2 &mdash; Violation Detected: apps-wildcard-tls Expiring</div>
+  <img loading="lazy" src="images/acm-govern-check-cert-1.png" alt="ACM Governance — policy-certificate shows Violations status, related resource apps-wildcard-tls Secret expiring on 2026-06-10" style="width:100%;border-radius:8px"/>
+</div>
+
 <div class="diagram-box">
   <div class="diagram-title">ACM Console &mdash; Policy Sets</div>
-  <img src="images/acm-governance-2.png" alt="ACM Policy Sets view — bundle-init policy set with cluster violations, individual policy status and remediation actions" style="width:100%;border-radius:8px"/>
+  <img loading="lazy" src="images/acm-governance-2.png" alt="ACM Policy Sets view — bundle-init policy set with cluster violations, individual policy status and remediation actions" style="width:100%;border-radius:8px"/>
 </div>
 
 <h3>How Policy Works</h3>
@@ -5164,10 +5188,10 @@ spec:
 </div>
 
 <h4>Full Policy Wrapper</h4>
-<p>A <code>ConfigurationPolicy</code> doesn&rsquo;t work alone &mdash; it must be wrapped in a <code>Policy</code> and bound to clusters via <code>PlacementBinding</code> + <code>Placement</code>. Here&rsquo;s the complete set of three resources:</p>
+<p>A <code>ConfigurationPolicy</code> doesn&rsquo;t work alone &mdash; it must be wrapped in a <code>Policy</code> and bound to clusters via <code>PlacementBinding</code> + <code>Placement</code>. One frequently missed prerequisite: <strong>Placement only selects clusters from ManagedClusterSets that are bound to the policy namespace</strong> via a <code>ManagedClusterSetBinding</code>. Here&rsquo;s the complete set of resources:</p>
 
 <div class="acc-item">
-  <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> Complete Policy + PlacementBinding + Placement YAML</div>
+  <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> Complete Policy + ManagedClusterSetBinding + Placement + PlacementBinding YAML</div>
   <div class="acc-body">
 <pre><code># 1. Policy — wraps ConfigurationPolicy template
 apiVersion: policy.open-cluster-management.io/v1
@@ -5208,7 +5232,17 @@ spec:
                         cpu: "500m"
                         memory: "512Mi"
 ---
-# 2. Placement — select target clusters
+# 2. ManagedClusterSetBinding — Placement only selects clusters from
+#    ManagedClusterSets bound to the policy namespace
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: global
+  namespace: open-cluster-management-policies
+spec:
+  clusterSet: global
+---
+# 3. Placement — select target clusters
 apiVersion: cluster.open-cluster-management.io/v1beta1
 kind: Placement
 metadata:
@@ -5223,7 +5257,7 @@ spec:
               operator: In
               values: ["production", "staging"]
 ---
-# 3. PlacementBinding — links Policy ↔ Placement
+# 4. PlacementBinding — links Policy ↔ Placement
 apiVersion: policy.open-cluster-management.io/v1
 kind: PlacementBinding
 metadata:
@@ -5331,7 +5365,11 @@ generators:
 </div>
 
 <h2>Application Deployment</h2>
-<p>ACM provides two primary models for delivering applications across managed clusters: the built-in <strong>Subscription</strong> model and <strong>ArgoCD-based GitOps</strong> via ApplicationSets with ACM Placement.</p>
+<p>ACM supports two models for delivering applications across managed clusters: the legacy <strong>Subscription</strong> model and <strong>ArgoCD-based GitOps</strong> via ApplicationSets with ACM Placement.</p>
+
+<div class="callout warn">
+<strong>Subscription model is deprecated.</strong> Starting with ACM 2.12, the Subscription model (Channel + Subscription + PlacementRule) is deprecated. Red Hat recommends migrating to <strong>ArgoCD ApplicationSet with ACM Placement</strong> for all multi-cluster application delivery. The Subscription model will be removed in a future release.
+</div>
 
 <div class="diagram-box">
   <div class="diagram-title">App Delivery Models &mdash; Subscription vs GitOps (ArgoCD)</div>
@@ -5340,7 +5378,7 @@ generators:
 
     <!-- Left lane: Subscription -->
     <rect x="10" y="8" width="390" height="352" rx="10" fill="rgba(91,156,245,.02)" stroke="var(--blue)" stroke-opacity=".15"/>
-    <text x="205" y="30" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="11">Subscription Model (Built-in)</text>
+    <text x="205" y="30" text-anchor="middle" fill="var(--text-muted)" font-weight="700" font-size="11">Subscription Model (Deprecated)</text>
 
     <g class="d-node" data-tip="acm-channel">
       <rect x="115" y="45" width="180" height="45" rx="8" fill="rgba(167,139,250,.06)" stroke="var(--purple)" stroke-opacity=".5"/>
@@ -5428,8 +5466,8 @@ generators:
 <div class="card-grid">
   <div class="card-sm">
     <div class="card-icon">&#128230;</div>
-    <div class="card-title">Subscription Model</div>
-    <div class="card-desc">Hub-side controller pushes resources to managed clusters. Good for simple apps. Uses Channel + Subscription + PlacementRule CRDs.</div>
+    <div class="card-title">Subscription Model (Deprecated)</div>
+    <div class="card-desc">Hub-side controller pushes resources to managed clusters. Uses Channel + Subscription + PlacementRule CRDs. <strong>Deprecated since ACM 2.12</strong> &mdash; migrate to ApplicationSet.</div>
   </div>
   <div class="card-sm">
     <div class="card-icon">&#128260;</div>
@@ -5625,6 +5663,16 @@ config:
   </div>
 </div>
 
+<h2>What's New in Recent ACM Releases</h2>
+<table>
+<thead><tr><th>Version</th><th>Highlights</th></tr></thead>
+<tbody>
+<tr><td><strong>2.14</strong></td><td>Observability backup/restore for hub migrations. <code>namespaceMapping</code> on restore (OADP) &mdash; restore resources into a different namespace.</td></tr>
+<tr><td><strong>2.15</strong></td><td><strong>Fleet virtualization perspective</strong> &mdash; manage OpenShift Virtualization VMs across all clusters from the hub. Right-sizing recommendations for cluster resources. <strong>Argo CD agent</strong> (Tech Preview) &mdash; pull-based GitOps that scales to large/edge fleets.</td></tr>
+<tr><td><strong>2.16</strong></td><td>Latest release &mdash; see the <a href="https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_management_for_kubernetes/2.16/html/release_notes/acm-release-notes" target="_blank" rel="noopener">ACM 2.16 release notes</a> for details.</td></tr>
+</tbody>
+</table>
+
 <button class="mark-read" onclick="markRead(this,8)">&#10003; Mark section as read</button>
 </div>
 
@@ -5645,7 +5693,7 @@ config:
   <div class="card-sm"><div class="card-icon">&#128737;</div><div class="card-title">Vulnerability Management</div><div class="card-desc">Scan images for CVEs. Prioritize by risk score combining CVSS, exploit availability, and deployment exposure. Track fix status.</div></div>
   <div class="card-sm"><div class="card-icon">&#9745;</div><div class="card-title">Compliance Scanning</div><div class="card-desc">CIS Kubernetes, NIST SP 800-190, PCI-DSS, HIPAA, NERC-CIP checks. Continuous compliance monitoring with exportable reports.</div></div>
   <div class="card-sm"><div class="card-icon">&#128279;</div><div class="card-title">Network Segmentation</div><div class="card-desc">Visualize actual network flows between pods. Auto-generate NetworkPolicies from observed traffic. Detect unexpected connections.</div></div>
-  <div class="card-sm"><div class="card-icon">&#9888;</div><div class="card-title">Runtime Detection</div><div class="card-desc">eBPF-based process, network, and file monitoring. Detect crypto mining, shell-in-container, privilege escalation. Kill or alert.</div></div>
+  <div class="card-sm"><div class="card-icon">&#9888;</div><div class="card-title">Runtime Detection</div><div class="card-desc">CO-RE BPF-based process, network, and file monitoring. Detect crypto mining, shell-in-container, privilege escalation. Kill or alert.</div></div>
   <div class="card-sm"><div class="card-icon">&#9878;</div><div class="card-title">Risk Profiling</div><div class="card-desc">Score every deployment by combined risk: CVE severity, misconfigurations, network exposure, runtime activity. Prioritize remediation.</div></div>
   <div class="card-sm"><div class="card-icon">&#9881;</div><div class="card-title">CI/CD Integration</div><div class="card-desc">roxctl CLI in pipelines. Fail builds on policy violations. Shift security left — catch issues before deploy, not after.</div></div>
 </div>
@@ -5690,7 +5738,7 @@ config:
     <g class="d-node" data-tip="acs-policy-engine">
       <rect x="495" y="52" width="145" height="48" rx="8" fill="var(--rose)" opacity="0.12" stroke="var(--rose)"/>
       <text x="568" y="72" text-anchor="middle" fill="var(--rose)" font-size="10" font-weight="600">Policy Engine</text>
-      <text x="568" y="88" text-anchor="middle" fill="var(--text-dim)" font-size="8">70+ built-in policies</text>
+      <text x="568" y="88" text-anchor="middle" fill="var(--text-dim)" font-size="8">Built-in policy library</text>
     </g>
 
     <!-- Central DB -->
@@ -5741,7 +5789,7 @@ config:
 
     <g class="d-node" data-tip="acs-collector">
       <rect x="55" y="320" width="200" height="35" rx="6" fill="var(--amber)" opacity="0.08" stroke="var(--amber)" stroke-opacity="0.3"/>
-      <text x="155" y="337" text-anchor="middle" fill="var(--amber)" font-size="9" font-weight="600">Collector (eBPF)</text>
+      <text x="155" y="337" text-anchor="middle" fill="var(--amber)" font-size="9" font-weight="600">Collector (CO-RE BPF)</text>
       <text x="155" y="350" text-anchor="middle" fill="var(--text-dim)" font-size="7">Process, network &amp; file monitoring</text>
     </g>
 
@@ -5758,7 +5806,7 @@ config:
     <text x="410" y="295" text-anchor="middle" fill="var(--teal)" font-size="9" font-weight="600">Sensor</text>
     <text x="410" y="308" text-anchor="middle" fill="var(--text-dim)" font-size="7">Watches K8s API &amp; image metadata</text>
     <rect x="310" y="320" width="200" height="35" rx="6" fill="var(--amber)" opacity="0.08" stroke="var(--amber)" stroke-opacity="0.3"/>
-    <text x="410" y="337" text-anchor="middle" fill="var(--amber)" font-size="9" font-weight="600">Collector (eBPF)</text>
+    <text x="410" y="337" text-anchor="middle" fill="var(--amber)" font-size="9" font-weight="600">Collector (CO-RE BPF)</text>
     <text x="410" y="350" text-anchor="middle" fill="var(--text-dim)" font-size="7">Process, network &amp; file monitoring</text>
     <rect x="310" y="362" width="200" height="35" rx="6" fill="var(--rose)" opacity="0.08" stroke="var(--rose)" stroke-opacity="0.3"/>
     <text x="410" y="379" text-anchor="middle" fill="var(--rose)" font-size="9" font-weight="600">Admission Controller</text>
@@ -5771,7 +5819,7 @@ config:
     <text x="665" y="295" text-anchor="middle" fill="var(--teal)" font-size="9" font-weight="600">Sensor</text>
     <text x="665" y="308" text-anchor="middle" fill="var(--text-dim)" font-size="7">Watches K8s API &amp; image metadata</text>
     <rect x="565" y="320" width="200" height="35" rx="6" fill="var(--amber)" opacity="0.08" stroke="var(--amber)" stroke-opacity="0.3"/>
-    <text x="665" y="337" text-anchor="middle" fill="var(--amber)" font-size="9" font-weight="600">Collector (eBPF)</text>
+    <text x="665" y="337" text-anchor="middle" fill="var(--amber)" font-size="9" font-weight="600">Collector (CO-RE BPF)</text>
     <text x="665" y="350" text-anchor="middle" fill="var(--text-dim)" font-size="7">Process, network &amp; file monitoring</text>
     <rect x="565" y="362" width="200" height="35" rx="6" fill="var(--rose)" opacity="0.08" stroke="var(--rose)" stroke-opacity="0.3"/>
     <text x="665" y="379" text-anchor="middle" fill="var(--rose)" font-size="9" font-weight="600">Admission Controller</text>
@@ -5780,7 +5828,7 @@ config:
 </div>
 
 <h2>Policy &amp; Violation Flow</h2>
-<p>ACS ships with <strong>70+ built-in security policies</strong> covering CVEs, misconfigurations, runtime anomalies, and compliance standards. Policies evaluate at build, deploy, or runtime &mdash; violations trigger alerts, block deployments, or kill pods depending on enforcement configuration.</p>
+<p>ACS ships with an extensive <strong>built-in security policy library</strong> covering CVEs, misconfigurations, runtime anomalies, and compliance standards. Policies evaluate at build, deploy, or runtime &mdash; violations trigger alerts, block deployments, or kill pods depending on enforcement configuration. Policies can also be managed declaratively as code via the <code>SecurityPolicy</code> CRD (GitOps-friendly).</p>
 
 <div class="diagram-box">
   <div class="diagram-title">Policy Evaluation &amp; Enforcement Flow</div>
@@ -5813,7 +5861,7 @@ config:
     <g class="d-node" data-tip="acs-eval-runtime">
       <rect x="205" y="110" width="170" height="40" rx="8" fill="var(--rose)" opacity="0.10" stroke="var(--rose)"/>
       <text x="290" y="128" text-anchor="middle" fill="var(--rose)" font-size="10" font-weight="600">&#128165; RUNTIME Check</text>
-      <text x="290" y="143" text-anchor="middle" fill="var(--text-dim)" font-size="8">eBPF Collector</text>
+      <text x="290" y="143" text-anchor="middle" fill="var(--text-dim)" font-size="8">Collector (CO-RE BPF)</text>
     </g>
 
     <!-- Arrows to violation -->
@@ -5870,7 +5918,7 @@ config:
     <text x="710" y="213" text-anchor="middle" fill="var(--green)" font-size="9" font-weight="600">COMPLIANCE</text>
     <text x="710" y="230" text-anchor="middle" fill="var(--text-dim)" font-size="8">&bull; CIS Kubernetes Benchmark</text>
     <text x="710" y="245" text-anchor="middle" fill="var(--text-dim)" font-size="8">&bull; NIST SP 800-190</text>
-    <text x="710" y="260" text-anchor="middle" fill="var(--text-dim)" font-size="8">&bull; PCI-DSS v3.2</text>
+    <text x="710" y="260" text-anchor="middle" fill="var(--text-dim)" font-size="8">&bull; PCI DSS 4.0</text>
     <text x="710" y="275" text-anchor="middle" fill="var(--text-dim)" font-size="8">&bull; HIPAA</text>
   </svg>
 </div>
@@ -5933,27 +5981,27 @@ metadata:
 spec:
   clusterName: production
   centralEndpoint: central-stackrox.apps.hub.example.com:443
-  admissionControl:
+  admissionControl:               # 4.9+ console: single ON/OFF enforcement toggle
     listenOnCreates: true
     listenOnUpdates: true
     listenOnEvents: true          # runtime enforcement
     contactImageScanners: ScanIfMissing
   perNode:
     collector:
-      collection: EBPF            # eBPF preferred over kernel module
+      collection: CORE_BPF        # only supported method since ACS 4.5
       imageFlavor: Regular
     taintToleration: TolerateTaints</code></pre>
   </div>
 </div>
 
 <div class="callout success">
-<strong>Recommendation:</strong> Deploy Central on the ACM hub cluster for unified management. Use eBPF collection mode (not kernel module) for lower overhead and broader compatibility. Start with <code>inform</code> enforcement on all policies &mdash; switch to <code>enforce</code> per-policy after tuning to avoid false-positive blocks in production.
+<strong>Recommendation:</strong> Deploy Central on the ACM hub cluster for unified management. Collector uses <strong>CO-RE BPF</strong> (Compile Once &ndash; Run Everywhere) &mdash; the only collection method since ACS 4.5; no per-kernel drivers or modules needed. Start with <code>inform</code> enforcement on all policies &mdash; switch to <code>enforce</code> per-policy after tuning to avoid false-positive blocks in production.
 </div>
 
 <h2>Key Features Deep Dive</h2>
 
 <h3>Vulnerability Management</h3>
-<p>ACS scans images using <strong>Scanner V4</strong> and correlates CVEs with deployment context: is the vulnerable package in the running container? Is the port exposed? Is there a known exploit? This produces a <strong>risk score</strong> that prioritizes remediation beyond raw CVSS.</p>
+<p>ACS scans images using <strong>Scanner V4</strong> &mdash; the default scanner since ACS 4.8 (the legacy StackRox Scanner is deprecated) &mdash; and correlates CVEs with deployment context: is the vulnerable package in the running container? Is the port exposed? Is there a known exploit? This produces a <strong>risk score</strong> that prioritizes remediation beyond raw CVSS. Since ACS 4.10, base-image layers are distinguished from application-added layers, so platform and app teams each see the CVEs they own.</p>
 <table>
 <tr><th>Capability</th><th>Detail</th></tr>
 <tr><td>Image scanning</td><td>Scans on first deploy + continuous re-scan as new CVEs are published</td></tr>
@@ -5964,7 +6012,7 @@ spec:
 
 <div class="diagram-box">
   <div class="diagram-title">ACS Console &mdash; Vulnerability Management</div>
-  <img src="images/acs-vulnebility-mgmt.png" alt="ACS Vulnerability Management — workload CVE findings filtered by namespace, showing deployments with CVE severity breakdown" style="width:100%;border-radius:8px"/>
+  <img loading="lazy" src="images/acs-vulnerability-mgmt.png" alt="ACS Vulnerability Management — workload CVE findings filtered by namespace, showing deployments with CVE severity breakdown" style="width:100%;border-radius:8px"/>
 </div>
 
 <h3>Network Segmentation</h3>
@@ -5978,11 +6026,11 @@ spec:
 
 <div class="diagram-box">
   <div class="diagram-title">ACS Console &mdash; Network Graph</div>
-  <img src="images/acs-network-segment.png" alt="ACS Network Graph — visualizing pod-to-pod traffic flows with baseline and anomalous flow detection" style="width:100%;border-radius:8px"/>
+  <img loading="lazy" src="images/acs-network-segment.png" alt="ACS Network Graph — visualizing pod-to-pod traffic flows with baseline and anomalous flow detection" style="width:100%;border-radius:8px"/>
 </div>
 
 <h3>Runtime Detection</h3>
-<p>Collector uses <strong>eBPF probes</strong> on each node to monitor all container processes, network connections, and file access in real-time &mdash; without modifying containers or requiring sidecars.</p>
+<p>Collector uses <strong>CO-RE BPF probes</strong> (Compile Once &ndash; Run Everywhere eBPF) on each node to monitor all container processes, network connections, and file access in real-time &mdash; without modifying containers, requiring sidecars, or loading per-kernel drivers.</p>
 <ul>
 <li><strong>Process monitoring</strong> &mdash; detect unexpected binaries (crypto miners, reverse shells, nmap)</li>
 <li><strong>Network monitoring</strong> &mdash; detect unexpected outbound connections or lateral movement</li>
@@ -5990,18 +6038,36 @@ spec:
 <li><strong>Response actions</strong> &mdash; alert only, scale to zero, or kill pod immediately</li>
 </ul>
 
+<h4>Live Example &mdash; Process Discovery in Action</h4>
+<p>Run a few commands inside a pod terminal, and Collector picks them up instantly. Below: <code>curl</code> and <code>tracepath</code> executed in a toolbox pod, then flagged by ACS under <strong>Risk &rarr; Process Discovery</strong> with full parent-process lineage and timestamps.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">Step 1 &mdash; Commands Executed in Pod Terminal</div>
+  <img loading="lazy" src="images/acs-process-test.png" alt="OpenShift console pod terminal — running curl google.com and tracepath google.com inside a ubi9-toolbox container" style="width:100%;border-radius:8px"/>
+</div>
+
+<div class="diagram-box">
+  <div class="diagram-title">Step 2 &mdash; ACS Process Discovery Flags the Activity</div>
+  <img loading="lazy" src="images/acs-process-mon-0.png" alt="ACS Risk view — Process Discovery tab showing flagged processes /usr/bin/curl, /usr/bin/sh, /usr/sbin/tracepath in the ubi9-toolbox container with event timeline counts" style="width:100%;border-radius:8px"/>
+</div>
+
+<div class="diagram-box">
+  <div class="diagram-title">Step 3 &mdash; Event Timeline with Process Lineage</div>
+  <img loading="lazy" src="images/acs-process-mon-1.png" alt="ACS Event Timeline detail — process activity entries for sh, curl and tracepath with arguments, parent process names, UIDs and timestamps" style="width:100%;border-radius:8px"/>
+</div>
+
 <div class="diagram-box">
   <div class="diagram-title">ACS Console &mdash; Violations</div>
-  <img src="images/acs-runtime-detect.png" alt="ACS Violations view — policy violations by severity, category, and lifecycle stage for workloads" style="width:100%;border-radius:8px"/>
+  <img loading="lazy" src="images/acs-runtime-detect.png" alt="ACS Violations view — policy violations by severity, category, and lifecycle stage for workloads" style="width:100%;border-radius:8px"/>
 </div>
 
 <h3>Compliance Scanning</h3>
-<p>ACS continuously evaluates clusters against industry compliance standards and generates audit-ready reports.</p>
+<p>ACS continuously evaluates clusters against industry compliance standards and generates audit-ready reports. Current ACS delivers this through <strong>Compliance v2</strong>: the <strong>Compliance Operator</strong> runs the actual node/platform scans on each secured cluster, while ACS schedules scans, aggregates fleet-wide results, and produces reports.</p>
 <ul>
-<li>Supported standards: CIS Kubernetes Benchmark, NIST SP 800-190, PCI-DSS, HIPAA, NERC-CIP</li>
+<li>Supported standards: CIS Kubernetes Benchmark, NIST SP 800-190, PCI DSS 4.0, HIPAA, NERC-CIP</li>
 <li>Per-cluster and per-namespace compliance dashboards</li>
 <li>Export PDF/CSV reports for auditors</li>
-<li>Integrates with the Compliance Operator for node-level CIS checks</li>
+<li>Requires the Compliance Operator installed on each secured cluster for node-level checks</li>
 </ul>
 
 <h3>CI/CD Integration (roxctl)</h3>
@@ -6012,6 +6078,46 @@ spec:
 <li><code>roxctl deployment check</code> &mdash; validate deployment YAML against policies</li>
 <li>Exit code non-zero on policy violation &mdash; fails the pipeline</li>
 </ul>
+
+<h3>Policy as Code (SecurityPolicy CRD)</h3>
+<p>ACS policies can be managed declaratively with the <code>SecurityPolicy</code> custom resource on the Central cluster &mdash; store policies in Git, apply via ArgoCD, and keep security rules under the same GitOps review flow as application manifests.</p>
+<div class="acc-item">
+  <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> SecurityPolicy CRD &mdash; declarative ACS policy</div>
+  <div class="acc-body">
+<pre><code>apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: no-latest-tag
+  namespace: stackrox          # must be on the Central cluster
+spec:
+  policyName: "Image uses :latest tag"
+  description: "Forbid mutable :latest tags in production"
+  severity: HIGH_SEVERITY
+  categories:
+    - DevOps Best Practices
+  lifecycleStages:
+    - BUILD
+    - DEPLOY
+  scope:
+    - cluster: production
+  policySections:
+    - sectionName: Image tag
+      policyGroups:
+        - fieldName: Image Tag
+          values:
+            - value: latest</code></pre>
+  </div>
+</div>
+
+<h2>What's New in Recent ACS Releases</h2>
+<table>
+<thead><tr><th>Version</th><th>Highlights</th></tr></thead>
+<tbody>
+<tr><td><strong>4.8</strong></td><td>Scanner V4 becomes the <strong>default scanner</strong> (StackRox Scanner deprecated). External IP visibility in the network graph.</td></tr>
+<tr><td><strong>4.9</strong></td><td>Auto-locking process baselines (scope a policy to a namespace &mdash; new deployments alert from Day 1). Simplified admission controller: single ON/OFF enforcement toggle. Machine-to-machine OIDC auth for API automation. Cluster registration secret default expiry reduced to 1 hour.</td></tr>
+<tr><td><strong>4.10</strong></td><td><strong>VM vulnerability scanning</strong> for OpenShift Virtualization (Tech Preview). OpenShift Console security plugin &mdash; vulnerability data inside the OCP console (Tech Preview). Base-image vs application-layer CVE separation. File activity monitoring (Tech Preview). CVE fix-date policy criterion for remediation SLAs.</td></tr>
+</tbody>
+</table>
 
 <button class="mark-read" onclick="markRead(this,9)">&#10003; Mark section as read</button>
 </div>
@@ -6180,20 +6286,24 @@ spec:
 <p>ODF exposes three distinct storage types. Choose based on access mode requirements and workload characteristics.</p>
 <table>
 <tr><th>Type</th><th>Protocol</th><th>Access Mode</th><th>Use Cases</th><th>Backing Service</th><th>StorageClass</th></tr>
-<tr><td><strong>RBD (Block)</strong></td><td>Kernel RBD</td><td>RWO, RWOP</td><td>Databases (PostgreSQL, MySQL), VMs, general-purpose</td><td>Ceph RADOS Block Device</td><td><code>ocs-storagecluster-ceph-rbd</code></td></tr>
+<tr><td><strong>RBD (Block)</strong></td><td>Kernel RBD</td><td>RWO, RWOP, RWX (Block)</td><td>Databases (PostgreSQL, MySQL), VMs, general-purpose</td><td>Ceph RADOS Block Device</td><td><code>ocs-storagecluster-ceph-rbd</code></td></tr>
 <tr><td><strong>CephFS (File)</strong></td><td>POSIX filesystem</td><td>RWX, RWO</td><td>Shared config, CMS uploads, ML training data, CI artifacts</td><td>Ceph MDS + OSDs</td><td><code>ocs-storagecluster-cephfs</code></td></tr>
 <tr><td><strong>NooBaa MCG (Object)</strong></td><td>S3 API</td><td>N/A (API)</td><td>Backups (OADP), log archives (Loki), ML datasets, multi-cloud tiering</td><td>NooBaa + backing stores</td><td><code>openshift-storage.noobaa.io</code></td></tr>
 </table>
 
+<div class="callout">
+<strong>OpenShift Virtualization:</strong> ODF also creates <code>ocs-storagecluster-ceph-rbd-virtualization</code> &mdash; an RBD StorageClass tuned for VM disks (RWX block mode for live migration). Use it as the default StorageClass for VMs instead of the regular RBD class.
+</div>
+
 <h2>Deploying ODF on OpenShift</h2>
-<p>ODF is deployed via the <strong>ODF Operator</strong> from OperatorHub. The operator installs the Rook-Ceph operator, NooBaa operator, and CSI drivers. <strong>Internal mode</strong> uses local disks on labeled nodes; <strong>external mode</strong> connects to a pre-existing Ceph cluster.</p>
+<p>ODF is deployed via the <strong>ODF Operator</strong> from OperatorHub. The operator installs the Rook-Ceph operator, NooBaa operator, and CSI drivers. <strong>Internal mode</strong> uses local disks on labeled nodes; <strong>external mode</strong> connects to a pre-existing Ceph cluster. A third option, <strong>provider mode</strong>, lets one dedicated ODF cluster serve storage to multiple consumer OpenShift clusters.</p>
 
 <h3>Deployment Steps</h3>
 <table>
 <tr><th>#</th><th>Step</th><th>Detail</th></tr>
 <tr><td>1</td><td>Label storage nodes</td><td><code>oc label node &lt;name&gt; cluster.ocs.openshift.io/openshift-storage=""</code> &mdash; minimum 3 nodes</td></tr>
 <tr><td>2</td><td>Install ODF Operator</td><td>OperatorHub &rarr; Red Hat OpenShift Data Foundation &rarr; Install (creates <code>openshift-storage</code> namespace)</td></tr>
-<tr><td>3</td><td>Create StorageSystem</td><td>Console &rarr; Installed Operators &rarr; ODF &rarr; Create StorageSystem &rarr; select internal-attached devices</td></tr>
+<tr><td>3</td><td>Create StorageCluster</td><td>Console &rarr; Installed Operators &rarr; ODF &rarr; Create StorageCluster &rarr; select internal-attached devices <em>(the StorageSystem CRD was removed in ODF 4.19 &mdash; StorageCluster is created directly)</em></td></tr>
 <tr><td>4</td><td>Verify StorageClasses</td><td><code>oc get sc</code> &mdash; confirm <code>ocs-storagecluster-ceph-rbd</code>, <code>ocs-storagecluster-cephfs</code>, <code>openshift-storage.noobaa.io</code></td></tr>
 <tr><td>5</td><td>Create first PVC</td><td>Use new StorageClasses in PVC manifests or set <code>ocs-storagecluster-ceph-rbd</code> as default StorageClass</td></tr>
 </table>
@@ -6282,10 +6392,10 @@ spec:
 <h3>Replication &amp; Erasure Coding</h3>
 <p>ODF supports two data protection strategies. <strong>Replication</strong> (default) writes N full copies across failure domains. <strong>Erasure coding</strong> splits data into data + parity chunks for better space efficiency at higher CPU cost.</p>
 <ul>
-<li><strong>3-way replication</strong> (default) &mdash; Every object stored 3 times across 3 failure domains. Tolerates loss of any 2 copies. ~33% storage efficiency. Best for performance-sensitive workloads.</li>
+<li><strong>3-way replication</strong> (default) &mdash; Every object stored 3 times across 3 failure domains. Data survives loss of 2 replicas; cluster tolerates loss of 1 failure domain while remaining fully available. ~33% storage efficiency. Best for performance-sensitive workloads.</li>
 <li><strong>Erasure coding (EC)</strong> &mdash; Splits data into k data chunks + m parity chunks (e.g., 4+2). Tolerates loss of m chunks. ~67% efficiency (4+2). Higher CPU overhead; best for large, cold, or archival data.</li>
 <li><strong>Pool-level setting</strong> &mdash; Each Ceph pool is either replicated or erasure-coded. RBD pools are typically replicated (latency-sensitive). CephFS data pools can use EC for bulk storage.</li>
-<li><strong>Minimum cluster size</strong> &mdash; 3 nodes for replication, k+m nodes for EC. ODF internal mode requires minimum 3 nodes.</li>
+<li><strong>Minimum cluster size</strong> &mdash; 3 failure domains (hosts) for replication, k+m failure domains for EC. ODF internal mode requires minimum 3 nodes.</li>
 </ul>
 
 <h3>Snapshots &amp; Clones</h3>
@@ -6305,6 +6415,91 @@ spec:
 <li><strong>ObjectBucketClaim (OBC)</strong> &mdash; Kubernetes-native way to provision S3 buckets. Creates a ConfigMap (endpoint, bucket name) and Secret (access key, secret key) in the claiming namespace.</li>
 <li><strong>Use cases</strong> &mdash; OADP backup target, ACM observability (Thanos), Loki log storage, ML datasets, and application object storage without external S3 dependency.</li>
 </ul>
+
+<h3>Disaster Recovery: Metro-DR vs Regional-DR</h3>
+<p>ODF supports two DR topologies, both orchestrated with <strong>ACM</strong> and the <strong>Ramen</strong> (OpenShift DR) operators. <strong>Metro-DR</strong> stretches a single Ceph cluster synchronously across two sites (RPO zero, distance-limited). <strong>Regional-DR</strong> asynchronously replicates between two independent ODF clusters (minutes of RPO, unlimited distance). Since ODF 4.20, DR-protected VMs can fail over <em>individually</em> rather than only as a whole namespace.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">ODF Disaster Recovery Topologies</div>
+  <svg width="820" height="330" viewBox="0 0 820 330" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs><marker id="odf-dr-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--text-dim)"/></marker></defs>
+
+    <!-- Left lane: Metro-DR -->
+    <rect x="10" y="8" width="390" height="312" rx="10" fill="rgba(91,156,245,.02)" stroke="var(--blue)" stroke-opacity=".15"/>
+    <g class="d-node" data-tip="odf-dr-metro">
+      <text x="205" y="30" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="11">Metro-DR (Synchronous)</text>
+      <text x="205" y="46" text-anchor="middle" fill="var(--text-dim)" font-size="8">RPO = 0 | &lt;10ms RTT between sites</text>
+    </g>
+
+    <g class="d-node" data-tip="odf-dr-stretch">
+      <rect x="30" y="60" width="160" height="70" rx="8" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".4"/>
+      <text x="110" y="84" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="10">Site A (Zone 1)</text>
+      <text x="110" y="100" text-anchor="middle" fill="var(--text-dim)" font-size="8">OCP + ODF nodes</text>
+      <text x="110" y="114" text-anchor="middle" fill="var(--text-dim)" font-size="8">OSD replicas</text>
+    </g>
+    <rect x="220" y="60" width="160" height="70" rx="8" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".4"/>
+    <text x="300" y="84" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="10">Site B (Zone 2)</text>
+    <text x="300" y="100" text-anchor="middle" fill="var(--text-dim)" font-size="8">OCP + ODF nodes</text>
+    <text x="300" y="114" text-anchor="middle" fill="var(--text-dim)" font-size="8">OSD replicas</text>
+
+    <line x1="190" y1="95" x2="218" y2="95" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#odf-dr-arrow)"/>
+    <line x1="218" y1="105" x2="190" y2="105" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#odf-dr-arrow)"/>
+    <text x="205" y="148" text-anchor="middle" fill="var(--blue)" font-size="8" font-weight="600">Single stretched Ceph cluster &mdash; sync writes</text>
+
+    <g class="d-node" data-tip="odf-dr-arbiter">
+      <rect x="120" y="165" width="170" height="44" rx="8" fill="rgba(245,166,35,.06)" stroke="var(--amber)" stroke-opacity=".4"/>
+      <text x="205" y="184" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="9.5">Arbiter (Site C)</text>
+      <text x="205" y="199" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Tie-breaker MON &mdash; quorum on site loss</text>
+    </g>
+
+    <text x="205" y="240" text-anchor="middle" fill="var(--text-dim)" font-size="8">Both sites active &mdash; data written to both before ack</text>
+    <text x="205" y="258" text-anchor="middle" fill="var(--text-dim)" font-size="8">Failover orchestrated by ACM + Ramen (DRPlacementControl)</text>
+    <text x="205" y="290" text-anchor="middle" fill="var(--blue)" font-size="8" font-weight="600">USE: campus / metro distance, zero data loss</text>
+
+    <!-- Divider -->
+    <line x1="410" y1="15" x2="410" y2="315" stroke="var(--border)" stroke-dasharray="4" stroke-opacity=".5"/>
+
+    <!-- Right lane: Regional-DR -->
+    <rect x="420" y="8" width="390" height="312" rx="10" fill="rgba(74,222,128,.02)" stroke="var(--green)" stroke-opacity=".15"/>
+    <g class="d-node" data-tip="odf-dr-regional">
+      <text x="615" y="30" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="11">Regional-DR (Asynchronous)</text>
+      <text x="615" y="46" text-anchor="middle" fill="var(--text-dim)" font-size="8">RPO = minutes | any distance</text>
+    </g>
+
+    <g class="d-node" data-tip="odf-dr-mirror">
+      <rect x="440" y="60" width="160" height="70" rx="8" fill="rgba(74,222,128,.06)" stroke="var(--green)" stroke-opacity=".4"/>
+      <text x="520" y="84" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="10">Region 1 (Primary)</text>
+      <text x="520" y="100" text-anchor="middle" fill="var(--text-dim)" font-size="8">OCP + ODF cluster</text>
+      <text x="520" y="114" text-anchor="middle" fill="var(--text-dim)" font-size="8">Workload active</text>
+    </g>
+    <rect x="630" y="60" width="160" height="70" rx="8" fill="rgba(74,222,128,.06)" stroke="var(--green)" stroke-opacity=".4"/>
+    <text x="710" y="84" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="10">Region 2 (Standby)</text>
+    <text x="710" y="100" text-anchor="middle" fill="var(--text-dim)" font-size="8">OCP + ODF cluster</text>
+    <text x="710" y="114" text-anchor="middle" fill="var(--text-dim)" font-size="8">Receives mirror</text>
+
+    <line x1="600" y1="100" x2="628" y2="100" stroke="var(--green)" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#odf-dr-arrow)"/>
+    <text x="615" y="148" text-anchor="middle" fill="var(--green)" font-size="8" font-weight="600">RBD mirroring &mdash; snapshot-based async replication</text>
+
+    <g class="d-node" data-tip="odf-dr-ramen">
+      <rect x="530" y="165" width="170" height="44" rx="8" fill="rgba(167,139,250,.06)" stroke="var(--purple)" stroke-opacity=".4"/>
+      <text x="615" y="184" text-anchor="middle" fill="var(--purple)" font-weight="600" font-size="9.5">Ramen + ACM Hub</text>
+      <text x="615" y="199" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">DRPolicy / DRPlacementControl CRs</text>
+    </g>
+
+    <text x="615" y="240" text-anchor="middle" fill="var(--text-dim)" font-size="8">Failover/relocate per application &mdash; 4.20: per-VM failover</text>
+    <text x="615" y="258" text-anchor="middle" fill="var(--text-dim)" font-size="8">Sync interval set in DRPolicy (e.g. 5m)</text>
+    <text x="615" y="290" text-anchor="middle" fill="var(--green)" font-size="8" font-weight="600">USE: cross-region, tolerates minutes of data loss</text>
+  </svg>
+</div>
+
+<h2>What's New in Recent ODF Releases</h2>
+<table>
+<thead><tr><th>Version</th><th>Highlights</th></tr></thead>
+<tbody>
+<tr><td><strong>4.19</strong></td><td><strong>StorageSystem CRD removed</strong> &mdash; StorageCluster is created directly; simpler deployment flow.</td></tr>
+<tr><td><strong>4.20</strong></td><td>Per-VM failover/failback for DR-protected VMs (no longer all-or-nothing per namespace). Multus network support extended to IPv6. Pool-level near-full/full alerts with actionable messages. DR recipes with exec hooks for more workload types. Encryption annotations auto-added when KMS is missing.</td></tr>
+</tbody>
+</table>
 
 <button class="mark-read" onclick="markRead(this,10)">&#10003; Mark section as read</button>
 </div>
@@ -6328,6 +6523,7 @@ spec:
   <div class="card-sm"><div class="card-icon">&#128260;</div><div class="card-title">Repository Mirroring</div><div class="card-desc">Mirror external registries (Docker Hub, upstream vendors) into Quay for air-gapped and disconnected cluster deployments. Scheduled sync.</div></div>
   <div class="card-sm"><div class="card-icon">&#127760;</div><div class="card-title">Geo-Replication</div><div class="card-desc">Replicate images across multiple storage backends in different regions. Pulls served from nearest location. Single global namespace.</div></div>
   <div class="card-sm"><div class="card-icon">&#9878;</div><div class="card-title">Quota Management</div><div class="card-desc">Set storage quotas per organization and repository. Prevent runaway image accumulation. Track usage with built-in reporting.</div></div>
+  <div class="card-sm"><div class="card-icon">&#128230;</div><div class="card-title">OCI Artifacts</div><div class="card-desc">Store Helm charts, cosign signatures, SBOMs, and zstd images alongside container images. OCI Referrers API links signatures/SBOMs to their images.</div></div>
 </div>
 
 <h2>Quay Architecture</h2>
@@ -6371,7 +6567,7 @@ spec:
       <g class="d-node" data-tip="quay-ui">
         <rect x="340" y="85" width="110" height="45" rx="8" fill="var(--rose)" opacity="0.15" stroke="var(--rose)"/>
         <text x="395" y="105" text-anchor="middle" fill="var(--rose)" font-size="10" font-weight="600">Quay UI</text>
-        <text x="395" y="119" text-anchor="middle" fill="var(--text-dim)" font-size="8">Web Console</text>
+        <text x="395" y="119" text-anchor="middle" fill="var(--text-dim)" font-size="8">v2 UI (default 3.16+)</text>
       </g>
       <!-- Mirror Workers -->
       <g class="d-node" data-tip="quay-mirror">
@@ -6594,6 +6790,8 @@ spec:
   components:
     - kind: clair
       managed: true
+    - kind: clairpostgres
+      managed: true
     - kind: postgres
       managed: true
     - kind: redis
@@ -6641,11 +6839,11 @@ spec:
 <h2>Key Features Deep Dive</h2>
 
 <h3>Clair Security Scanning</h3>
-<p>Clair automatically scans every image pushed to Quay against continuously updated vulnerability databases (NVD, Red Hat OVAL, Ubuntu, Alpine, Debian). Scans happen asynchronously &mdash; results appear in the Quay UI under each image tag. Supports indexing OCI and Docker v2 manifest formats.</p>
+<p><strong>Clair V4</strong> (indexer/matcher architecture) automatically scans every image pushed to Quay against continuously updated vulnerability databases. Scans happen asynchronously &mdash; results appear in the Quay UI under each image tag. Supports indexing OCI and Docker v2 manifest formats.</p>
 <table>
 <tr><th>Capability</th><th>Detail</th></tr>
 <tr><td>Scan trigger</td><td>Automatic on push; can re-scan existing images via API</td></tr>
-<tr><td>Databases</td><td>NVD, Red Hat OVAL, Ubuntu Tracker, Alpine SecDB, Debian Tracker</td></tr>
+<tr><td>Databases</td><td>NVD, Red Hat OVAL v2, OSV.dev, Ubuntu Tracker, Alpine SecDB, Debian Tracker</td></tr>
 <tr><td>Output</td><td>CVE list with severity, fixed-in version, CVSS score</td></tr>
 <tr><td>Integration</td><td>Notifications on new CVEs found in previously scanned images</td></tr>
 </table>
@@ -6667,23 +6865,220 @@ spec:
 <li>Mirrored repos are read-only in Quay &mdash; source of truth is upstream</li>
 </ul>
 
+<div class="diagram-box">
+  <div class="diagram-title">Repository Mirroring &mdash; External to Quay</div>
+  <svg width="820" height="280" viewBox="0 0 820 280" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs><marker id="qmirr-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--text-dim)"/></marker></defs>
+
+    <!-- External Registries -->
+    <rect x="10" y="10" width="220" height="260" rx="12" fill="rgba(244,63,94,.03)" stroke="var(--rose)" stroke-opacity=".2" stroke-dasharray="6"/>
+    <text x="120" y="32" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="10" letter-spacing=".06em">EXTERNAL REGISTRIES</text>
+
+    <g class="d-node" data-tip="quay-mirr-dockerhub">
+      <rect x="30" y="48" width="180" height="38" rx="8" fill="rgba(244,63,94,.06)" stroke="var(--rose)" stroke-opacity=".3"/>
+      <text x="120" y="64" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="10">Docker Hub</text>
+      <text x="120" y="78" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">docker.io/library/*</text>
+    </g>
+    <g class="d-node" data-tip="quay-mirr-rhreg">
+      <rect x="30" y="96" width="180" height="38" rx="8" fill="rgba(244,63,94,.06)" stroke="var(--rose)" stroke-opacity=".3"/>
+      <text x="120" y="112" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="10">Red Hat Registry</text>
+      <text x="120" y="126" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">registry.redhat.io</text>
+    </g>
+    <g class="d-node" data-tip="quay-mirr-upstream">
+      <rect x="30" y="144" width="180" height="38" rx="8" fill="rgba(244,63,94,.06)" stroke="var(--rose)" stroke-opacity=".3"/>
+      <text x="120" y="160" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="10">Vendor / OCI Registry</text>
+      <text x="120" y="174" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">ghcr.io, quay.io, ECR, etc.</text>
+    </g>
+
+    <!-- Arrows: external → mirror worker -->
+    <line x1="230" y1="67" x2="310" y2="120" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#qmirr-arrow)"/>
+    <line x1="230" y1="115" x2="310" y2="125" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#qmirr-arrow)"/>
+    <line x1="230" y1="163" x2="310" y2="135" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#qmirr-arrow)"/>
+
+    <!-- Mirror Worker -->
+    <g class="d-node" data-tip="quay-mirror">
+      <rect x="312" y="95" width="185" height="65" rx="10" fill="rgba(245,166,35,.08)" stroke="var(--amber)" stroke-opacity=".4"/>
+      <text x="405" y="118" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="11">Mirror Worker</text>
+      <text x="405" y="135" text-anchor="middle" fill="var(--text-muted)" font-size="8">Scheduled sync (cron)</text>
+      <text x="405" y="149" text-anchor="middle" fill="var(--text-muted)" font-size="8">Tag filter (regex)</text>
+    </g>
+
+    <!-- Arrow: mirror worker → Quay -->
+    <line x1="497" y1="127" x2="560" y2="127" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#qmirr-arrow)"/>
+
+    <!-- Quay internal -->
+    <rect x="562" y="10" width="248" height="260" rx="12" fill="rgba(91,156,245,.03)" stroke="var(--blue)" stroke-opacity=".2" stroke-dasharray="6"/>
+    <text x="686" y="32" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="10" letter-spacing=".06em">QUAY (AIR-GAPPED)</text>
+
+    <g class="d-node" data-tip="quay-mirr-repo">
+      <rect x="582" y="95" width="208" height="65" rx="10" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".4"/>
+      <text x="686" y="118" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="11">Mirrored Repository</text>
+      <text x="686" y="135" text-anchor="middle" fill="var(--text-muted)" font-size="8">Read-only in Quay</text>
+      <text x="686" y="149" text-anchor="middle" fill="var(--text-muted)" font-size="8">Source of truth = upstream</text>
+    </g>
+
+    <!-- Arrow: Quay → OCP clusters -->
+    <line x1="686" y1="160" x2="686" y2="195" stroke="var(--green)" stroke-width="1.5" marker-end="url(#qmirr-arrow)"/>
+
+    <g class="d-node" data-tip="quay-cluster">
+      <rect x="602" y="197" width="168" height="42" rx="8" fill="rgba(74,222,128,.06)" stroke="var(--green)" stroke-opacity=".4"/>
+      <text x="686" y="215" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="10">OCP Clusters</text>
+      <text x="686" y="231" text-anchor="middle" fill="var(--text-muted)" font-size="8">pull mirrored images</text>
+    </g>
+
+    <!-- Schedule annotation -->
+    <text x="405" y="230" text-anchor="middle" fill="var(--amber)" font-size="8.5" font-style="italic">Sync: hourly / daily / weekly</text>
+    <text x="405" y="248" text-anchor="middle" fill="var(--text-dim)" font-size="8">Only new/changed layers transferred</text>
+  </svg>
+</div>
+
+<h4>Live Example &mdash; Mirroring from quay.io to Internal Quay</h4>
+<p>Mirror an upstream image (<code>quay.io/rh_ee_swongpai/openwebui</code>) into an internal Quay instance. Configure the mirror with a Robot Account for pull credentials, tag filters, and a sync schedule &mdash; then watch the image appear with Clair scan results.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">Step 1 &mdash; Source Image on quay.io (upstream)</div>
+  <img loading="lazy" src="images/quay-public-repo.png" alt="Quay.io public repository rh_ee_swongpai/openwebui — latest tag, 1.7 GiB, Clair scan showing 2 Critical and 104 fixable CVEs" style="width:100%;border-radius:8px"/>
+</div>
+
+<div class="diagram-box">
+  <div class="diagram-title">Step 2 &mdash; Mirror Configuration on Internal Quay</div>
+  <img loading="lazy" src="images/quay-internal-mirroring-setup.png" alt="Internal Quay mirror config — external repository quay.io/rh_ee_swongpai/openwebui, tag filter latest/*, sync interval, Robot User swongpai+mirrorrobot, Sync Now button" style="width:100%;border-radius:8px"/>
+</div>
+
+<div class="diagram-box">
+  <div class="diagram-title">Step 3 &mdash; Sync Logs Show Successful Mirror</div>
+  <img loading="lazy" src="images/quay-internal-mirroring-status.png" alt="Internal Quay usage logs — mirror started, push of latest tag by mirrorrobot, mirror finished successfully with timestamp and IP" style="width:100%;border-radius:8px"/>
+</div>
+
+<div class="diagram-box">
+  <div class="diagram-title">Step 4 &mdash; Mirrored Tag Appears in Internal Quay</div>
+  <img loading="lazy" src="images/quay-internal-tag-appear.png" alt="Internal Quay repository tags — latest tag mirrored, 1.7 GiB, SHA256 digest, OCI labels showing image source and description" style="width:100%;border-radius:8px"/>
+</div>
+
 <h3>Geo-Replication</h3>
 <p>Replicate image data across multiple storage backends in different geographic regions. All Quay instances share a single metadata database but store blobs locally for low-latency pulls.</p>
 <ul>
 <li>Single global namespace &mdash; <code>quay.example.com/org/repo:tag</code> works from any region</li>
 <li>Each region stores its own copy of image layers</li>
 <li>Pulls served from nearest storage backend</li>
-<li>Requires shared PostgreSQL (or external managed DB)</li>
+<li>Requires shared PostgreSQL <em>and</em> shared Redis across all regions (or external managed equivalents)</li>
 </ul>
 
-<h3>Quota Management</h3>
+<div class="diagram-box">
+  <div class="diagram-title">Geo-Replication &mdash; Multi-Region Image Distribution</div>
+  <svg width="820" height="370" viewBox="0 0 820 370" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs><marker id="qgeo-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--text-dim)"/></marker></defs>
+
+    <!-- Shared DB layer -->
+    <rect x="240" y="8" width="340" height="55" rx="10" fill="rgba(167,139,250,.05)" stroke="var(--purple)" stroke-opacity=".3"/>
+    <g class="d-node" data-tip="quay-geo-db">
+      <text x="410" y="30" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="11">Shared PostgreSQL + Redis</text>
+      <text x="410" y="48" text-anchor="middle" fill="var(--text-muted)" font-size="8.5">Single metadata DB + shared Redis &mdash; users, repos, tags, permissions</text>
+    </g>
+
+    <!-- Lines from DB to regions -->
+    <line x1="330" y1="63" x2="140" y2="105" stroke="var(--purple)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity=".4"/>
+    <line x1="410" y1="63" x2="410" y2="105" stroke="var(--purple)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity=".4"/>
+    <line x1="490" y1="63" x2="680" y2="105" stroke="var(--purple)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity=".4"/>
+
+    <!-- Region 1: US-East -->
+    <rect x="10" y="107" width="260" height="195" rx="12" fill="rgba(91,156,245,.03)" stroke="var(--blue)" stroke-opacity=".2" stroke-dasharray="6"/>
+    <text x="140" y="127" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="10" letter-spacing=".06em">REGION: US-EAST</text>
+
+    <g class="d-node" data-tip="quay-geo-quay">
+      <rect x="30" y="140" width="220" height="44" rx="8" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".4"/>
+      <text x="140" y="158" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="10">Quay Instance</text>
+      <text x="140" y="174" text-anchor="middle" fill="var(--text-muted)" font-size="8">quay-us-east.example.com</text>
+    </g>
+    <line x1="140" y1="184" x2="140" y2="205" stroke="var(--text-dim)" stroke-width="1" marker-end="url(#qgeo-arrow)"/>
+    <g class="d-node" data-tip="quay-geo-storage">
+      <rect x="40" y="207" width="200" height="38" rx="8" fill="rgba(74,222,128,.06)" stroke="var(--green)" stroke-opacity=".3"/>
+      <text x="140" y="223" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9.5">S3 Storage (US-East)</text>
+      <text x="140" y="237" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">Local blob copy</text>
+    </g>
+    <line x1="140" y1="245" x2="140" y2="268" stroke="var(--text-dim)" stroke-width="1" marker-end="url(#qgeo-arrow)"/>
+    <g class="d-node" data-tip="quay-cluster">
+      <rect x="55" y="270" width="170" height="24" rx="6" fill="var(--bg-elevated)" stroke="var(--border)"/>
+      <text x="140" y="287" text-anchor="middle" fill="var(--text)" font-size="8.5">OCP clusters pull locally</text>
+    </g>
+
+    <!-- Region 2: EU-West -->
+    <rect x="280" y="107" width="260" height="195" rx="12" fill="rgba(54,214,181,.03)" stroke="var(--teal)" stroke-opacity=".2" stroke-dasharray="6"/>
+    <text x="410" y="127" text-anchor="middle" fill="var(--teal)" font-weight="700" font-size="10" letter-spacing=".06em">REGION: EU-WEST</text>
+
+    <g class="d-node" data-tip="quay-geo-quay">
+      <rect x="300" y="140" width="220" height="44" rx="8" fill="rgba(54,214,181,.06)" stroke="var(--teal)" stroke-opacity=".4"/>
+      <text x="410" y="158" text-anchor="middle" fill="var(--teal)" font-weight="600" font-size="10">Quay Instance</text>
+      <text x="410" y="174" text-anchor="middle" fill="var(--text-muted)" font-size="8">quay-eu-west.example.com</text>
+    </g>
+    <line x1="410" y1="184" x2="410" y2="205" stroke="var(--text-dim)" stroke-width="1" marker-end="url(#qgeo-arrow)"/>
+    <g class="d-node" data-tip="quay-geo-storage">
+      <rect x="310" y="207" width="200" height="38" rx="8" fill="rgba(74,222,128,.06)" stroke="var(--green)" stroke-opacity=".3"/>
+      <text x="410" y="223" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9.5">S3 Storage (EU-West)</text>
+      <text x="410" y="237" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">Local blob copy</text>
+    </g>
+    <line x1="410" y1="245" x2="410" y2="268" stroke="var(--text-dim)" stroke-width="1" marker-end="url(#qgeo-arrow)"/>
+    <g class="d-node" data-tip="quay-cluster">
+      <rect x="325" y="270" width="170" height="24" rx="6" fill="var(--bg-elevated)" stroke="var(--border)"/>
+      <text x="410" y="287" text-anchor="middle" fill="var(--text)" font-size="8.5">OCP clusters pull locally</text>
+    </g>
+
+    <!-- Region 3: AP-Southeast -->
+    <rect x="550" y="107" width="260" height="195" rx="12" fill="rgba(245,166,35,.03)" stroke="var(--amber)" stroke-opacity=".2" stroke-dasharray="6"/>
+    <text x="680" y="127" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="10" letter-spacing=".06em">REGION: AP-SOUTHEAST</text>
+
+    <g class="d-node" data-tip="quay-geo-quay">
+      <rect x="570" y="140" width="220" height="44" rx="8" fill="rgba(245,166,35,.06)" stroke="var(--amber)" stroke-opacity=".4"/>
+      <text x="680" y="158" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="10">Quay Instance</text>
+      <text x="680" y="174" text-anchor="middle" fill="var(--text-muted)" font-size="8">quay-ap-se.example.com</text>
+    </g>
+    <line x1="680" y1="184" x2="680" y2="205" stroke="var(--text-dim)" stroke-width="1" marker-end="url(#qgeo-arrow)"/>
+    <g class="d-node" data-tip="quay-geo-storage">
+      <rect x="580" y="207" width="200" height="38" rx="8" fill="rgba(74,222,128,.06)" stroke="var(--green)" stroke-opacity=".3"/>
+      <text x="680" y="223" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9.5">S3 Storage (AP-SE)</text>
+      <text x="680" y="237" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">Local blob copy</text>
+    </g>
+    <line x1="680" y1="245" x2="680" y2="268" stroke="var(--text-dim)" stroke-width="1" marker-end="url(#qgeo-arrow)"/>
+    <g class="d-node" data-tip="quay-cluster">
+      <rect x="595" y="270" width="170" height="24" rx="6" fill="var(--bg-elevated)" stroke="var(--border)"/>
+      <text x="680" y="287" text-anchor="middle" fill="var(--text)" font-size="8.5">OCP clusters pull locally</text>
+    </g>
+
+    <!-- Replication arrows between regions -->
+    <line x1="250" y1="225" x2="310" y2="225" stroke="var(--rose)" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#qgeo-arrow)"/>
+    <line x1="300" y1="218" x2="240" y2="218" stroke="var(--rose)" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#qgeo-arrow)"/>
+    <line x1="520" y1="225" x2="580" y2="225" stroke="var(--rose)" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#qgeo-arrow)"/>
+    <line x1="570" y1="218" x2="510" y2="218" stroke="var(--rose)" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#qgeo-arrow)"/>
+
+    <!-- Replication label -->
+    <text x="280" y="210" text-anchor="middle" fill="var(--rose)" font-size="7.5" font-weight="600">replication</text>
+    <text x="545" y="210" text-anchor="middle" fill="var(--rose)" font-size="7.5" font-weight="600">replication</text>
+
+    <!-- Bottom annotation -->
+    <text x="410" y="330" text-anchor="middle" fill="var(--text)" font-size="9.5" font-weight="600">Single namespace: <tspan fill="var(--blue)">quay.example.com/org/repo:tag</tspan> &mdash; works from any region</text>
+    <text x="410" y="350" text-anchor="middle" fill="var(--text-dim)" font-size="8.5">Push to any region &rarr; blobs replicate to all regions automatically &rarr; pulls served from nearest storage</text>
+  </svg>
+</div>
+
+<h3>Quota Management &amp; Auto-Pruning</h3>
 <p>Control storage consumption per organization and repository to prevent unbounded growth.</p>
 <ul>
 <li>Set <strong>warning threshold</strong> and <strong>reject threshold</strong> per org</li>
 <li>Pushes rejected when quota exceeded</li>
 <li>Track consumption via Quay UI or API</li>
-<li>Combine with <strong>tag expiration</strong> policies to auto-clean old images</li>
+<li><strong>Auto-pruning policies</strong> &mdash; org- or repo-level rules that delete tags automatically by <em>tag count</em> (keep newest N) or <em>tag age</em> (delete older than X days); multiple policies with regex tag-pattern filters can coexist</li>
+<li>Combine with <strong>tag expiration</strong> (per-tag TTL) for full lifecycle control</li>
 </ul>
+
+<h2>What's New in Recent Quay Releases</h2>
+<table>
+<thead><tr><th>Version</th><th>Highlights</th></tr></thead>
+<tbody>
+<tr><td><strong>3.13&ndash;3.14</strong></td><td>Enhanced auto-pruning: tag-pattern (regex) filters and multiple policies per org/repo.</td></tr>
+<tr><td><strong>3.15</strong></td><td>Image pull statistics (<code>FEATURE_IMAGE_PULL_STATS</code>) &mdash; see how often and when tags are pulled. Superuser panel in the v2 UI.</td></tr>
+<tr><td><strong>3.16</strong></td><td>v2 React-based UI becomes the <strong>default UI</strong>.</td></tr>
+</tbody>
+</table>
 
 <button class="mark-read" onclick="markRead(this,18)">&#10003; Mark section as read</button>
 </div>
@@ -7276,13 +7671,13 @@ const T = {
   'acm-policy-ctrl':{t:'Policy Controller',b:'Runs on the hub cluster. Watches Policy CRs, evaluates PlacementBindings, and propagates replicated policies to the target managed clusters via the Policy Framework. Aggregates compliance status back from all clusters.'},
   'acm-config-pol':{t:'ConfigurationPolicy',b:'Most common and versatile policy template. Audits or enforces the presence/absence/configuration of any Kubernetes resource. Three compliance types: musthave (object exists with at least these fields), mustonlyhave (object has exactly these fields — extras removed on enforce), mustnothave (object must not exist — deleted on enforce). Supports namespaceSelector to scope checks. Examples: require LimitRanges, enforce NetworkPolicies, ensure namespaces have labels, forbid privileged pods.'},
   'acm-cert-pol':{t:'CertificatePolicy',b:'Monitors TLS certificate expiration across managed clusters. Alerts when certificates in specified namespaces will expire within a configurable threshold (e.g., 30 days). Reports NonCompliant status for expiring certs.'},
-  'acm-iam-pol':{t:'IamPolicy',b:'Limits the number of cluster-admin role bindings per managed cluster. Helps enforce least-privilege access. Set maxClusterRoleBindingUsers to cap the number of users with cluster-admin.'},
+  'acm-gatekeeper-pol':{t:'Gatekeeper Constraint',b:'OPA Gatekeeper admission-time enforcement, deployed and managed by ACM. Rejects non-compliant resources at the API server before they are created. Replaces the removed IamPolicy template for role-binding limits.'},
   'acm-operator-pol':{t:'OperatorPolicy',b:'Ensures specific operators are installed, running correct versions, and configured on managed clusters. Can enforce operator installation via OLM Subscriptions. Useful for mandating compliance-operator, cert-manager, etc.'},
   'acm-klusterlet':{t:'Klusterlet',b:'Agent running on each managed cluster. Connects outbound to the hub (no inbound firewall rules needed). Components: Registration Agent (registers with hub), Work Agent (applies ManifestWork resources), Policy Framework Agent (evaluates policies locally), Add-on agents (observability, search).'},
   'acm-channel':{t:'Channel',b:'Defines the source repository for application resources. Types: Git (Git repository), HelmRepo (Helm chart repository), ObjectBucket (S3-compatible), Namespace (resources in a namespace). The Subscription references a Channel to know where to pull manifests from.'},
-  'acm-subscription':{t:'Subscription',b:'Defines what to deploy from a Channel: branch/tag, path within repo, package overrides per cluster. The hub Subscription controller watches the source and pushes updates to managed clusters matching the PlacementRule.'},
-  'acm-placementrule':{t:'PlacementRule (Legacy)',b:'Older CRD for selecting target clusters in the Subscription model. Being replaced by the Placement API. Selects clusters by labels, clusterSets, or cluster conditions. Still functional but new deployments should use Placement.'},
-  'acm-sub-model':{t:'Subscription Model',b:'Hub pushes resources to managed clusters. Channel → Subscription → PlacementRule → Deployed resources. Simple setup but hub is a single point of failure for delivery. Good for smaller fleets or simple applications.'},
+  'acm-subscription':{t:'Subscription (Deprecated)',b:'Deprecated since ACM 2.12. Defines what to deploy from a Channel: branch/tag, path within repo, package overrides per cluster. Migrate to ArgoCD ApplicationSet with ACM Placement.'},
+  'acm-placementrule':{t:'PlacementRule (Deprecated)',b:'Deprecated. Legacy CRD for selecting target clusters in the Subscription model. Replaced by the Placement API. New deployments must use Placement + ApplicationSet.'},
+  'acm-sub-model':{t:'Subscription Model (Deprecated)',b:'Deprecated since ACM 2.12. Hub pushes resources to managed clusters via Channel → Subscription → PlacementRule. Migrate to ArgoCD ApplicationSet with ACM Placement for all new deployments.'},
   'acm-appset':{t:'ApplicationSet',b:'ArgoCD CRD that generates multiple Application objects from a template. ACM provides a clusterDecisionResource generator that reads Placement decisions. Each matched cluster gets its own ArgoCD Application. Supports per-cluster overlays via Kustomize or Helm values.'},
   'acm-placement-gitops':{t:'Placement (GitOps)',b:'Same Placement API used for governance. Selects target clusters for ApplicationSet generation. Placement decisions are written to a status field that the ArgoCD ApplicationSet controller reads. Dynamic — adding a cluster matching the selector auto-generates a new Application.'},
   'acm-pull-model':{t:'Pull Model (GitOps)',b:'Each managed cluster runs its own ArgoCD instance that pulls manifests directly from Git and reconciles locally. Hub only manages Placement decisions — no resource payloads flow through the hub. More resilient, works in disconnected/restricted networks, scales to large fleets.'},
@@ -7299,17 +7694,17 @@ const T = {
   'acs-central':{t:'ACS Central',b:'Hub deployment running on a dedicated or shared cluster. Contains Central API (REST + gRPC), Dashboard UI, Scanner V4, Policy Engine (70+ built-in policies), and Central DB (PostgreSQL). All secured clusters connect outbound to Central via gRPC/mTLS.'},
   'acs-api':{t:'Central API',b:'REST API for UI/integrations and gRPC endpoint for Sensor communication. Handles policy evaluation, image scan requests, violation aggregation, and RBAC. Exposed via OpenShift Route.'},
   'acs-ui':{t:'Dashboard UI',b:'Web console showing risk-ranked deployments, vulnerability dashboard, network flow graph, compliance status, and policy violations. Accessible via OpenShift Route on the Central cluster.'},
-  'acs-scanner':{t:'Scanner V4',b:'Next-generation image vulnerability scanner. Indexes image layers, identifies installed packages (RPM, dpkg, apk, language-specific), and matches against CVE databases. Replaces the legacy StackRox Scanner. Auto-scales replicas based on scan workload.'},
+  'acs-scanner':{t:'Scanner V4',b:'Image vulnerability scanner — default since ACS 4.8 (legacy StackRox Scanner deprecated). Indexer analyzes image layers and identifies installed packages (RPM, dpkg, apk, language-specific); Matcher correlates against CVE databases. Auto-scales replicas based on scan workload.'},
   'acs-policy-engine':{t:'Policy Engine',b:'Evaluates 70+ built-in security policies plus custom policies against images, deployments, and runtime events. Policies specify criteria (what to check), lifecycle stage (build/deploy/runtime), scope (clusters/namespaces), and enforcement action (inform/enforce).'},
   'acs-centraldb':{t:'Central DB',b:'PostgreSQL database storing all ACS data: images, deployments, policies, violations, compliance results, network flows, and cluster metadata. Requires persistent storage (PVC). Managed by the RHACS Operator.'},
   'acs-roxctl':{t:'roxctl CLI',b:'Command-line tool for CI/CD integration. Runs image scans, checks deployment YAML against policies, generates init-bundles for secured clusters. Exit code non-zero on policy violation — fails the pipeline build.'},
   'acs-sensor':{t:'Sensor',b:'Primary secured cluster component. Watches the Kubernetes API for deployments, pods, services, and network policies. Sends metadata to Central for policy evaluation. Also coordinates with Collector and Admission Controller locally.'},
-  'acs-collector':{t:'Collector (eBPF)',b:'Runs as a DaemonSet on every node. Uses eBPF probes to monitor all container processes, network connections, and file access in real-time. No container modification or sidecar injection needed. Sends runtime events to Sensor for forwarding to Central.'},
+  'acs-collector':{t:'Collector (CO-RE BPF)',b:'Runs as a DaemonSet on every node. Uses CO-RE BPF probes (Compile Once – Run Everywhere; the only collection method since ACS 4.5) to monitor all container processes, network connections, and file access in real-time. No container modification, sidecars, or per-kernel drivers needed. Sends runtime events to Sensor for forwarding to Central.'},
   'acs-admctrl':{t:'Admission Controller',b:'Kubernetes ValidatingWebhookConfiguration that intercepts CREATE and UPDATE operations. Evaluates deployments against deploy-time policies. Can block non-compliant workloads before they run. Configurable: listen on creates, updates, and/or events.'},
   'acs-policy-def':{t:'Policy Definition',b:'Each policy specifies: criteria (image CVE threshold, config requirement, runtime behavior), lifecycle stage (build/deploy/runtime), scope (which clusters/namespaces/deployments), and enforcement action (inform = alert only, enforce = block/kill).'},
   'acs-eval-build':{t:'Build-Time Check',b:'roxctl CLI in CI/CD pipelines scans images against all build-time policies. Evaluates CVE severity, fixable vulnerabilities, base image trust, and image age. Non-zero exit code fails the pipeline.'},
   'acs-eval-deploy':{t:'Deploy-Time Check',b:'Admission Controller intercepts deployment creation. Evaluates against deploy-time policies: privileged containers, root UID, resource limits, writable root filesystem, untrusted registry. Can block the deployment entirely.'},
-  'acs-eval-runtime':{t:'Runtime Check',b:'Collector continuously monitors running containers via eBPF. Policy Engine evaluates runtime events: unexpected process execution, network connections, file access. Can alert, scale deployment to zero, or kill the pod.'},
+  'acs-eval-runtime':{t:'Runtime Check',b:'Collector continuously monitors running containers via CO-RE BPF. Policy Engine evaluates runtime events: unexpected process execution, network connections, file access. Can alert, scale deployment to zero, or kill the pod.'},
   'acs-violation':{t:'Violation',b:'Generated when a policy criteria match is detected. Contains: policy name, severity (Critical/High/Medium/Low), affected deployment, specific details (which CVE, which process, which network flow). Stored in Central DB and visible in the dashboard.'},
   'acs-enforce':{t:'Enforcement Actions',b:'Three enforcement levels: Inform (alert only — log violation, send notification), Block (prevent deployment creation or fail CI build), Kill (terminate the pod at runtime). Most organizations start with Inform and gradually enable Block/Kill per policy after tuning.'},
 
@@ -7332,6 +7727,12 @@ const T = {
   'odf-flow-rbd-pool':{t:'RBD Pool',b:'Ceph RADOS pool storing block device images. Default: ocs-storagecluster-cephblockpool. 3-way replicated. Each PVC becomes an RBD image in this pool.'},
   'odf-flow-cephfs-pool':{t:'CephFS Data Pool',b:'Ceph pool backing the CephFS filesystem. MDS handles metadata (inodes, directories). Data striped across OSDs. Default: ocs-storagecluster-cephfilesystem.'},
   'odf-flow-osd':{t:'OSD → Physical Disk',b:'Each OSD daemon manages one physical disk or partition. Data is distributed across OSDs by CRUSH. 3-way replication ensures copies land on different failure domains (hosts).'},
+  'odf-dr-metro':{t:'Metro-DR',b:'Synchronous DR: one Ceph cluster stretched across two sites. Every write is committed at both sites before being acknowledged — RPO of zero. Requires low latency (<10ms RTT) between sites, so limited to campus/metro distances.'},
+  'odf-dr-stretch':{t:'Stretch Site',b:'Each site runs OCP + ODF nodes belonging to the same stretched Ceph cluster. CRUSH places OSD replicas across both sites so either site holds a full copy of the data.'},
+  'odf-dr-arbiter':{t:'Arbiter',b:'A lightweight third site running only a tie-breaker Ceph MON. If one data site fails, the arbiter keeps MON quorum so the surviving site stays read-write. No OSDs — minimal footprint (can be a small VM).'},
+  'odf-dr-regional':{t:'Regional-DR',b:'Asynchronous DR between two independent ODF clusters in different regions. Snapshot-based RBD mirroring replicates volumes on a schedule (e.g. every 5 minutes) — RPO of minutes, but no distance limit.'},
+  'odf-dr-mirror':{t:'RBD Mirroring',b:'Ceph RBD mirroring daemon replicates block volume snapshots from the primary to the standby cluster. The sync interval is set in the DRPolicy. VolSync handles CephFS volumes the same way.'},
+  'odf-dr-ramen':{t:'Ramen + ACM',b:'Ramen (OpenShift DR operators) orchestrates failover/relocate via DRPolicy and DRPlacementControl CRs on the ACM hub. ACM moves the workload placement; Ramen flips volume replication direction. Since ODF 4.20, individual VMs can fail over independently.'},
 
   // Day-2
   'upg-channel':{t:'Update Channel',b:'stable (tested), fast (early access), eus (Extended Update Support for even-numbered releases like 4.14, 4.16).'},
@@ -7363,7 +7764,7 @@ const T = {
   'quay-cicd':{t:'CI/CD Pipelines',b:'Automated systems (Tekton, Jenkins, GitLab CI) use Robot Accounts to push built images and pull base images. Robot Accounts provide scoped, auditable credentials without sharing human passwords.'},
   'quay-core':{t:'Quay Application',b:'Core Quay deployment managed by the Quay Operator. Includes API server, web UI, mirror workers, and Clair scanner. All components deployed as pods and auto-scaled by HPA.'},
   'quay-api':{t:'Quay API',b:'OCI Distribution v2 API and Quay-specific API. Handles image push/pull, tag management, user/org management, and notifications. Stateless — scales horizontally behind a Route.'},
-  'quay-ui':{t:'Quay Web Console',b:'Browser-based UI for managing repositories, organizations, robot accounts, team permissions, and viewing Clair scan results. Accessed via the auto-created OpenShift Route.'},
+  'quay-ui':{t:'Quay Web Console',b:'Browser-based UI for managing repositories, organizations, robot accounts, team permissions, and viewing Clair scan results. The React-based v2 UI is the default since Quay 3.16. Accessed via the auto-created OpenShift Route.'},
   'quay-mirror':{t:'Mirror Worker',b:'Background workers that execute repository mirroring jobs. Sync images from external registries (Docker Hub, Red Hat, upstream vendors) into Quay on a configurable schedule. Critical for air-gapped deployments.'},
   'quay-clair':{t:'Clair Scanner',b:'Vulnerability scanner integrated with Quay. Indexes every pushed image layer and matches packages against CVE databases (NVD, Red Hat OVAL, Ubuntu, Alpine, Debian). Results available in Quay UI and API.'},
   'quay-clairdb':{t:'Clair PostgreSQL',b:'Dedicated PostgreSQL instance for Clair vulnerability data. Stores the vulnerability database and image index results. Separate from the main Quay PostgreSQL to isolate scan workload.'},
@@ -7381,6 +7782,13 @@ const T = {
   'quay-mcg-obc':{t:'ObjectBucketClaim',b:'Kubernetes CRD that requests a bucket from MCG. When created with storageClassName: openshift-storage.noobaa.io, NooBaa auto-provisions the bucket and generates a Secret (access key, secret key) and ConfigMap (bucket name, endpoint).'},
   'quay-mcg-noobaa':{t:'MCG / NooBaa',b:'Multicloud Object Gateway operator. Provides S3-compatible object storage as a service on OpenShift. Aggregates multiple backing stores (Ceph, cloud, PV) behind a single S3 endpoint. Part of ODF.'},
   'quay-mcg-backends':{t:'Storage Backends',b:'Physical storage where MCG stores data. Options: Ceph RGW (ODF default), AWS S3, Azure Blob, GCS, or PersistentVolume-backed stores. Data placement policies control which backend stores which data.'},
+  'quay-mirr-dockerhub':{t:'Docker Hub',b:'Public container registry. Mirror popular base images (nginx, python, node) into Quay for air-gapped clusters. Tag filter by regex to sync only needed versions.'},
+  'quay-mirr-rhreg':{t:'Red Hat Registry',b:'registry.redhat.io — authenticated access to Red Hat product images (UBI, RHEL, operator bundles). Mirror for disconnected OCP installations.'},
+  'quay-mirr-upstream':{t:'Vendor / OCI Registry',b:'Any OCI-compliant registry: ghcr.io, quay.io, ECR, GCR, ACR. Configure per-repo credentials and sync schedules.'},
+  'quay-mirr-repo':{t:'Mirrored Repository',b:'Read-only copy in Quay. Tags synced on schedule. Source of truth remains the upstream registry. Quay tracks sync status and errors per repo.'},
+  'quay-geo-db':{t:'Shared PostgreSQL + Redis',b:'Single metadata database plus shared Redis, both shared across all Quay geo-replicated instances. PostgreSQL stores users, repos, tags, permissions; Redis handles events and locks. Can be managed (operator) or external (RDS, CloudSQL). All regions connect to these shared services.'},
+  'quay-geo-quay':{t:'Quay Instance (Region)',b:'Regional Quay deployment serving local users and clusters. Shares metadata DB with other regions. Stores image blobs in its own regional S3 backend for low-latency pulls.'},
+  'quay-geo-storage':{t:'Regional S3 Storage',b:'S3-compatible object store local to this region. Stores a full copy of all image blobs. Push to any region triggers async replication to all other regional stores.'},
 };
 
 // Navigation
