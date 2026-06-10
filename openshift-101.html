@@ -5365,121 +5365,179 @@ generators:
 </div>
 
 <h2>Application Deployment</h2>
-<p>ACM supports two models for delivering applications across managed clusters: the legacy <strong>Subscription</strong> model and <strong>ArgoCD-based GitOps</strong> via ApplicationSets with ACM Placement.</p>
+<p>ACM delivers applications to managed clusters using <strong>ArgoCD ApplicationSets</strong> with ACM Placement. ArgoCD supports two deployment modes: <strong>Push</strong> (hub ArgoCD applies to remote clusters) and <strong>Pull</strong> (each cluster runs its own ArgoCD that pulls from Git). Both use the same ApplicationSet + Placement CRDs on the hub.</p>
 
 <div class="callout warn">
-<strong>Subscription model is deprecated.</strong> Starting with ACM 2.12, the Subscription model (Channel + Subscription + PlacementRule) is deprecated. Red Hat recommends migrating to <strong>ArgoCD ApplicationSet with ACM Placement</strong> for all multi-cluster application delivery. The Subscription model will be removed in a future release.
+<strong>Subscription model is removed.</strong> The legacy Subscription model (Channel + Subscription + PlacementRule) was deprecated in ACM 2.12 and is removed in current releases. Use <strong>ArgoCD ApplicationSet with ACM Placement</strong> for all multi-cluster application delivery.
 </div>
 
 <div class="diagram-box">
-  <div class="diagram-title">App Delivery Models &mdash; Subscription vs GitOps (ArgoCD)</div>
-  <svg width="820" height="370" viewBox="0 0 820 370" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
-    <defs><marker id="aAPP" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--green)"/></marker></defs>
+  <div class="diagram-title">ArgoCD Push vs Pull Model &mdash; Application Delivery</div>
+  <svg width="820" height="480" viewBox="0 0 820 480" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs>
+      <marker id="aAPP" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--green)"/></marker>
+      <marker id="aAPP-blue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--blue)"/></marker>
+      <marker id="aAPP-purple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--purple)"/></marker>
+    </defs>
 
-    <!-- Left lane: Subscription -->
-    <rect x="10" y="8" width="390" height="352" rx="10" fill="rgba(91,156,245,.02)" stroke="var(--blue)" stroke-opacity=".15"/>
-    <text x="205" y="30" text-anchor="middle" fill="var(--text-muted)" font-weight="700" font-size="11">Subscription Model (Deprecated)</text>
+    <!-- ===== LEFT LANE: PUSH MODEL ===== -->
+    <rect x="10" y="8" width="390" height="462" rx="10" fill="rgba(91,156,245,.02)" stroke="var(--blue)" stroke-opacity=".15"/>
+    <text x="205" y="30" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="11">Push Model</text>
+    <text x="205" y="44" text-anchor="middle" fill="var(--text-dim)" font-size="8">Hub ArgoCD applies to remote clusters</text>
 
-    <g class="d-node" data-tip="acm-channel">
-      <rect x="115" y="45" width="180" height="45" rx="8" fill="rgba(167,139,250,.06)" stroke="var(--purple)" stroke-opacity=".5"/>
-      <text x="205" y="65" text-anchor="middle" fill="var(--purple)" font-weight="600" font-size="10">Channel</text>
-      <text x="205" y="80" text-anchor="middle" fill="var(--text-dim)" font-size="8">Git repo / Helm repo / ObjectBucket</text>
+    <!-- Git Repo -->
+    <g class="d-node" data-tip="acm-push-git">
+      <rect x="115" y="58" width="180" height="42" rx="8" fill="rgba(167,139,250,.06)" stroke="var(--purple)" stroke-opacity=".5"/>
+      <text x="205" y="76" text-anchor="middle" fill="var(--purple)" font-weight="600" font-size="10">Git Repository</text>
+      <text x="205" y="92" text-anchor="middle" fill="var(--text-dim)" font-size="8">Application manifests / Helm / Kustomize</text>
     </g>
-    <line x1="205" y1="90" x2="205" y2="110" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aAPP)"/>
 
-    <g class="d-node" data-tip="acm-subscription">
-      <rect x="115" y="110" width="180" height="45" rx="8" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".5"/>
-      <text x="205" y="130" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="10">Subscription</text>
-      <text x="205" y="145" text-anchor="middle" fill="var(--text-dim)" font-size="8">Branch, path, overrides</text>
+    <!-- Arrow: Git → Hub ArgoCD -->
+    <line x1="205" y1="100" x2="205" y2="115" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aAPP-blue)"/>
+    <text x="235" y="112" fill="var(--text-dim)" font-size="7">watches</text>
+
+    <!-- Hub ArgoCD -->
+    <g class="d-node" data-tip="acm-push-argocd">
+      <rect x="60" y="118" width="290" height="72" rx="10" fill="rgba(91,156,245,.05)" stroke="var(--blue)" stroke-opacity=".3" stroke-dasharray="6"/>
+      <text x="205" y="136" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="10">ACM HUB CLUSTER</text>
+      <rect x="80" y="145" width="130" height="34" rx="6" fill="rgba(91,156,245,.08)" stroke="var(--blue)" stroke-opacity=".4"/>
+      <text x="145" y="160" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="9">ArgoCD (Hub)</text>
+      <text x="145" y="173" text-anchor="middle" fill="var(--text-dim)" font-size="7">openshift-gitops</text>
+      <rect x="225" y="145" width="110" height="34" rx="6" fill="rgba(245,166,35,.06)" stroke="var(--amber)" stroke-opacity=".4"/>
+      <text x="280" y="160" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="9">ApplicationSet</text>
+      <text x="280" y="173" text-anchor="middle" fill="var(--text-dim)" font-size="7">+ Placement</text>
     </g>
-    <line x1="205" y1="155" x2="205" y2="175" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aAPP)"/>
 
-    <g class="d-node" data-tip="acm-placementrule">
-      <rect x="115" y="175" width="180" height="45" rx="8" fill="rgba(245,166,35,.06)" stroke="var(--amber)" stroke-opacity=".5"/>
-      <text x="205" y="195" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="10">PlacementRule</text>
-      <text x="205" y="210" text-anchor="middle" fill="var(--text-dim)" font-size="8">Select target clusters</text>
+    <!-- Arrows: Hub pushes to clusters -->
+    <line x1="130" y1="190" x2="80" y2="225" stroke="var(--blue)" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#aAPP-blue)"/>
+    <line x1="205" y1="190" x2="205" y2="225" stroke="var(--blue)" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#aAPP-blue)"/>
+    <line x1="280" y1="190" x2="330" y2="225" stroke="var(--blue)" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#aAPP-blue)"/>
+    <text x="205" y="217" text-anchor="middle" fill="var(--blue)" font-size="7" font-weight="600">applies via API</text>
+
+    <!-- Managed clusters -->
+    <g class="d-node" data-tip="acm-push-cluster">
+      <rect x="25" y="228" width="110" height="40" rx="7" fill="var(--bg-elevated)" stroke="var(--blue)" stroke-opacity=".3"/>
+      <text x="80" y="246" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="9">prod-cluster</text>
+      <text x="80" y="260" text-anchor="middle" fill="var(--green)" font-size="7.5">&#10003; synced</text>
     </g>
-    <line x1="135" y1="220" x2="80" y2="260" stroke="var(--green)" stroke-dasharray="5" stroke-opacity=".4"/>
-    <line x1="205" y1="220" x2="205" y2="260" stroke="var(--green)" stroke-dasharray="5" stroke-opacity=".4"/>
-    <line x1="275" y1="220" x2="330" y2="260" stroke="var(--green)" stroke-dasharray="5" stroke-opacity=".4"/>
+    <rect x="150" y="228" width="110" height="40" rx="7" fill="var(--bg-elevated)" stroke="var(--blue)" stroke-opacity=".3"/>
+    <text x="205" y="246" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="9">stg-cluster</text>
+    <text x="205" y="260" text-anchor="middle" fill="var(--green)" font-size="7.5">&#10003; synced</text>
+    <rect x="275" y="228" width="110" height="40" rx="7" fill="var(--bg-elevated)" stroke="var(--blue)" stroke-opacity=".3"/>
+    <text x="330" y="246" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="9">dev-cluster</text>
+    <text x="330" y="260" text-anchor="middle" fill="var(--green)" font-size="7.5">&#10003; synced</text>
 
-    <g class="d-node" data-tip="acm-sub-model">
-      <rect x="25" y="260" width="110" height="40" rx="7" fill="var(--bg-elevated)" stroke="var(--green)" stroke-opacity=".3"/>
-      <text x="80" y="278" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9">prod-cluster</text>
-      <text x="80" y="292" text-anchor="middle" fill="var(--green)" font-size="7.5">&#10003; deployed</text>
+    <!-- Push characteristics -->
+    <rect x="30" y="285" width="350" height="170" rx="8" fill="var(--bg-elevated)" stroke="var(--border)" stroke-opacity=".3"/>
+    <text x="205" y="305" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="9">PUSH MODEL CHARACTERISTICS</text>
+    <text x="50" y="325" fill="var(--text-dim)" font-size="8">&#10003; Hub ArgoCD needs API access to all managed clusters</text>
+    <text x="50" y="343" fill="var(--text-dim)" font-size="8">&#10003; Single ArgoCD instance manages all deployments</text>
+    <text x="50" y="361" fill="var(--text-dim)" font-size="8">&#10003; Centralized visibility &amp; drift detection</text>
+    <text x="50" y="379" fill="var(--text-dim)" font-size="8">&#10003; Simpler setup &mdash; no ArgoCD on spoke clusters</text>
+    <text x="50" y="397" fill="var(--text-dim)" font-size="8">&#9888; Hub is a single point of failure for deployments</text>
+    <text x="50" y="415" fill="var(--text-dim)" font-size="8">&#9888; Requires network path from hub to all spokes</text>
+    <text x="50" y="440" fill="var(--blue)" font-weight="600" font-size="8">USE: &lt;50 clusters, connected networks, centralized ops</text>
+
+    <!-- ===== DIVIDER ===== -->
+    <line x1="410" y1="15" x2="410" y2="462" stroke="var(--border)" stroke-dasharray="4" stroke-opacity=".5"/>
+
+    <!-- ===== RIGHT LANE: PULL MODEL ===== -->
+    <rect x="420" y="8" width="390" height="462" rx="10" fill="rgba(74,222,128,.02)" stroke="var(--green)" stroke-opacity=".15"/>
+    <text x="615" y="30" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="11">Pull Model</text>
+    <text x="615" y="44" text-anchor="middle" fill="var(--text-dim)" font-size="8">Each cluster&rsquo;s ArgoCD pulls from Git</text>
+
+    <!-- Git Repo -->
+    <g class="d-node" data-tip="acm-pull-git">
+      <rect x="525" y="58" width="180" height="42" rx="8" fill="rgba(167,139,250,.06)" stroke="var(--purple)" stroke-opacity=".5"/>
+      <text x="615" y="76" text-anchor="middle" fill="var(--purple)" font-weight="600" font-size="10">Git Repository</text>
+      <text x="615" y="92" text-anchor="middle" fill="var(--text-dim)" font-size="8">Application manifests / Helm / Kustomize</text>
     </g>
-    <rect x="150" y="260" width="110" height="40" rx="7" fill="var(--bg-elevated)" stroke="var(--green)" stroke-opacity=".3"/>
-    <text x="205" y="278" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9">stg-cluster</text>
-    <text x="205" y="292" text-anchor="middle" fill="var(--green)" font-size="7.5">&#10003; deployed</text>
-    <rect x="275" y="260" width="110" height="40" rx="7" fill="var(--bg-elevated)" stroke="var(--green)" stroke-opacity=".3"/>
-    <text x="330" y="278" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9">dev-cluster</text>
-    <text x="330" y="292" text-anchor="middle" fill="var(--green)" font-size="7.5">&#10003; deployed</text>
 
-    <text x="205" y="330" text-anchor="middle" fill="var(--text-dim)" font-size="8">Hub pushes resources to managed clusters</text>
-    <text x="205" y="345" text-anchor="middle" fill="var(--blue)" font-size="7.5" font-weight="600">PUSH MODEL</text>
-
-    <!-- Divider -->
-    <line x1="410" y1="15" x2="410" y2="350" stroke="var(--border)" stroke-dasharray="4" stroke-opacity=".5"/>
-
-    <!-- Right lane: ArgoCD / GitOps -->
-    <rect x="420" y="8" width="390" height="352" rx="10" fill="rgba(74,222,128,.02)" stroke="var(--green)" stroke-opacity=".15"/>
-    <text x="615" y="30" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="11">GitOps / ArgoCD (ApplicationSet)</text>
-
-    <g class="d-node" data-tip="acm-appset">
-      <rect x="515" y="45" width="200" height="45" rx="8" fill="rgba(74,222,128,.06)" stroke="var(--green)" stroke-opacity=".5"/>
-      <text x="615" y="65" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="10">ApplicationSet</text>
-      <text x="615" y="80" text-anchor="middle" fill="var(--text-dim)" font-size="8">ACM Placement generator</text>
+    <!-- Hub box (just placement, no ArgoCD apply) -->
+    <g class="d-node" data-tip="acm-pull-hub">
+      <rect x="470" y="118" width="290" height="72" rx="10" fill="rgba(74,222,128,.04)" stroke="var(--green)" stroke-opacity=".3" stroke-dasharray="6"/>
+      <text x="615" y="136" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="10">ACM HUB CLUSTER</text>
+      <rect x="490" y="145" width="110" height="34" rx="6" fill="rgba(245,166,35,.06)" stroke="var(--amber)" stroke-opacity=".4"/>
+      <text x="545" y="160" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="9">ApplicationSet</text>
+      <text x="545" y="173" text-anchor="middle" fill="var(--text-dim)" font-size="7">+ Placement</text>
+      <rect x="615" y="145" width="130" height="34" rx="6" fill="rgba(13,148,136,.06)" stroke="var(--teal)" stroke-opacity=".4"/>
+      <text x="680" y="160" text-anchor="middle" fill="var(--teal)" font-weight="600" font-size="9">Argo CD Agent</text>
+      <text x="680" y="173" text-anchor="middle" fill="var(--text-dim)" font-size="7">distributes config</text>
     </g>
-    <line x1="615" y1="90" x2="615" y2="110" stroke="var(--green)" stroke-width="1.5" marker-end="url(#aAPP)"/>
 
-    <g class="d-node" data-tip="acm-placement-gitops">
-      <rect x="515" y="110" width="200" height="45" rx="8" fill="rgba(245,166,35,.06)" stroke="var(--amber)" stroke-opacity=".5"/>
-      <text x="615" y="130" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="10">Placement</text>
-      <text x="615" y="145" text-anchor="middle" fill="var(--text-dim)" font-size="8">Cluster selectors + decisions</text>
+    <!-- Arrows: Hub distributes config to cluster ArgoCD instances -->
+    <line x1="540" y1="190" x2="490" y2="225" stroke="var(--green)" stroke-width="1" stroke-dasharray="4 2" stroke-opacity=".5"/>
+    <line x1="615" y1="190" x2="615" y2="225" stroke="var(--green)" stroke-width="1" stroke-dasharray="4 2" stroke-opacity=".5"/>
+    <line x1="690" y1="190" x2="740" y2="225" stroke="var(--green)" stroke-width="1" stroke-dasharray="4 2" stroke-opacity=".5"/>
+    <text x="615" y="217" text-anchor="middle" fill="var(--teal)" font-size="7" font-weight="600">distributes Application CR</text>
+
+    <!-- Managed clusters with local ArgoCD -->
+    <g class="d-node" data-tip="acm-pull-cluster">
+      <rect x="435" y="228" width="110" height="55" rx="7" fill="var(--bg-elevated)" stroke="var(--green)" stroke-opacity=".3"/>
+      <text x="490" y="246" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9">prod-cluster</text>
+      <rect x="445" y="253" width="90" height="18" rx="4" fill="rgba(13,148,136,.08)" stroke="var(--teal)" stroke-opacity=".3"/>
+      <text x="490" y="266" text-anchor="middle" fill="var(--teal)" font-size="7">ArgoCD (local)</text>
     </g>
-    <line x1="615" y1="155" x2="615" y2="175" stroke="var(--green)" stroke-width="1.5" marker-end="url(#aAPP)"/>
+    <rect x="560" y="228" width="110" height="55" rx="7" fill="var(--bg-elevated)" stroke="var(--green)" stroke-opacity=".3"/>
+    <text x="615" y="246" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9">stg-cluster</text>
+    <rect x="570" y="253" width="90" height="18" rx="4" fill="rgba(13,148,136,.08)" stroke="var(--teal)" stroke-opacity=".3"/>
+    <text x="615" y="266" text-anchor="middle" fill="var(--teal)" font-size="7">ArgoCD (local)</text>
+    <rect x="685" y="228" width="110" height="55" rx="7" fill="var(--bg-elevated)" stroke="var(--green)" stroke-opacity=".3"/>
+    <text x="740" y="246" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9">edge-cluster</text>
+    <rect x="695" y="253" width="90" height="18" rx="4" fill="rgba(13,148,136,.08)" stroke="var(--teal)" stroke-opacity=".3"/>
+    <text x="740" y="266" text-anchor="middle" fill="var(--teal)" font-size="7">ArgoCD (local)</text>
 
-    <g class="d-node" data-tip="acm-pull-model">
-      <rect x="515" y="175" width="200" height="45" rx="8" fill="rgba(13,148,136,.06)" stroke="var(--teal)" stroke-opacity=".5"/>
-      <text x="615" y="195" text-anchor="middle" fill="var(--teal)" font-weight="600" font-size="10">ArgoCD (per cluster)</text>
-      <text x="615" y="210" text-anchor="middle" fill="var(--text-dim)" font-size="8">Pulls from Git &amp; reconciles</text>
-    </g>
-    <line x1="545" y1="220" x2="490" y2="260" stroke="var(--green)" stroke-dasharray="5" stroke-opacity=".4"/>
-    <line x1="615" y1="220" x2="615" y2="260" stroke="var(--green)" stroke-dasharray="5" stroke-opacity=".4"/>
-    <line x1="685" y1="220" x2="740" y2="260" stroke="var(--green)" stroke-dasharray="5" stroke-opacity=".4"/>
+    <!-- Arrows: each cluster pulls from Git (arrow points down = data flows to cluster) -->
+    <path d="M 525,85 L 480,100 Q 455,110 455,155 L 455,228" fill="none" stroke="var(--purple)" stroke-width="1.2" stroke-dasharray="4 2" stroke-opacity=".5" marker-end="url(#aAPP-purple)"/>
+    <path d="M 615,100 L 615,228" fill="none" stroke="var(--purple)" stroke-width="1.2" stroke-dasharray="4 2" stroke-opacity=".35" marker-end="url(#aAPP-purple)"/>
+    <path d="M 705,85 L 745,100 Q 770,110 770,155 L 770,228" fill="none" stroke="var(--purple)" stroke-width="1.2" stroke-dasharray="4 2" stroke-opacity=".5" marker-end="url(#aAPP-purple)"/>
+    <text x="443" y="175" fill="var(--purple)" font-size="7" font-weight="600" transform="rotate(-90,443,175)">pulls from Git</text>
+    <text x="782" y="175" fill="var(--purple)" font-size="7" font-weight="600" transform="rotate(90,782,175)">pulls from Git</text>
 
-    <rect x="435" y="260" width="110" height="40" rx="7" fill="var(--bg-elevated)" stroke="var(--green)" stroke-opacity=".3"/>
-    <text x="490" y="278" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9">prod-cluster</text>
-    <text x="490" y="292" text-anchor="middle" fill="var(--green)" font-size="7.5">&#10003; synced</text>
-    <rect x="560" y="260" width="110" height="40" rx="7" fill="var(--bg-elevated)" stroke="var(--green)" stroke-opacity=".3"/>
-    <text x="615" y="278" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9">stg-cluster</text>
-    <text x="615" y="292" text-anchor="middle" fill="var(--green)" font-size="7.5">&#10003; synced</text>
-    <rect x="685" y="260" width="110" height="40" rx="7" fill="var(--bg-elevated)" stroke="var(--green)" stroke-opacity=".3"/>
-    <text x="740" y="278" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9">edge-cluster</text>
-    <text x="740" y="292" text-anchor="middle" fill="var(--green)" font-size="7.5">&#10003; synced</text>
-
-    <text x="615" y="330" text-anchor="middle" fill="var(--text-dim)" font-size="8">Each cluster&rsquo;s ArgoCD pulls from Git</text>
-    <text x="615" y="345" text-anchor="middle" fill="var(--green)" font-size="7.5" font-weight="600">PULL MODEL</text>
+    <!-- Pull characteristics -->
+    <rect x="440" y="300" width="350" height="155" rx="8" fill="var(--bg-elevated)" stroke="var(--border)" stroke-opacity=".3"/>
+    <text x="615" y="320" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="9">PULL MODEL CHARACTERISTICS</text>
+    <text x="460" y="340" fill="var(--text-dim)" font-size="8">&#10003; Each cluster pulls from Git independently</text>
+    <text x="460" y="358" fill="var(--text-dim)" font-size="8">&#10003; No API access from hub to spoke required</text>
+    <text x="460" y="376" fill="var(--text-dim)" font-size="8">&#10003; Works in disconnected / restricted networks</text>
+    <text x="460" y="394" fill="var(--text-dim)" font-size="8">&#10003; No single point of failure &mdash; clusters self-heal</text>
+    <text x="460" y="412" fill="var(--text-dim)" font-size="8">&#10003; Scales to thousands of clusters (edge/telco)</text>
+    <text x="460" y="430" fill="var(--text-dim)" font-size="8">&#9888; Requires ArgoCD or agent on every managed cluster</text>
+    <text x="460" y="448" fill="var(--green)" font-weight="600" font-size="8">USE: edge, telco, disconnected, large fleets (&gt;50 clusters)</text>
   </svg>
 </div>
 
 <div class="card-grid">
   <div class="card-sm">
-    <div class="card-icon">&#128230;</div>
-    <div class="card-title">Subscription Model (Deprecated)</div>
-    <div class="card-desc">Hub-side controller pushes resources to managed clusters. Uses Channel + Subscription + PlacementRule CRDs. <strong>Deprecated since ACM 2.12</strong> &mdash; migrate to ApplicationSet.</div>
+    <div class="card-icon">&#8593;</div>
+    <div class="card-title">Push Model</div>
+    <div class="card-desc">Hub ArgoCD applies manifests to remote clusters via their API servers. Simple setup, centralized control. Best for smaller, connected fleets.</div>
+  </div>
+  <div class="card-sm">
+    <div class="card-icon">&#8595;</div>
+    <div class="card-title">Pull Model</div>
+    <div class="card-desc">Each managed cluster runs its own ArgoCD (or Argo CD Agent) that pulls from Git independently. No hub-to-spoke network path needed. Best for edge and disconnected.</div>
   </div>
   <div class="card-sm">
     <div class="card-icon">&#128260;</div>
-    <div class="card-title">ApplicationSet (ArgoCD)</div>
-    <div class="card-desc">ACM Placement generates ArgoCD Applications per cluster. Pull-based GitOps. Preferred for production-grade delivery.</div>
-  </div>
-  <div class="card-sm">
-    <div class="card-icon">&#127760;</div>
-    <div class="card-title">Pull Model (GitOps)</div>
-    <div class="card-desc">Managed cluster ArgoCD pulls manifests from Git and reconciles. No hub-to-spoke push needed. Works in restricted network topologies.</div>
+    <div class="card-title">ApplicationSet + Placement</div>
+    <div class="card-desc">Both models use the same CRDs on the hub: ApplicationSet generates per-cluster ArgoCD Applications, Placement selects target clusters. Only the delivery mechanism differs.</div>
   </div>
 </div>
+
+<h3>Push vs Pull &mdash; How to Choose</h3>
+<table>
+<thead><tr><th>Factor</th><th>Push Model</th><th>Pull Model</th></tr></thead>
+<tbody>
+<tr><td><strong>Network requirement</strong></td><td>Hub must reach spoke API servers</td><td>Spokes only need Git access (outbound)</td></tr>
+<tr><td><strong>ArgoCD on spokes</strong></td><td>Not required</td><td>Required (or Argo CD Agent)</td></tr>
+<tr><td><strong>Drift detection</strong></td><td>Centralized on hub</td><td>Local per cluster</td></tr>
+<tr><td><strong>Failure blast radius</strong></td><td>Hub failure stops all deployments</td><td>Hub failure only stops <em>new</em> placements; existing clusters self-heal</td></tr>
+<tr><td><strong>Scale</strong></td><td>Tens of clusters</td><td>Hundreds to thousands</td></tr>
+<tr><td><strong>Disconnected / air-gap</strong></td><td>Not possible</td><td>Supported (Git mirror on-site)</td></tr>
+<tr><td><strong>Best for</strong></td><td>Centralized ops, dev/staging, small fleets</td><td>Edge, telco, regulated, large fleets</td></tr>
+</tbody>
+</table>
 
 <h3>ApplicationSet with ACM Placement</h3>
 <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button>
@@ -5509,6 +5567,24 @@ generators:
         <span class="key">server</span>: <span class="str">'{{server}}'</span>
         <span class="key">namespace</span>: <span class="val">my-app</span>
 </pre>
+
+<h4>Live Example &mdash; ApplicationSet Deploying via GitOps</h4>
+<p>An ApplicationSet named <strong>timecheck</strong> pulls from a Git repo (<code>github.com/Surote/simple-fastapi-deployment</code>) via ArgoCD push model. ACM Placement targets the local cluster. The topology view shows the full resource tree: ApplicationSet &rarr; Placement &rarr; Cluster &rarr; Route + Deployment + Service &rarr; ReplicaSet &rarr; Pod.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">ACM Console &mdash; ApplicationSet Overview (Push Model)</div>
+  <img loading="lazy" src="images/acm-deployment-push-0.png" alt="ACM Applications — timecheck ApplicationSet overview showing type Push model (Argo), Git repo, 5 cluster resources synced, namespace openshift-gitops" style="width:100%;border-radius:8px"/>
+</div>
+
+<div class="diagram-box">
+  <div class="diagram-title">ACM Console &mdash; Application Topology View</div>
+  <img loading="lazy" src="images/acm-deployment-push-1.png" alt="ACM Applications — timecheck topology tree: ApplicationSet → Placement → Cluster → Route, Deployment, Service → ReplicaSet → Pod, all green/healthy" style="width:100%;border-radius:8px"/>
+</div>
+
+<div class="diagram-box">
+  <div class="diagram-title">OpenShift Console &mdash; Deployed Workload Running</div>
+  <img loading="lazy" src="images/acm-deployment-workload.png" alt="OpenShift console Pods view — timecheck-deployment pod Running 1/1, owned by ReplicaSet, 57.5 MiB memory, namespace swongpai-timecheck-public-demo" style="width:100%;border-radius:8px"/>
+</div>
 
 <h2>Observability</h2>
 <p>ACM aggregates metrics from all managed clusters into a central <strong>Thanos</strong> deployment on the hub. Each managed cluster runs a <strong>metrics-collector</strong> (based on Prometheus) that pushes metrics to the hub&rsquo;s Thanos Receive endpoint. Grafana dashboards on the hub provide fleet-wide visibility: cluster health, resource utilization, API server latency, etcd performance, and custom alerts across the entire fleet.</p>
@@ -6107,6 +6183,24 @@ spec:
           values:
             - value: latest</code></pre>
   </div>
+</div>
+
+<h4>Live Example &mdash; "Image uses :latest tag" Policy as Code</h4>
+<p>A <code>SecurityPolicy</code> CRD deployed via GitOps creates the "Image uses :latest tag" policy in ACS. The policy is marked <strong>Externally managed</strong> (origin), meaning it&rsquo;s controlled by the CRD &mdash; not editable in the UI. When a deployment uses <code>:latest</code>, ACS raises a deploy-time violation.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">Step 1 &mdash; Policy in ACS Policy Management (Externally Managed)</div>
+  <img loading="lazy" src="images/acs-policy-as-code-0.png" alt="ACS Policy Management — 88 policies listed, 'Image uses :latest tag' shown as Enabled, Externally managed origin, High severity, Build/Deploy lifecycle" style="width:100%;border-radius:8px"/>
+</div>
+
+<div class="diagram-box">
+  <div class="diagram-title">Step 2 &mdash; Policy Details, Behavior &amp; Criteria</div>
+  <img loading="lazy" src="images/acs-policy-as-code-1.png" alt="ACS policy detail — 'Image uses :latest tag', severity High, category DevOps Best Practices, origin Externally managed, lifecycle Build/Deploy, response Inform, criteria: Image tag is 'latest'" style="width:100%;border-radius:8px"/>
+</div>
+
+<div class="diagram-box">
+  <div class="diagram-title">Step 3 &mdash; Violation Triggered on Deployment</div>
+  <img loading="lazy" src="images/acs-policy-as-code-violation.png" alt="ACS Violations — 'Image uses :latest tag' violation on simple-app Deployment in swongpai-helm namespace, High severity, Deploy lifecycle, DevOps Best Practices category" style="width:100%;border-radius:8px"/>
 </div>
 
 <h2>What's New in Recent ACS Releases</h2>
@@ -7674,13 +7768,14 @@ const T = {
   'acm-gatekeeper-pol':{t:'Gatekeeper Constraint',b:'OPA Gatekeeper admission-time enforcement, deployed and managed by ACM. Rejects non-compliant resources at the API server before they are created. Replaces the removed IamPolicy template for role-binding limits.'},
   'acm-operator-pol':{t:'OperatorPolicy',b:'Ensures specific operators are installed, running correct versions, and configured on managed clusters. Can enforce operator installation via OLM Subscriptions. Useful for mandating compliance-operator, cert-manager, etc.'},
   'acm-klusterlet':{t:'Klusterlet',b:'Agent running on each managed cluster. Connects outbound to the hub (no inbound firewall rules needed). Components: Registration Agent (registers with hub), Work Agent (applies ManifestWork resources), Policy Framework Agent (evaluates policies locally), Add-on agents (observability, search).'},
-  'acm-channel':{t:'Channel',b:'Defines the source repository for application resources. Types: Git (Git repository), HelmRepo (Helm chart repository), ObjectBucket (S3-compatible), Namespace (resources in a namespace). The Subscription references a Channel to know where to pull manifests from.'},
-  'acm-subscription':{t:'Subscription (Deprecated)',b:'Deprecated since ACM 2.12. Defines what to deploy from a Channel: branch/tag, path within repo, package overrides per cluster. Migrate to ArgoCD ApplicationSet with ACM Placement.'},
-  'acm-placementrule':{t:'PlacementRule (Deprecated)',b:'Deprecated. Legacy CRD for selecting target clusters in the Subscription model. Replaced by the Placement API. New deployments must use Placement + ApplicationSet.'},
-  'acm-sub-model':{t:'Subscription Model (Deprecated)',b:'Deprecated since ACM 2.12. Hub pushes resources to managed clusters via Channel → Subscription → PlacementRule. Migrate to ArgoCD ApplicationSet with ACM Placement for all new deployments.'},
-  'acm-appset':{t:'ApplicationSet',b:'ArgoCD CRD that generates multiple Application objects from a template. ACM provides a clusterDecisionResource generator that reads Placement decisions. Each matched cluster gets its own ArgoCD Application. Supports per-cluster overlays via Kustomize or Helm values.'},
+  'acm-push-git':{t:'Git Repository',b:'Source of truth for application manifests. Can contain plain YAML, Kustomize overlays, or Helm charts. Hub ArgoCD watches this repo and applies changes to target clusters via their API servers (push model).'},
+  'acm-push-argocd':{t:'Push Model — Hub ArgoCD',b:'In push mode, a single ArgoCD instance on the hub cluster applies manifests to all managed clusters via their Kubernetes API servers. ApplicationSet + Placement generates one ArgoCD Application per target cluster. Simple setup, centralized drift detection — but hub must have network access to every spoke.'},
+  'acm-push-cluster':{t:'Push Target Cluster',b:'Managed cluster receiving deployments from hub ArgoCD via API. No ArgoCD runs locally. Hub detects and remediates drift centrally.'},
+  'acm-pull-git':{t:'Git Repository',b:'Source of truth for application manifests. Each managed cluster\'s local ArgoCD pulls from this repo independently. In disconnected environments, a Git mirror on-site replaces the external repo.'},
+  'acm-pull-hub':{t:'Pull Model — Hub (Placement Only)',b:'In pull mode, the hub does NOT apply resources to spokes. It only runs ApplicationSet + Placement to distribute Application CRs (lightweight config) to each cluster\'s local ArgoCD. The Argo CD Agent (TP in ACM 2.15) streamlines this distribution. Hub failure only stops new placements — existing clusters keep self-healing.'},
+  'acm-pull-cluster':{t:'Pull Target Cluster',b:'Managed cluster running its own ArgoCD instance. Pulls manifests directly from Git and reconciles locally. No inbound API access from hub needed — only outbound Git access. Scales to thousands of clusters; ideal for edge and disconnected environments.'},
+  'acm-appset':{t:'ApplicationSet',b:'ArgoCD CRD that generates multiple Application objects from a template. ACM provides a clusterDecisionResource generator that reads Placement decisions. Each matched cluster gets its own ArgoCD Application. Used in both push and pull models. Supports per-cluster overlays via Kustomize or Helm values.'},
   'acm-placement-gitops':{t:'Placement (GitOps)',b:'Same Placement API used for governance. Selects target clusters for ApplicationSet generation. Placement decisions are written to a status field that the ArgoCD ApplicationSet controller reads. Dynamic — adding a cluster matching the selector auto-generates a new Application.'},
-  'acm-pull-model':{t:'Pull Model (GitOps)',b:'Each managed cluster runs its own ArgoCD instance that pulls manifests directly from Git and reconciles locally. Hub only manages Placement decisions — no resource payloads flow through the hub. More resilient, works in disconnected/restricted networks, scales to large fleets.'},
   'acm-obs-hub':{t:'ACM Hub Observability Stack',b:'All observability components run on the hub cluster: Thanos (Query, Receive, Store Gateway, Compactor), Grafana for dashboards, and Alertmanager for fleet-wide alerts. Deployed by the MultiClusterObservability CR.'},
   'acm-grafana':{t:'Grafana',b:'Pre-configured dashboards for fleet-wide visibility: cluster health, resource utilization, API server latency, etcd performance, pod/node counts. Custom dashboards can be added via ConfigMaps. Read-only — managed by the operator.'},
   'acm-thanos-query':{t:'Thanos Query',b:'Federated PromQL query engine. Queries both real-time data from Thanos Receive and historical data from Thanos Store (S3). Provides a single pane of glass across all managed clusters.'},
