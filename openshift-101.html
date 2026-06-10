@@ -169,7 +169,7 @@ body {
 @keyframes pageIn { to { opacity:1; transform:translateY(0); } }
 
 h1 {
-  font-size:2.1rem; font-weight:700; color:#1a1f36;
+  font-size:2.1rem; font-weight:700; color:var(--text-bright);
   letter-spacing:-.03em; margin-bottom:6px; line-height:1.2;
 }
 .page-subtitle {
@@ -177,7 +177,7 @@ h1 {
   font-weight:400; line-height:1.6;
 }
 h2 {
-  font-size:1.35rem; font-weight:700; color:#1a1f36;
+  font-size:1.35rem; font-weight:700; color:var(--text-bright);
   margin:48px 0 16px; padding-bottom:10px;
   border-bottom:1px solid var(--border); letter-spacing:-.02em;
 }
@@ -6145,6 +6145,16 @@ spec:
 <li>Export PDF/CSV reports for auditors</li>
 <li>Requires the Compliance Operator installed on each secured cluster for node-level checks</li>
 </ul>
+
+<div class="diagram-box">
+  <div class="diagram-title">ACS Console &mdash; CIS-OCP Compliance Coverage (98% passing)</div>
+  <img loading="lazy" src="images/acs-compliance-coverage-0.png" alt="ACS Compliance — CIS-OCP profile ocp4-cis-node, profile version 1.9.0, 98% passing 2% failing, 188 checks across clusters with pass/fail/manual status" style="width:100%;border-radius:8px"/>
+</div>
+
+<div class="diagram-box">
+  <div class="diagram-title">ACS Console &mdash; Compliance Check Detail (NetworkPolicy requirement)</div>
+  <img loading="lazy" src="images/acs-compliance-coverage-1.png" alt="ACS Compliance — ocp4-cis-configure-network-policies-namespaces check failing, CIS-OCP 5.3.2 control, description and remediation instructions for ensuring NetworkPolicy in all namespaces" style="width:100%;border-radius:8px"/>
+</div>
 
 <h3>CI/CD Integration (roxctl)</h3>
 <p>The <code>roxctl</code> CLI integrates ACS into CI/CD pipelines to shift security left &mdash; catch issues before deployment.</p>
