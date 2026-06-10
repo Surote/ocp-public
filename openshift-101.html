@@ -5131,59 +5131,59 @@ EOF
 <div class="acc-item">
   <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> ConfigurationPolicy &mdash; Require LimitRange in all namespaces</div>
   <div class="acc-body">
-<pre><code>apiVersion: policy.open-cluster-management.io/v1
-kind: ConfigurationPolicy
-metadata:
-  name: require-limitrange
-spec:
-  remediationAction: inform       # start with audit
-  severity: medium
-  namespaceSelector:
-    include: ["*"]
-    exclude: ["openshift-*", "kube-*"]
-  object-templates:
-    - complianceType: musthave
-      objectDefinition:
-        apiVersion: v1
-        kind: LimitRange
-        metadata:
-          name: default-limits
-        spec:
-          limits:
-            - type: Container
-              default:
-                cpu: "500m"
-                memory: "512Mi"
-              defaultRequest:
-                cpu: "100m"
-                memory: "128Mi"</code></pre>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">policy.open-cluster-management.io/v1</span>
+<span class="key">kind</span>: <span class="str">ConfigurationPolicy</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">require-limitrange</span>
+<span class="key">spec</span>:
+  <span class="key">remediationAction</span>: <span class="str">inform</span>   <span class="cmt"># start with audit</span>
+  <span class="key">severity</span>: <span class="str">medium</span>
+  <span class="key">namespaceSelector</span>:
+    <span class="key">include</span>: <span class="str">["*"]</span>
+    <span class="key">exclude</span>: <span class="str">["openshift-*", "kube-*"]</span>
+  <span class="key">object-templates</span>:
+    - <span class="key">complianceType</span>: <span class="str">musthave</span>
+      <span class="key">objectDefinition</span>:
+        <span class="key">apiVersion</span>: <span class="str">v1</span>
+        <span class="key">kind</span>: <span class="str">LimitRange</span>
+        <span class="key">metadata</span>:
+          <span class="key">name</span>: <span class="str">default-limits</span>
+        <span class="key">spec</span>:
+          <span class="key">limits</span>:
+            - <span class="key">type</span>: <span class="str">Container</span>
+              <span class="key">default</span>:
+                <span class="key">cpu</span>: <span class="val">"500m"</span>
+                <span class="key">memory</span>: <span class="val">"512Mi"</span>
+              <span class="key">defaultRequest</span>:
+                <span class="key">cpu</span>: <span class="val">"100m"</span>
+                <span class="key">memory</span>: <span class="val">"128Mi"</span></pre>
   </div>
 </div>
 
 <div class="acc-item">
   <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> ConfigurationPolicy &mdash; Forbid privileged pods (mustnothave)</div>
   <div class="acc-body">
-<pre><code>apiVersion: policy.open-cluster-management.io/v1
-kind: ConfigurationPolicy
-metadata:
-  name: no-privileged-pods
-spec:
-  remediationAction: inform
-  severity: high
-  namespaceSelector:
-    include: ["*"]
-    exclude: ["openshift-*", "kube-*"]
-  object-templates:
-    - complianceType: mustnothave
-      objectDefinition:
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          namespace: "{{ .metadata.namespace }}"
-        spec:
-          containers:
-            - securityContext:
-                privileged: true</code></pre>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">policy.open-cluster-management.io/v1</span>
+<span class="key">kind</span>: <span class="str">ConfigurationPolicy</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">no-privileged-pods</span>
+<span class="key">spec</span>:
+  <span class="key">remediationAction</span>: <span class="str">inform</span>
+  <span class="key">severity</span>: <span class="str">high</span>
+  <span class="key">namespaceSelector</span>:
+    <span class="key">include</span>: <span class="str">["*"]</span>
+    <span class="key">exclude</span>: <span class="str">["openshift-*", "kube-*"]</span>
+  <span class="key">object-templates</span>:
+    - <span class="key">complianceType</span>: <span class="str">mustnothave</span>
+      <span class="key">objectDefinition</span>:
+        <span class="key">apiVersion</span>: <span class="str">v1</span>
+        <span class="key">kind</span>: <span class="str">Pod</span>
+        <span class="key">metadata</span>:
+          <span class="key">namespace</span>: <span class="str">"{{ .metadata.namespace }}"</span>
+        <span class="key">spec</span>:
+          <span class="key">containers</span>:
+            - <span class="key">securityContext</span>:
+                <span class="key">privileged</span>: <span class="val">true</span></pre>
   </div>
 </div>
 
@@ -5193,84 +5193,84 @@ spec:
 <div class="acc-item">
   <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> Complete Policy + ManagedClusterSetBinding + Placement + PlacementBinding YAML</div>
   <div class="acc-body">
-<pre><code># 1. Policy — wraps ConfigurationPolicy template
-apiVersion: policy.open-cluster-management.io/v1
-kind: Policy
-metadata:
-  name: policy-require-limitrange
-  namespace: open-cluster-management-policies
-  annotations:
-    policy.open-cluster-management.io/standards: NIST SP 800-53
-    policy.open-cluster-management.io/categories: CM Configuration Management
-    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
-spec:
-  remediationAction: inform
-  disabled: false
-  policy-templates:
-    - objectDefinition:
-        apiVersion: policy.open-cluster-management.io/v1
-        kind: ConfigurationPolicy
-        metadata:
-          name: require-limitrange
-        spec:
-          remediationAction: inform
-          severity: medium
-          namespaceSelector:
-            include: ["*"]
-            exclude: ["openshift-*", "kube-*"]
-          object-templates:
-            - complianceType: musthave
-              objectDefinition:
-                apiVersion: v1
-                kind: LimitRange
-                metadata:
-                  name: default-limits
-                spec:
-                  limits:
-                    - type: Container
-                      default:
-                        cpu: "500m"
-                        memory: "512Mi"
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># 1. Policy — wraps ConfigurationPolicy template</span>
+<span class="key">apiVersion</span>: <span class="str">policy.open-cluster-management.io/v1</span>
+<span class="key">kind</span>: <span class="str">Policy</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">policy-require-limitrange</span>
+  <span class="key">namespace</span>: <span class="str">open-cluster-management-policies</span>
+  <span class="key">annotations</span>:
+    <span class="key">policy.open-cluster-management.io/standards</span>: <span class="str">NIST SP 800-53</span>
+    <span class="key">policy.open-cluster-management.io/categories</span>: <span class="str">CM Configuration Management</span>
+    <span class="key">policy.open-cluster-management.io/controls</span>: <span class="str">CM-2 Baseline Configuration</span>
+<span class="key">spec</span>:
+  <span class="key">remediationAction</span>: <span class="str">inform</span>
+  <span class="key">disabled</span>: <span class="val">false</span>
+  <span class="key">policy-templates</span>:
+    - <span class="key">objectDefinition</span>:
+        <span class="key">apiVersion</span>: <span class="str">policy.open-cluster-management.io/v1</span>
+        <span class="key">kind</span>: <span class="str">ConfigurationPolicy</span>
+        <span class="key">metadata</span>:
+          <span class="key">name</span>: <span class="str">require-limitrange</span>
+        <span class="key">spec</span>:
+          <span class="key">remediationAction</span>: <span class="str">inform</span>
+          <span class="key">severity</span>: <span class="str">medium</span>
+          <span class="key">namespaceSelector</span>:
+            <span class="key">include</span>: <span class="str">["*"]</span>
+            <span class="key">exclude</span>: <span class="str">["openshift-*", "kube-*"]</span>
+          <span class="key">object-templates</span>:
+            - <span class="key">complianceType</span>: <span class="str">musthave</span>
+              <span class="key">objectDefinition</span>:
+                <span class="key">apiVersion</span>: <span class="str">v1</span>
+                <span class="key">kind</span>: <span class="str">LimitRange</span>
+                <span class="key">metadata</span>:
+                  <span class="key">name</span>: <span class="str">default-limits</span>
+                <span class="key">spec</span>:
+                  <span class="key">limits</span>:
+                    - <span class="key">type</span>: <span class="str">Container</span>
+                      <span class="key">default</span>:
+                        <span class="key">cpu</span>: <span class="val">"500m"</span>
+                        <span class="key">memory</span>: <span class="val">"512Mi"</span>
 ---
-# 2. ManagedClusterSetBinding — Placement only selects clusters from
-#    ManagedClusterSets bound to the policy namespace
-apiVersion: cluster.open-cluster-management.io/v1beta2
-kind: ManagedClusterSetBinding
-metadata:
-  name: global
-  namespace: open-cluster-management-policies
-spec:
-  clusterSet: global
+<span class="cmt"># 2. ManagedClusterSetBinding — Placement only selects clusters from</span>
+<span class="cmt">#    ManagedClusterSets bound to the policy namespace</span>
+<span class="key">apiVersion</span>: <span class="str">cluster.open-cluster-management.io/v1beta2</span>
+<span class="key">kind</span>: <span class="str">ManagedClusterSetBinding</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">global</span>
+  <span class="key">namespace</span>: <span class="str">open-cluster-management-policies</span>
+<span class="key">spec</span>:
+  <span class="key">clusterSet</span>: <span class="str">global</span>
 ---
-# 3. Placement — select target clusters
-apiVersion: cluster.open-cluster-management.io/v1beta1
-kind: Placement
-metadata:
-  name: placement-require-limitrange
-  namespace: open-cluster-management-policies
-spec:
-  predicates:
-    - requiredClusterSelector:
-        labelSelector:
-          matchExpressions:
-            - key: env
-              operator: In
-              values: ["production", "staging"]
+<span class="cmt"># 3. Placement — select target clusters</span>
+<span class="key">apiVersion</span>: <span class="str">cluster.open-cluster-management.io/v1beta1</span>
+<span class="key">kind</span>: <span class="str">Placement</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">placement-require-limitrange</span>
+  <span class="key">namespace</span>: <span class="str">open-cluster-management-policies</span>
+<span class="key">spec</span>:
+  <span class="key">predicates</span>:
+    - <span class="key">requiredClusterSelector</span>:
+        <span class="key">labelSelector</span>:
+          <span class="key">matchExpressions</span>:
+            - <span class="key">key</span>: <span class="str">env</span>
+              <span class="key">operator</span>: <span class="str">In</span>
+              <span class="key">values</span>: <span class="str">["production", "staging"]</span>
 ---
-# 4. PlacementBinding — links Policy ↔ Placement
-apiVersion: policy.open-cluster-management.io/v1
-kind: PlacementBinding
-metadata:
-  name: binding-require-limitrange
-  namespace: open-cluster-management-policies
-placementRef:
-  apiGroup: cluster.open-cluster-management.io
-  kind: Placement
-  name: placement-require-limitrange
-subjects:
-  - apiGroup: policy.open-cluster-management.io
-    kind: Policy
-    name: policy-require-limitrange</code></pre>
+<span class="cmt"># 4. PlacementBinding — links Policy ↔ Placement</span>
+<span class="key">apiVersion</span>: <span class="str">policy.open-cluster-management.io/v1</span>
+<span class="key">kind</span>: <span class="str">PlacementBinding</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">binding-require-limitrange</span>
+  <span class="key">namespace</span>: <span class="str">open-cluster-management-policies</span>
+<span class="key">placementRef</span>:
+  <span class="key">apiGroup</span>: <span class="str">cluster.open-cluster-management.io</span>
+  <span class="key">kind</span>: <span class="str">Placement</span>
+  <span class="key">name</span>: <span class="str">placement-require-limitrange</span>
+<span class="key">subjects</span>:
+  - <span class="key">apiGroup</span>: <span class="str">policy.open-cluster-management.io</span>
+    <span class="key">kind</span>: <span class="str">Policy</span>
+    <span class="key">name</span>: <span class="str">policy-require-limitrange</span></pre>
   </div>
 </div>
 
@@ -5296,54 +5296,54 @@ subjects:
 <div class="acc-item">
   <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> policyGenerator.yaml &mdash; Kustomize plugin</div>
   <div class="acc-body">
-<pre><code>apiVersion: policy.open-cluster-management.io/v1
-kind: PolicyGenerator
-metadata:
-  name: gen-security-baseline
-placementBindingDefaults:
-  name: binding-security-baseline
-policyDefaults:
-  namespace: open-cluster-management-policies
-  remediationAction: inform
-  severity: medium
-  consolidateManifests: false     # one ConfigurationPolicy per manifest file
-  placement:
-    labelSelector:
-      matchExpressions:
-        - key: env
-          operator: In
-          values: ["production", "staging"]
-policies:
-  - name: require-resource-limits
-    manifests:
-      - path: manifests/limitrange.yaml
-    policyAnnotations:
-      policy.open-cluster-management.io/standards: NIST SP 800-53
-      policy.open-cluster-management.io/categories: CM Configuration Management
-  - name: require-network-policies
-    severity: high
-    remediationAction: enforce    # override default for this policy
-    manifests:
-      - path: manifests/deny-all-netpol.yaml
-      - path: manifests/allow-dns-netpol.yaml
-    policyAnnotations:
-      policy.open-cluster-management.io/standards: CIS Kubernetes Benchmark
-  - name: require-pod-disruption-budget
-    manifests:
-      - path: manifests/pdb.yaml</code></pre>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">policy.open-cluster-management.io/v1</span>
+<span class="key">kind</span>: <span class="str">PolicyGenerator</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">gen-security-baseline</span>
+<span class="key">placementBindingDefaults</span>:
+  <span class="key">name</span>: <span class="str">binding-security-baseline</span>
+<span class="key">policyDefaults</span>:
+  <span class="key">namespace</span>: <span class="str">open-cluster-management-policies</span>
+  <span class="key">remediationAction</span>: <span class="str">inform</span>
+  <span class="key">severity</span>: <span class="str">medium</span>
+  <span class="key">consolidateManifests</span>: <span class="val">false</span>   <span class="cmt"># one ConfigurationPolicy per manifest file</span>
+  <span class="key">placement</span>:
+    <span class="key">labelSelector</span>:
+      <span class="key">matchExpressions</span>:
+        - <span class="key">key</span>: <span class="str">env</span>
+          <span class="key">operator</span>: <span class="str">In</span>
+          <span class="key">values</span>: <span class="str">["production", "staging"]</span>
+<span class="key">policies</span>:
+  - <span class="key">name</span>: <span class="str">require-resource-limits</span>
+    <span class="key">manifests</span>:
+      - <span class="key">path</span>: <span class="str">manifests/limitrange.yaml</span>
+    <span class="key">policyAnnotations</span>:
+      <span class="key">policy.open-cluster-management.io/standards</span>: <span class="str">NIST SP 800-53</span>
+      <span class="key">policy.open-cluster-management.io/categories</span>: <span class="str">CM Configuration Management</span>
+  - <span class="key">name</span>: <span class="str">require-network-policies</span>
+    <span class="key">severity</span>: <span class="str">high</span>
+    <span class="key">remediationAction</span>: <span class="str">enforce</span>   <span class="cmt"># override default for this policy</span>
+    <span class="key">manifests</span>:
+      - <span class="key">path</span>: <span class="str">manifests/deny-all-netpol.yaml</span>
+      - <span class="key">path</span>: <span class="str">manifests/allow-dns-netpol.yaml</span>
+    <span class="key">policyAnnotations</span>:
+      <span class="key">policy.open-cluster-management.io/standards</span>: <span class="str">CIS Kubernetes Benchmark</span>
+  - <span class="key">name</span>: <span class="str">require-pod-disruption-budget</span>
+    <span class="key">manifests</span>:
+      - <span class="key">path</span>: <span class="str">manifests/pdb.yaml</span></pre>
   </div>
 </div>
 
 <div class="acc-item">
   <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> kustomization.yaml &mdash; wire up PolicyGenerator</div>
   <div class="acc-body">
-<pre><code># kustomization.yaml — in the same directory as policyGenerator.yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-generators:
-  - policyGenerator.yaml
-# Run: kustomize build --enable-alpha-plugins .
-# Output: Policy + PlacementBinding + Placement for each entry</code></pre>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># kustomization.yaml — in the same directory as policyGenerator.yaml</span>
+<span class="key">apiVersion</span>: <span class="str">kustomize.config.k8s.io/v1beta1</span>
+<span class="key">kind</span>: <span class="str">Kustomization</span>
+<span class="key">generators</span>:
+  - <span class="str">policyGenerator.yaml</span>
+<span class="cmt"># Run: kustomize build --enable-alpha-plugins .</span>
+<span class="cmt"># Output: Policy + PlacementBinding + Placement for each entry</span></pre>
   </div>
 </div>
 
@@ -5700,42 +5700,42 @@ generators:
 <div class="acc-item">
   <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> MultiClusterObservability Custom Resource YAML</div>
   <div class="acc-body">
-<pre><code>apiVersion: observability.open-cluster-management.io/v1beta2
-kind: MultiClusterObservability
-metadata:
-  name: observability
-spec:
-  observabilityAddonSpec:
-    enableMetrics: true
-    interval: 300                # collection interval (seconds)
-  storageConfig:
-    metricObjectStorage:
-      name: thanos-object-storage   # Secret with S3 creds
-      key: thanos.yaml
-    statefulSetSize: 10Gi           # local cache per Thanos component
-  retentionConfig:
-    retentionResolutionRaw: 5d
-    retentionResolution5m: 14d
-    retentionResolution1h: 365d
-  advanced:
-    queryFrontend:
-      replicas: 2
-    receive:
-      replicas: 3</code></pre>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">observability.open-cluster-management.io/v1beta2</span>
+<span class="key">kind</span>: <span class="str">MultiClusterObservability</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">observability</span>
+<span class="key">spec</span>:
+  <span class="key">observabilityAddonSpec</span>:
+    <span class="key">enableMetrics</span>: <span class="val">true</span>
+    <span class="key">interval</span>: <span class="val">300</span>   <span class="cmt"># collection interval (seconds)</span>
+  <span class="key">storageConfig</span>:
+    <span class="key">metricObjectStorage</span>:
+      <span class="key">name</span>: <span class="str">thanos-object-storage</span>   <span class="cmt"># Secret with S3 creds</span>
+      <span class="key">key</span>: <span class="str">thanos.yaml</span>
+    <span class="key">statefulSetSize</span>: <span class="val">10Gi</span>   <span class="cmt"># local cache per Thanos component</span>
+  <span class="key">retentionConfig</span>:
+    <span class="key">retentionResolutionRaw</span>: <span class="val">5d</span>
+    <span class="key">retentionResolution5m</span>: <span class="val">14d</span>
+    <span class="key">retentionResolution1h</span>: <span class="val">365d</span>
+  <span class="key">advanced</span>:
+    <span class="key">queryFrontend</span>:
+      <span class="key">replicas</span>: <span class="val">2</span>
+    <span class="key">receive</span>:
+      <span class="key">replicas</span>: <span class="val">3</span></pre>
   </div>
 </div>
 
 <div class="acc-item">
   <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> thanos.yaml Secret (S3 bucket config)</div>
   <div class="acc-body">
-<pre><code># thanos.yaml — referenced by MultiClusterObservability
-type: s3
-config:
-  bucket: acm-observability
-  endpoint: s3.openshift-storage.svc:443
-  insecure: false
-  access_key: &lt;from ObjectBucketClaim Secret&gt;
-  secret_key: &lt;from ObjectBucketClaim Secret&gt;</code></pre>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># thanos.yaml — referenced by MultiClusterObservability</span>
+<span class="key">type</span>: <span class="str">s3</span>
+<span class="key">config</span>:
+  <span class="key">bucket</span>: <span class="str">acm-observability</span>
+  <span class="key">endpoint</span>: <span class="str">s3.openshift-storage.svc:443</span>
+  <span class="key">insecure</span>: <span class="val">false</span>
+  <span class="key">access_key</span>: <span class="str">&lt;from ObjectBucketClaim Secret&gt;</span>
+  <span class="key">secret_key</span>: <span class="str">&lt;from ObjectBucketClaim Secret&gt;</span></pre>
   </div>
 </div>
 
@@ -6016,32 +6016,32 @@ config:
 <div class="acc-item">
   <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> Central Custom Resource YAML</div>
   <div class="acc-body">
-<pre><code>apiVersion: platform.stackrox.io/v1alpha1
-kind: Central
-metadata:
-  name: stackrox-central-services
-  namespace: stackrox
-spec:
-  central:
-    exposure:
-      route:
-        enabled: true             # auto-create Route
-    persistence:
-      persistentVolumeClaim:
-        claimName: stackrox-db
-    db:
-      isEnabled: Default          # managed PostgreSQL
-      persistence:
-        persistentVolumeClaim:
-          claimName: central-db
-  scanner:
-    analyzer:
-      scaling:
-        autoScaling: Enabled
-        maxReplicas: 5
-        minReplicas: 2
-        replicas: 3
-    scannerComponent: AutoSense   # V4 when available</code></pre>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">platform.stackrox.io/v1alpha1</span>
+<span class="key">kind</span>: <span class="str">Central</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">stackrox-central-services</span>
+  <span class="key">namespace</span>: <span class="str">stackrox</span>
+<span class="key">spec</span>:
+  <span class="key">central</span>:
+    <span class="key">exposure</span>:
+      <span class="key">route</span>:
+        <span class="key">enabled</span>: <span class="val">true</span>   <span class="cmt"># auto-create Route</span>
+    <span class="key">persistence</span>:
+      <span class="key">persistentVolumeClaim</span>:
+        <span class="key">claimName</span>: <span class="str">stackrox-db</span>
+    <span class="key">db</span>:
+      <span class="key">isEnabled</span>: <span class="str">Default</span>   <span class="cmt"># managed PostgreSQL</span>
+      <span class="key">persistence</span>:
+        <span class="key">persistentVolumeClaim</span>:
+          <span class="key">claimName</span>: <span class="str">central-db</span>
+  <span class="key">scanner</span>:
+    <span class="key">analyzer</span>:
+      <span class="key">scaling</span>:
+        <span class="key">autoScaling</span>: <span class="str">Enabled</span>
+        <span class="key">maxReplicas</span>: <span class="val">5</span>
+        <span class="key">minReplicas</span>: <span class="val">2</span>
+        <span class="key">replicas</span>: <span class="val">3</span>
+    <span class="key">scannerComponent</span>: <span class="str">AutoSense</span>   <span class="cmt"># V4 when available</span></pre>
   </div>
 </div>
 
@@ -6049,24 +6049,24 @@ spec:
 <div class="acc-item">
   <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> SecuredCluster Custom Resource YAML</div>
   <div class="acc-body">
-<pre><code>apiVersion: platform.stackrox.io/v1alpha1
-kind: SecuredCluster
-metadata:
-  name: stackrox-secured-cluster
-  namespace: stackrox
-spec:
-  clusterName: production
-  centralEndpoint: central-stackrox.apps.hub.example.com:443
-  admissionControl:               # 4.9+ console: single ON/OFF enforcement toggle
-    listenOnCreates: true
-    listenOnUpdates: true
-    listenOnEvents: true          # runtime enforcement
-    contactImageScanners: ScanIfMissing
-  perNode:
-    collector:
-      collection: CORE_BPF        # only supported method since ACS 4.5
-      imageFlavor: Regular
-    taintToleration: TolerateTaints</code></pre>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">platform.stackrox.io/v1alpha1</span>
+<span class="key">kind</span>: <span class="str">SecuredCluster</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">stackrox-secured-cluster</span>
+  <span class="key">namespace</span>: <span class="str">stackrox</span>
+<span class="key">spec</span>:
+  <span class="key">clusterName</span>: <span class="str">production</span>
+  <span class="key">centralEndpoint</span>: <span class="str">central-stackrox.apps.hub.example.com:443</span>
+  <span class="key">admissionControl</span>: <span class="str"># 4.9+ console: single ON/OFF enforcement toggle</span>
+    <span class="key">listenOnCreates</span>: <span class="val">true</span>
+    <span class="key">listenOnUpdates</span>: <span class="val">true</span>
+    <span class="key">listenOnEvents</span>: <span class="val">true</span>   <span class="cmt"># runtime enforcement</span>
+    <span class="key">contactImageScanners</span>: <span class="str">ScanIfMissing</span>
+  <span class="key">perNode</span>:
+    <span class="key">collector</span>:
+      <span class="key">collection</span>: <span class="str">CORE_BPF</span>   <span class="cmt"># only supported method since ACS 4.5</span>
+      <span class="key">imageFlavor</span>: <span class="str">Regular</span>
+    <span class="key">taintToleration</span>: <span class="str">TolerateTaints</span></pre>
   </div>
 </div>
 
@@ -6170,28 +6170,28 @@ spec:
 <div class="acc-item">
   <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> SecurityPolicy CRD &mdash; declarative ACS policy</div>
   <div class="acc-body">
-<pre><code>apiVersion: config.stackrox.io/v1alpha1
-kind: SecurityPolicy
-metadata:
-  name: no-latest-tag
-  namespace: stackrox          # must be on the Central cluster
-spec:
-  policyName: "Image uses :latest tag"
-  description: "Forbid mutable :latest tags in production"
-  severity: HIGH_SEVERITY
-  categories:
-    - DevOps Best Practices
-  lifecycleStages:
-    - BUILD
-    - DEPLOY
-  scope:
-    - cluster: production
-  policySections:
-    - sectionName: Image tag
-      policyGroups:
-        - fieldName: Image Tag
-          values:
-            - value: latest</code></pre>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">config.stackrox.io/v1alpha1</span>
+<span class="key">kind</span>: <span class="str">SecurityPolicy</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">no-latest-tag</span>
+  <span class="key">namespace</span>: <span class="str">stackrox</span>   <span class="cmt"># must be on the Central cluster</span>
+<span class="key">spec</span>:
+  <span class="key">policyName</span>: <span class="str">"Image uses :latest tag"</span>
+  <span class="key">description</span>: <span class="str">"Forbid mutable :latest tags in production"</span>
+  <span class="key">severity</span>: <span class="str">HIGH_SEVERITY</span>
+  <span class="key">categories</span>:
+    - <span class="str">DevOps Best Practices</span>
+  <span class="key">lifecycleStages</span>:
+    - <span class="str">BUILD</span>
+    - <span class="str">DEPLOY</span>
+  <span class="key">scope</span>:
+    - <span class="key">cluster</span>: <span class="str">production</span>
+  <span class="key">policySections</span>:
+    - <span class="key">sectionName</span>: <span class="str">Image tag</span>
+      <span class="key">policyGroups</span>:
+        - <span class="key">fieldName</span>: <span class="str">Image Tag</span>
+          <span class="key">values</span>:
+            - <span class="key">value</span>: <span class="str">latest</span></pre>
   </div>
 </div>
 
@@ -6416,31 +6416,31 @@ spec:
 <div class="acc-item">
   <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> StorageCluster Custom Resource YAML</div>
   <div class="acc-body">
-<pre><code>apiVersion: ocs.openshift.io/v1
-kind: StorageCluster
-metadata:
-  name: ocs-storagecluster
-  namespace: openshift-storage
-spec:
-  manageNodes: false
-  monDataDirHostPath: /var/lib/rook
-  storageDeviceSets:
-    - name: ocs-deviceset
-      count: 1                    # devices per node
-      dataPVCTemplate:
-        spec:
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 512Gi      # size per OSD
-          storageClassName: localblock
-          volumeMode: Block
-      placement: {}
-      portable: true
-      replica: 3                  # 3-way replication
-  multiCloudGateway:
-    reconcileStrategy: standalone</code></pre>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">ocs.openshift.io/v1</span>
+<span class="key">kind</span>: <span class="str">StorageCluster</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">ocs-storagecluster</span>
+  <span class="key">namespace</span>: <span class="str">openshift-storage</span>
+<span class="key">spec</span>:
+  <span class="key">manageNodes</span>: <span class="val">false</span>
+  <span class="key">monDataDirHostPath</span>: <span class="str">/var/lib/rook</span>
+  <span class="key">storageDeviceSets</span>:
+    - <span class="key">name</span>: <span class="str">ocs-deviceset</span>
+      <span class="key">count</span>: <span class="val">1</span>   <span class="cmt"># devices per node</span>
+      <span class="key">dataPVCTemplate</span>:
+        <span class="key">spec</span>:
+          <span class="key">accessModes</span>:
+            - <span class="str">ReadWriteOnce</span>
+          <span class="key">resources</span>:
+            <span class="key">requests</span>:
+              <span class="key">storage</span>: <span class="val">512Gi</span>   <span class="cmt"># size per OSD</span>
+          <span class="key">storageClassName</span>: <span class="str">localblock</span>
+          <span class="key">volumeMode</span>: <span class="str">Block</span>
+      <span class="key">placement</span>: <span class="str">{}</span>
+      <span class="key">portable</span>: <span class="val">true</span>
+      <span class="key">replica</span>: <span class="val">3</span>   <span class="cmt"># 3-way replication</span>
+  <span class="key">multiCloudGateway</span>:
+    <span class="key">reconcileStrategy</span>: <span class="str">standalone</span></pre>
   </div>
 </div>
 
@@ -6448,33 +6448,33 @@ spec:
 <div class="acc-item">
   <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> RBD (Block) + CephFS (File) PVC Examples</div>
   <div class="acc-body">
-<pre><code># RBD block volume (RWO) — databases, general storage
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: my-app-data
-  namespace: my-app
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
-  storageClassName: ocs-storagecluster-ceph-rbd
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># RBD block volume (RWO) — databases, general storage</span>
+<span class="key">apiVersion</span>: <span class="str">v1</span>
+<span class="key">kind</span>: <span class="str">PersistentVolumeClaim</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">my-app-data</span>
+  <span class="key">namespace</span>: <span class="str">my-app</span>
+<span class="key">spec</span>:
+  <span class="key">accessModes</span>:
+    - <span class="str">ReadWriteOnce</span>
+  <span class="key">resources</span>:
+    <span class="key">requests</span>:
+      <span class="key">storage</span>: <span class="val">10Gi</span>
+  <span class="key">storageClassName</span>: <span class="str">ocs-storagecluster-ceph-rbd</span>
 ---
-# CephFS shared volume (RWX) — shared across pods/nodes
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: shared-uploads
-  namespace: my-app
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 50Gi
-  storageClassName: ocs-storagecluster-cephfs</code></pre>
+<span class="cmt"># CephFS shared volume (RWX) — shared across pods/nodes</span>
+<span class="key">apiVersion</span>: <span class="str">v1</span>
+<span class="key">kind</span>: <span class="str">PersistentVolumeClaim</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">shared-uploads</span>
+  <span class="key">namespace</span>: <span class="str">my-app</span>
+<span class="key">spec</span>:
+  <span class="key">accessModes</span>:
+    - <span class="str">ReadWriteMany</span>
+  <span class="key">resources</span>:
+    <span class="key">requests</span>:
+      <span class="key">storage</span>: <span class="val">50Gi</span>
+  <span class="key">storageClassName</span>: <span class="str">ocs-storagecluster-cephfs</span></pre>
   </div>
 </div>
 
@@ -6884,34 +6884,34 @@ spec:
 <div class="acc-item">
   <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> QuayRegistry Custom Resource YAML</div>
   <div class="acc-body">
-<pre><code>apiVersion: quay.redhat.com/v1
-kind: QuayRegistry
-metadata:
-  name: central
-  namespace: quay-enterprise
-spec:
-  configBundleSecret: quay-config-bundle
-  components:
-    - kind: clair
-      managed: true
-    - kind: clairpostgres
-      managed: true
-    - kind: postgres
-      managed: true
-    - kind: redis
-      managed: true
-    - kind: objectstorage
-      managed: true          # uses ODF/MCG via ObjectBucketClaim
-    - kind: route
-      managed: true
-    - kind: horizontalpodautoscaler
-      managed: true
-    - kind: mirror
-      managed: true
-    - kind: monitoring
-      managed: true
-    - kind: tls
-      managed: true</code></pre>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">quay.redhat.com/v1</span>
+<span class="key">kind</span>: <span class="str">QuayRegistry</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">central</span>
+  <span class="key">namespace</span>: <span class="str">quay-enterprise</span>
+<span class="key">spec</span>:
+  <span class="key">configBundleSecret</span>: <span class="str">quay-config-bundle</span>
+  <span class="key">components</span>:
+    - <span class="key">kind</span>: <span class="str">clair</span>
+      <span class="key">managed</span>: <span class="val">true</span>
+    - <span class="key">kind</span>: <span class="str">clairpostgres</span>
+      <span class="key">managed</span>: <span class="val">true</span>
+    - <span class="key">kind</span>: <span class="str">postgres</span>
+      <span class="key">managed</span>: <span class="val">true</span>
+    - <span class="key">kind</span>: <span class="str">redis</span>
+      <span class="key">managed</span>: <span class="val">true</span>
+    - <span class="key">kind</span>: <span class="str">objectstorage</span>
+      <span class="key">managed</span>: <span class="val">true</span>   <span class="cmt"># uses ODF/MCG via ObjectBucketClaim</span>
+    - <span class="key">kind</span>: <span class="str">route</span>
+      <span class="key">managed</span>: <span class="val">true</span>
+    - <span class="key">kind</span>: <span class="str">horizontalpodautoscaler</span>
+      <span class="key">managed</span>: <span class="val">true</span>
+    - <span class="key">kind</span>: <span class="str">mirror</span>
+      <span class="key">managed</span>: <span class="val">true</span>
+    - <span class="key">kind</span>: <span class="str">monitoring</span>
+      <span class="key">managed</span>: <span class="val">true</span>
+    - <span class="key">kind</span>: <span class="str">tls</span>
+      <span class="key">managed</span>: <span class="val">true</span></pre>
   </div>
 </div>
 
@@ -6919,20 +6919,20 @@ spec:
 <div class="acc-item">
   <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> ObjectBucketClaim YAML (MCG / NooBaa)</div>
   <div class="acc-body">
-<pre><code>apiVersion: objectbucket.io/v1alpha1
-kind: ObjectBucketClaim
-metadata:
-  name: quay-bucket
-  namespace: quay-enterprise
-spec:
-  generateBucketName: quay-bucket
-  storageClassName: openshift-storage.noobaa.io
-  additionalConfig:
-    bucketclass: noobaa-default-bucket-class
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">objectbucket.io/v1alpha1</span>
+<span class="key">kind</span>: <span class="str">ObjectBucketClaim</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">quay-bucket</span>
+  <span class="key">namespace</span>: <span class="str">quay-enterprise</span>
+<span class="key">spec</span>:
+  <span class="key">generateBucketName</span>: <span class="str">quay-bucket</span>
+  <span class="key">storageClassName</span>: <span class="str">openshift-storage.noobaa.io</span>
+  <span class="key">additionalConfig</span>:
+    <span class="key">bucketclass</span>: <span class="str">noobaa-default-bucket-class</span>
 ---
-# After OBC is bound, a Secret and ConfigMap are created:
-#   Secret:    quay-bucket  (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
-#   ConfigMap: quay-bucket  (BUCKET_NAME, BUCKET_HOST, BUCKET_PORT)</code></pre>
+<span class="cmt"># After OBC is bound, a Secret and ConfigMap are created:</span>
+<span class="cmt">#   Secret:    quay-bucket  (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)</span>
+<span class="cmt">#   ConfigMap: quay-bucket  (BUCKET_NAME, BUCKET_HOST, BUCKET_PORT)</span></pre>
   </div>
 </div>
 
