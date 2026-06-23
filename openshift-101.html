@@ -265,6 +265,7 @@ strong { color:var(--text-bright); font-weight:600; }
 .callout.warn { border-left-color:var(--amber); background:var(--amber-dim); }
 .callout.danger { border-left-color:var(--red-soft); background:var(--red-glow); }
 .callout.success { border-left-color:var(--green); background:var(--green-dim); }
+.callout.tryit { border-left-color:var(--teal); background:var(--teal-dim); }
 
 /* ═══ Tables ═══ */
 table { width:100%; border-collapse:collapse; margin:14px 0 18px; font-size:.84rem; }
@@ -510,6 +511,11 @@ html.dark code { color:#5b9cf5; }
   <div class="nav-item" data-page="deployments" data-idx="3">
     <span class="nav-icon">&#9654;</span>
     <span class="nav-label">Deployments &amp; Workloads</span>
+    <span class="nav-check">&#10003;</span>
+  </div>
+  <div class="nav-item" data-page="autoscaling" data-idx="19">
+    <span class="nav-icon">&#8693;</span>
+    <span class="nav-label">Autoscaling</span>
     <span class="nav-check">&#10003;</span>
   </div>
   <div class="nav-item" data-page="taints" data-idx="15">
@@ -2144,6 +2150,53 @@ html.dark code { color:#5b9cf5; }
   </svg>
 </div>
 
+<h2>ConfigMaps &amp; Secrets</h2>
+<p>Both decouple configuration from the container image (shown wired into the Pod above). A <strong>ConfigMap</strong> holds non-sensitive key-value data; a <strong>Secret</strong> holds sensitive data and is RBAC-protected. A pod consumes either as <strong>environment variables</strong> or as files in a <strong>mounted volume</strong>.</p>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># ConfigMap — non-sensitive config</span>
+<span class="key">apiVersion</span>: <span class="str">v1</span>
+<span class="key">kind</span>: <span class="str">ConfigMap</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">app-config</span>
+<span class="key">data</span>:
+  <span class="key">LOG_LEVEL</span>: <span class="str">info</span>
+  <span class="key">app.properties</span>: |
+    <span class="key">timeout</span>=<span class="val">30</span>
+    <span class="key">retries</span>=<span class="val">3</span>
+<span class="cmt">---</span>
+<span class="cmt"># Secret — sensitive data (stringData is auto base64-encoded on apply)</span>
+<span class="key">apiVersion</span>: <span class="str">v1</span>
+<span class="key">kind</span>: <span class="str">Secret</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">db-credentials</span>
+<span class="key">type</span>: <span class="str">Opaque</span>
+<span class="key">stringData</span>:
+  <span class="key">username</span>: <span class="str">appuser</span>
+  <span class="key">password</span>: <span class="str">s3cr3t-p@ss</span></pre>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># Consume inside a container — three patterns</span>
+<span class="key">env</span>:
+  - <span class="key">name</span>: <span class="str">LOG_LEVEL</span>          <span class="cmt"># single key as env var</span>
+    <span class="key">valueFrom</span>:
+      <span class="key">configMapKeyRef</span>: { <span class="key">name</span>: <span class="str">app-config</span>, <span class="key">key</span>: <span class="str">LOG_LEVEL</span> }
+<span class="key">envFrom</span>:
+  - <span class="key">secretRef</span>: { <span class="key">name</span>: <span class="str">db-credentials</span> }   <span class="cmt"># every key as env vars</span>
+<span class="key">volumeMounts</span>:
+  - <span class="key">name</span>: <span class="str">config-vol</span>            <span class="cmt"># mount as files</span>
+    <span class="key">mountPath</span>: <span class="str">/etc/app</span></pre>
+<h3>Secret Types</h3>
+<table>
+  <thead><tr><th>Type</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>Opaque</code></td><td>Default &mdash; arbitrary user-defined key-value data</td></tr>
+    <tr><td><code>kubernetes.io/dockerconfigjson</code></td><td>Registry pull credentials (used by <code>imagePullSecrets</code>)</td></tr>
+    <tr><td><code>kubernetes.io/tls</code></td><td>TLS cert + key (<code>tls.crt</code>, <code>tls.key</code>) for Routes/Ingress</td></tr>
+    <tr><td><code>kubernetes.io/basic-auth</code></td><td>Username + password for Git/source secrets</td></tr>
+    <tr><td><code>kubernetes.io/service-account-token</code></td><td>Auto-generated token for a ServiceAccount</td></tr>
+  </tbody>
+</table>
+<div class="callout warn">
+  <strong>Secrets are base64-encoded, not encrypted.</strong> By default they sit in plaintext in etcd. Enable <strong>etcd encryption at rest</strong> for real protection. Both ConfigMaps and Secrets have a <strong>1 MiB size limit</strong>; set <code>immutable: true</code> on stable ones to reduce API-server load and prevent accidental edits.
+</div>
+
 <h2>Deployment In Depth</h2>
 <p>A <strong>Deployment</strong> is the primary controller for stateless workloads. It creates and manages ReplicaSets, which in turn create Pods. When you update a Deployment (e.g., new image), it creates a new ReplicaSet and gradually shifts pods from old to new &mdash; this is a <strong>rolling update</strong>.</p>
 
@@ -2530,6 +2583,50 @@ html.dark code { color:#5b9cf5; }
     <span class="key">cpu</span>: <span class="str">"1000m"</span>   <span class="cmt"># Max 1 CPU core (throttled beyond)</span>
     <span class="key">memory</span>: <span class="str">"512Mi"</span>  <span class="cmt"># Max 512 MiB (OOMKilled beyond)</span></pre>
 
+<h3>Quality of Service (QoS) Classes</h3>
+<p>The kubelet <strong>derives</strong> a QoS class for every pod from its requests and limits &mdash; you don&rsquo;t set it directly. QoS decides <strong>eviction order</strong> when a node runs low on memory: lower-priority pods are killed first to protect critical ones.</p>
+<table>
+  <thead><tr><th>QoS Class</th><th>Condition</th><th>Eviction priority</th><th>Typical use</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Guaranteed</strong></td><td><code>limits == requests</code> for CPU <em>and</em> memory on every container</td><td>Evicted <strong>last</strong></td><td>Databases, critical stateful workloads</td></tr>
+    <tr><td><strong>Burstable</strong></td><td>At least one container has a request set, but not Guaranteed</td><td>Evicted <strong>middle</strong> (those most over their requests first)</td><td>Most general-purpose apps</td></tr>
+    <tr><td><strong>BestEffort</strong></td><td>No requests or limits set anywhere</td><td>Evicted <strong>first</strong></td><td>Batch jobs, non-critical workloads</td></tr>
+  </tbody>
+</table>
+<div class="callout warn">
+  <strong>Under node memory pressure</strong> the kubelet evicts in order: <strong>BestEffort &rarr; Burstable</strong> (those exceeding requests) <strong>&rarr; Guaranteed</strong> last. Set <code>requests == limits</code> for anything that must not be evicted. CPU pressure throttles rather than evicts.
+</div>
+
+<h2>Health Probes</h2>
+<p>OpenShift uses three probe types (shown in the lifecycle diagram above) to manage container health and traffic. Each can use an <code>httpGet</code>, <code>tcpSocket</code>, <code>exec</code>, or <code>grpc</code> handler.</p>
+<table>
+  <thead><tr><th>Probe</th><th>Question it answers</th><th>On failure</th></tr></thead>
+  <tbody>
+    <tr><td><strong>startupProbe</strong></td><td>Has the app finished starting?</td><td>Restart container; disables liveness/readiness until it passes (for slow-starting apps)</td></tr>
+    <tr><td><strong>livenessProbe</strong></td><td>Is the container still alive (not deadlocked)?</td><td><strong>Restart</strong> the container</td></tr>
+    <tr><td><strong>readinessProbe</strong></td><td>Can it serve traffic right now?</td><td><strong>Remove from Service endpoints</strong> (no restart) until it passes</td></tr>
+  </tbody>
+</table>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">containers</span>:
+  - <span class="key">name</span>: <span class="str">web</span>
+    <span class="key">startupProbe</span>:           <span class="cmt"># slow boot: allow up to 30 &times; 10s = 300s</span>
+      <span class="key">httpGet</span>: { <span class="key">path</span>: <span class="str">/healthz</span>, <span class="key">port</span>: <span class="val">8080</span> }
+      <span class="key">failureThreshold</span>: <span class="val">30</span>
+      <span class="key">periodSeconds</span>: <span class="val">10</span>
+    <span class="key">livenessProbe</span>:          <span class="cmt"># restart if deadlocked</span>
+      <span class="key">httpGet</span>: { <span class="key">path</span>: <span class="str">/healthz</span>, <span class="key">port</span>: <span class="val">8080</span> }
+      <span class="key">periodSeconds</span>: <span class="val">10</span>
+    <span class="key">readinessProbe</span>:         <span class="cmt"># pull from load balancer until deps are up</span>
+      <span class="key">httpGet</span>: { <span class="key">path</span>: <span class="str">/ready</span>, <span class="key">port</span>: <span class="val">8080</span> }
+      <span class="key">periodSeconds</span>: <span class="val">5</span></pre>
+<div class="callout">
+  <strong>Common gotcha:</strong> an over-aggressive <code>livenessProbe</code> (short timeout, hitting a slow endpoint) causes <strong>restart loops</strong>. Use <code>readinessProbe</code> for dependency checks (DB not ready) and <code>livenessProbe</code> only for true deadlock detection. Use <code>startupProbe</code> for legacy apps with long warm-up.
+</div>
+
+<div class="callout tryit">
+  <strong>Try it:</strong> <code>oc set probe deployment/myapp --readiness --get-url=http://:8080/ready</code> &mdash; then watch endpoints update with <code>oc get endpoints myapp -w</code>.
+</div>
+
 <button class="mark-read" onclick="markRead(this,2)">&#10003; Mark section as read</button>
 </div>
 
@@ -2679,6 +2776,355 @@ html.dark code { color:#5b9cf5; }
 </div>
 
 <button class="mark-read" onclick="markRead(this,3)">&#10003; Mark section as read</button>
+</div>
+
+<!-- ================ SECTION 19: AUTOSCALING ================ -->
+<div class="page" id="page-autoscaling">
+<h1>Autoscaling</h1>
+<p class="page-subtitle">Automatically adjust pod replicas, container resources, and cluster capacity to match workload demand.</p>
+
+<h2>Why Autoscaling?</h2>
+<p>Static resource allocation wastes capacity during low demand and causes outages during spikes. OpenShift provides <strong>four complementary autoscaling mechanisms</strong> that operate at two distinct levels:</p>
+<ul>
+  <li><strong>Pod-level scaling</strong> &mdash; adjusts the number of pod replicas (<em>HPA</em>) or the CPU/memory requests on each pod (<em>VPA</em>).</li>
+  <li><strong>Node-level scaling</strong> &mdash; adds or removes worker nodes when the cluster itself runs out of schedulable capacity (<em>Cluster Autoscaler</em> + <em>MachineAutoscaler</em>).</li>
+</ul>
+
+<h2>Autoscaling Architecture</h2>
+<div class="diagram-box">
+  <div class="diagram-title">Pod-Level vs Node-Level Autoscaling</div>
+  <svg width="820" height="440" viewBox="0 0 820 440" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs>
+      <marker id="aAS" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--blue)"/></marker>
+      <marker id="aASg" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--green)"/></marker>
+      <marker id="aASp" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--purple)"/></marker>
+      <marker id="aASa" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--amber)"/></marker>
+      <marker id="aASr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--rose)"/></marker>
+      <marker id="aASt" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--teal)"/></marker>
+    </defs>
+
+    <!-- Section labels -->
+    <text x="410" y="18" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".08em">POD-LEVEL SCALING</text>
+    <rect x="10" y="24" width="800" height="175" rx="10" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".2" stroke-dasharray="6 3"/>
+
+    <!-- HPA -->
+    <g class="d-node" data-tip="as-hpa">
+      <rect x="30" y="38" width="160" height="52" rx="8" fill="rgba(91,156,245,.08)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="110" y="58" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="11">HPA</text>
+      <text x="110" y="76" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">Horizontal Pod Autoscaler</text>
+    </g>
+
+    <!-- VPA -->
+    <g class="d-node" data-tip="as-vpa">
+      <rect x="30" y="100" width="160" height="52" rx="8" fill="rgba(54,214,181,.08)" stroke="var(--teal)" stroke-opacity=".5"/>
+      <text x="110" y="120" text-anchor="middle" fill="var(--teal)" font-weight="700" font-size="11">VPA</text>
+      <text x="110" y="138" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">Vertical Pod Autoscaler</text>
+    </g>
+
+    <!-- Metrics Server -->
+    <g class="d-node" data-tip="as-metrics">
+      <rect x="220" y="55" width="130" height="40" rx="8" fill="var(--bg-elevated)" stroke="var(--border)"/>
+      <text x="285" y="72" text-anchor="middle" fill="var(--text)" font-weight="600" font-size="9">Metrics Server</text>
+      <text x="285" y="84" text-anchor="middle" fill="var(--text-dim)" font-size="7">CPU / Memory metrics</text>
+    </g>
+    <line x1="190" y1="64" x2="218" y2="70" stroke="var(--blue)" stroke-width="1" stroke-opacity=".4" marker-end="url(#aAS)"/>
+    <line x1="190" y1="122" x2="216" y2="90" stroke="var(--teal)" stroke-width="1" stroke-opacity=".5" marker-end="url(#aASt)"/>
+
+    <!-- Existing Node box -->
+    <rect x="390" y="34" width="400" height="160" rx="10" fill="var(--bg-surface)" stroke="var(--border)" stroke-width="1.5"/>
+    <text x="590" y="52" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".06em">WORKER NODE (existing)</text>
+
+    <!-- Pod replicas inside node (HPA scales these) -->
+    <g class="d-node" data-tip="as-pod-replica">
+      <rect x="410" y="62" width="72" height="36" rx="6" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".3"/>
+      <text x="446" y="78" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="8">Pod 1</text>
+      <text x="446" y="92" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">cpu: 200m</text>
+    </g>
+    <g class="d-node" data-tip="as-pod-replica">
+      <rect x="490" y="62" width="72" height="36" rx="6" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".3"/>
+      <text x="526" y="78" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="8">Pod 2</text>
+      <text x="526" y="92" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">cpu: 200m</text>
+    </g>
+    <g class="d-node" data-tip="as-pod-replica">
+      <rect x="570" y="62" width="72" height="36" rx="6" fill="rgba(91,156,245,.10)" stroke="var(--blue)" stroke-opacity=".5" stroke-dasharray="4 2"/>
+      <text x="606" y="78" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="8">Pod 3</text>
+      <text x="606" y="92" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">+ HPA</text>
+    </g>
+    <g class="d-node" data-tip="as-pod-replica">
+      <rect x="650" y="62" width="72" height="36" rx="6" fill="rgba(91,156,245,.10)" stroke="var(--blue)" stroke-opacity=".5" stroke-dasharray="4 2"/>
+      <text x="686" y="78" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="8">Pod 4</text>
+      <text x="686" y="92" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">+ HPA</text>
+    </g>
+
+    <!-- HPA arrow to pods -->
+    <line x1="350" y1="64" x2="408" y2="74" stroke="var(--blue)" stroke-width="1.2" marker-end="url(#aAS)"/>
+    <text x="375" y="58" text-anchor="middle" fill="var(--blue)" font-size="7" font-weight="600">scale replicas</text>
+
+    <!-- VPA target pod (right-sizing) -->
+    <g class="d-node" data-tip="as-vpa-pod">
+      <rect x="410" y="115" width="145" height="50" rx="6" fill="rgba(54,214,181,.06)" stroke="var(--teal)" stroke-opacity=".4"/>
+      <text x="482" y="133" text-anchor="middle" fill="var(--teal)" font-weight="600" font-size="8">Pod (right-sized)</text>
+      <text x="482" y="147" text-anchor="middle" fill="var(--text-dim)" font-size="7">cpu: 200m &rarr; 350m</text>
+      <text x="482" y="159" text-anchor="middle" fill="var(--text-dim)" font-size="7">mem: 128Mi &rarr; 256Mi</text>
+    </g>
+    <line x1="350" y1="88" x2="408" y2="128" stroke="var(--teal)" stroke-width="1.2" marker-end="url(#aASt)"/>
+    <text x="382" y="103" text-anchor="middle" fill="var(--teal)" font-size="7" font-weight="600">right-size</text>
+
+    <!-- Conflict warning -->
+    <text x="245" y="175" text-anchor="middle" fill="var(--rose)" font-size="7.5" font-weight="600">&#9888; Don't use HPA + VPA on same CPU/memory metric</text>
+
+    <!-- NODE-LEVEL SCALING -->
+    <text x="410" y="222" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".08em">NODE-LEVEL SCALING</text>
+    <rect x="10" y="228" width="800" height="200" rx="10" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".2" stroke-dasharray="6 3"/>
+
+    <!-- Cluster Autoscaler -->
+    <g class="d-node" data-tip="as-cluster-autoscaler">
+      <rect x="30" y="245" width="200" height="55" rx="8" fill="rgba(22,163,74,.08)" stroke="var(--green)" stroke-opacity=".5"/>
+      <text x="130" y="265" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="11">Cluster Autoscaler</text>
+      <text x="130" y="280" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">cluster-scoped | decides scale up/down</text>
+      <text x="130" y="292" text-anchor="middle" fill="var(--text-dim)" font-size="7">autoscaling.openshift.io/v1</text>
+    </g>
+
+    <!-- MachineAutoscaler -->
+    <g class="d-node" data-tip="as-machineautoscaler">
+      <rect x="260" y="245" width="200" height="55" rx="8" fill="rgba(167,139,250,.08)" stroke="var(--purple)" stroke-opacity=".5"/>
+      <text x="360" y="265" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="11">MachineAutoscaler</text>
+      <text x="360" y="280" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">per-MachineSet | min/max bounds</text>
+      <text x="360" y="292" text-anchor="middle" fill="var(--text-dim)" font-size="7">autoscaling.openshift.io/v1beta1</text>
+    </g>
+
+    <!-- Arrow from Cluster Autoscaler to MachineAutoscaler -->
+    <line x1="230" y1="272" x2="258" y2="272" stroke="var(--green)" stroke-width="1.5" marker-end="url(#aASg)"/>
+    <text x="244" y="264" text-anchor="middle" fill="var(--green)" font-size="6.5" font-weight="600">triggers</text>
+
+    <!-- MachineSet -->
+    <g class="d-node" data-tip="as-machineset">
+      <rect x="260" y="318" width="200" height="45" rx="8" fill="rgba(217,119,6,.08)" stroke="var(--amber)" stroke-opacity=".5"/>
+      <text x="360" y="337" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="10">MachineSet</text>
+      <text x="360" y="352" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">machine.openshift.io/v1beta1</text>
+    </g>
+    <line x1="360" y1="300" x2="360" y2="316" stroke="var(--purple)" stroke-width="1.5" marker-end="url(#aASp)"/>
+    <text x="390" y="310" text-anchor="start" fill="var(--purple)" font-size="6.5" font-weight="600">sets replicas</text>
+
+    <!-- New Node (provisioned) -->
+    <g class="d-node" data-tip="as-new-node">
+      <rect x="510" y="318" width="180" height="45" rx="8" fill="rgba(22,163,74,.06)" stroke="var(--green)" stroke-opacity=".4" stroke-dasharray="4 2"/>
+      <text x="600" y="337" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="10">New Worker Node</text>
+      <text x="600" y="352" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">provisioned by Machine API</text>
+    </g>
+    <line x1="460" y1="340" x2="508" y2="340" stroke="var(--amber)" stroke-width="1.5" marker-end="url(#aASa)"/>
+    <text x="484" y="333" text-anchor="middle" fill="var(--amber)" font-size="6.5" font-weight="600">creates</text>
+
+    <!-- Pending pods trigger -->
+    <g class="d-node" data-tip="as-pending-pods">
+      <rect x="30" y="318" width="200" height="45" rx="8" fill="rgba(225,29,72,.06)" stroke="var(--rose)" stroke-opacity=".4"/>
+      <text x="130" y="337" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">Pending Pods (Unschedulable)</text>
+      <text x="130" y="352" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">insufficient CPU/memory on nodes</text>
+    </g>
+    <line x1="130" y1="318" x2="130" y2="302" stroke="var(--rose)" stroke-width="1.2" stroke-dasharray="4 2" marker-end="url(#aASr)"/>
+    <text x="155" y="312" text-anchor="start" fill="var(--rose)" font-size="6.5" font-weight="600">trigger</text>
+
+    <!-- Scheduled pods flow to new node -->
+    <line x1="130" y1="363" x2="130" y2="395" stroke="var(--green)" stroke-width="1" stroke-opacity=".3" stroke-dasharray="3 2"/>
+    <line x1="130" y1="395" x2="600" y2="395" stroke="var(--green)" stroke-width="1" stroke-opacity=".3" stroke-dasharray="3 2"/>
+    <line x1="600" y1="395" x2="600" y2="365" stroke="var(--green)" stroke-width="1" stroke-opacity=".3" marker-end="url(#aASg)"/>
+    <text x="365" y="410" text-anchor="middle" fill="var(--green)" font-size="7.5" font-weight="600">pending pods scheduled onto new node</text>
+
+    <!-- Underused scale-down note -->
+    <text x="130" y="420" text-anchor="middle" fill="var(--text-dim)" font-size="7">Scale down: nodes removed when underutilised &amp; pods can be rescheduled</text>
+  </svg>
+</div>
+
+<h2>Autoscaling Mechanisms Comparison</h2>
+<table>
+  <thead>
+    <tr><th>Mechanism</th><th>Scope</th><th>What It Changes</th><th>API / Kind</th><th>When to Use</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>HPA</strong></td>
+      <td>Pod-level</td>
+      <td>Replica count of a Deployment, StatefulSet, or ReplicaSet</td>
+      <td><code>autoscaling/v2</code><br><code>HorizontalPodAutoscaler</code></td>
+      <td>Workloads with variable request rates &mdash; web APIs, queue consumers</td>
+    </tr>
+    <tr>
+      <td><strong>VPA</strong></td>
+      <td>Pod-level</td>
+      <td>CPU/memory requests &amp; limits on pod containers</td>
+      <td><code>autoscaling.k8s.io/v1</code><br><code>VerticalPodAutoscaler</code></td>
+      <td>Right-sizing long-running pods; avoid over/under-provisioning</td>
+    </tr>
+    <tr>
+      <td><strong>Cluster Autoscaler</strong></td>
+      <td>Cluster-level</td>
+      <td>Number of nodes (via MachineSets) &mdash; add when pods pending, remove when underused</td>
+      <td><code>autoscaling.openshift.io/v1</code><br><code>ClusterAutoscaler</code></td>
+      <td>Elastic clusters on IaaS; scale capacity to match demand</td>
+    </tr>
+    <tr>
+      <td><strong>MachineAutoscaler</strong></td>
+      <td>Per-MachineSet</td>
+      <td>Min/max replica bounds for a specific MachineSet</td>
+      <td><code>autoscaling.openshift.io/v1beta1</code><br><code>MachineAutoscaler</code></td>
+      <td>Limit per-AZ or per-instance-type node counts; required companion for Cluster Autoscaler</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>HPA &mdash; Horizontal Pod Autoscaler</h2>
+<p>HPA watches metrics (CPU utilisation, memory, or custom/external metrics) and adjusts the <code>replicas</code> field on a target workload controller. It runs a control loop every 15 seconds by default and uses the <strong>autoscaling/v2</strong> API for multi-metric and custom metric support.</p>
+
+<h3>HPA YAML Example</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">autoscaling/v2</span>
+<span class="key">kind</span>: <span class="str">HorizontalPodAutoscaler</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">my-app-hpa</span>
+  <span class="key">namespace</span>: <span class="str">my-project</span>
+<span class="key">spec</span>:
+  <span class="key">scaleTargetRef</span>:
+    <span class="key">apiVersion</span>: <span class="str">apps/v1</span>
+    <span class="key">kind</span>: <span class="str">Deployment</span>
+    <span class="key">name</span>: <span class="str">my-app</span>
+  <span class="key">minReplicas</span>: <span class="val">2</span>
+  <span class="key">maxReplicas</span>: <span class="val">10</span>
+  <span class="key">metrics</span>:
+    - <span class="key">type</span>: <span class="str">Resource</span>
+      <span class="key">resource</span>:
+        <span class="key">name</span>: <span class="str">cpu</span>
+        <span class="key">target</span>:
+          <span class="key">type</span>: <span class="str">Utilization</span>
+          <span class="key">averageUtilization</span>: <span class="val">70</span>    <span class="cmt"># scale up when avg CPU &gt; 70%</span>
+    - <span class="key">type</span>: <span class="str">Resource</span>
+      <span class="key">resource</span>:
+        <span class="key">name</span>: <span class="str">memory</span>
+        <span class="key">target</span>:
+          <span class="key">type</span>: <span class="str">Utilization</span>
+          <span class="key">averageUtilization</span>: <span class="val">80</span>
+  <span class="key">behavior</span>:
+    <span class="key">scaleDown</span>:
+      <span class="key">stabilizationWindowSeconds</span>: <span class="val">300</span>  <span class="cmt"># wait 5 min before scaling down</span>
+      <span class="key">policies</span>:
+        - <span class="key">type</span>: <span class="str">Percent</span>
+          <span class="key">value</span>: <span class="val">25</span>
+          <span class="key">periodSeconds</span>: <span class="val">60</span></pre>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># Quick HPA via CLI</span>
+<span class="kw">oc</span> autoscale deployment/my-app --min=2 --max=10 --cpu-percent=70
+
+<span class="cmt"># Check HPA status</span>
+<span class="kw">oc</span> get hpa my-app-hpa
+<span class="cmt"># NAME          REFERENCE          TARGETS   MINPODS   MAXPODS   REPLICAS</span>
+<span class="cmt"># my-app-hpa    Deployment/my-app  45%/70%   2         10        3</span></pre>
+
+<h2>VPA &mdash; Vertical Pod Autoscaler</h2>
+<p>VPA analyses historical and real-time resource usage and recommends (or applies) right-sized CPU and memory requests. On OpenShift it is delivered by the <strong>VerticalPodAutoscaler Operator</strong> installed from OperatorHub.</p>
+
+<h3>VPA Modes</h3>
+<table>
+  <thead><tr><th>Mode</th><th>Behaviour</th><th>When to Use</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Off</strong></td><td>Calculates recommendations only &mdash; does not apply them. View with <code>oc get vpa -o yaml</code>.</td><td>Audit existing workloads without risk. First step for any new VPA rollout.</td></tr>
+    <tr><td><strong>Initial</strong></td><td>Sets requests at pod creation time only. Running pods are not restarted.</td><td>Batch jobs, CronJobs &mdash; each new pod gets optimised requests.</td></tr>
+    <tr><td><strong>Auto</strong></td><td>Updates requests on running pods (evicts and recreates with new values).</td><td>Long-running workloads where occasional restarts are acceptable.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+<strong>HPA + VPA conflict:</strong> Do not target the same CPU or memory metric with both HPA and VPA on the same workload. They will fight over the resource values. You <em>can</em> combine HPA on a custom metric (e.g. requests-per-second) with VPA on CPU/memory.
+</div>
+
+<h3>VPA YAML Example</h3>
+<div class="acc-item">
+  <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> VerticalPodAutoscaler Custom Resource</div>
+  <div class="acc-body">
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">autoscaling.k8s.io/v1</span>
+<span class="key">kind</span>: <span class="str">VerticalPodAutoscaler</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">my-app-vpa</span>
+  <span class="key">namespace</span>: <span class="str">my-project</span>
+<span class="key">spec</span>:
+  <span class="key">targetRef</span>:
+    <span class="key">apiVersion</span>: <span class="str">apps/v1</span>
+    <span class="key">kind</span>: <span class="str">Deployment</span>
+    <span class="key">name</span>: <span class="str">my-app</span>
+  <span class="key">updatePolicy</span>:
+    <span class="key">updateMode</span>: <span class="str">Auto</span>         <span class="cmt"># Off | Initial | Auto</span>
+  <span class="key">resourcePolicy</span>:
+    <span class="key">containerPolicies</span>:
+      - <span class="key">containerName</span>: <span class="str">'*'</span>
+        <span class="key">minAllowed</span>:
+          <span class="key">cpu</span>: <span class="str">100m</span>
+          <span class="key">memory</span>: <span class="str">64Mi</span>
+        <span class="key">maxAllowed</span>:
+          <span class="key">cpu</span>: <span class="str">2</span>
+          <span class="key">memory</span>: <span class="str">2Gi</span></pre>
+  </div>
+</div>
+
+<h2>Cluster Autoscaler</h2>
+<p>The <strong>Cluster Autoscaler</strong> is a cluster-scoped singleton CR that watches for <em>unschedulable pods</em> (pods stuck in Pending because no node has enough resources). When detected, it triggers a scale-up of the appropriate MachineSet. It also scales nodes <em>down</em> when they are underutilised and their pods can be rescheduled elsewhere.</p>
+
+<h3>ClusterAutoscaler YAML</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">autoscaling.openshift.io/v1</span>
+<span class="key">kind</span>: <span class="str">ClusterAutoscaler</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">default</span>             <span class="cmt"># must be named "default" (singleton)</span>
+<span class="key">spec</span>:
+  <span class="key">podPriorityThreshold</span>: <span class="val">-10</span>  <span class="cmt"># ignore pods with priority below this</span>
+  <span class="key">resourceLimits</span>:
+    <span class="key">maxNodesTotal</span>: <span class="val">24</span>        <span class="cmt"># hard cap on total cluster nodes</span>
+    <span class="key">cores</span>:
+      <span class="key">min</span>: <span class="val">8</span>
+      <span class="key">max</span>: <span class="val">256</span>
+    <span class="key">memory</span>:
+      <span class="key">min</span>: <span class="val">16</span>
+      <span class="key">max</span>: <span class="val">1024</span>              <span class="cmt"># GiB</span>
+  <span class="key">scaleDown</span>:
+    <span class="key">enabled</span>: <span class="val">true</span>
+    <span class="key">delayAfterAdd</span>: <span class="str">10m</span>      <span class="cmt"># wait after adding a node</span>
+    <span class="key">delayAfterDelete</span>: <span class="str">5m</span>
+    <span class="key">unneededTime</span>: <span class="str">5m</span>        <span class="cmt"># node must be underused this long</span>
+  <span class="key">balanceSimilarNodeGroups</span>: <span class="val">true</span></pre>
+
+<h2>MachineAutoscaler</h2>
+<p>A <strong>MachineAutoscaler</strong> sets the <code>minReplicas</code> and <code>maxReplicas</code> bounds for a single MachineSet. Create one MachineAutoscaler per MachineSet (typically one per availability zone or instance type). The Cluster Autoscaler uses these bounds when deciding which MachineSet to scale.</p>
+
+<h3>MachineAutoscaler YAML</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">autoscaling.openshift.io/v1beta1</span>
+<span class="key">kind</span>: <span class="str">MachineAutoscaler</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">worker-us-east-1a</span>
+  <span class="key">namespace</span>: <span class="str">openshift-machine-api</span>
+<span class="key">spec</span>:
+  <span class="key">minReplicas</span>: <span class="val">1</span>
+  <span class="key">maxReplicas</span>: <span class="val">6</span>
+  <span class="key">scaleTargetRef</span>:
+    <span class="key">apiVersion</span>: <span class="str">machine.openshift.io/v1beta1</span>
+    <span class="key">kind</span>: <span class="str">MachineSet</span>
+    <span class="key">name</span>: <span class="str">cluster-abc-worker-us-east-1a</span></pre>
+
+<h2>How They Work Together</h2>
+<p>In a well-configured cluster, autoscaling forms a chain reaction:</p>
+<ol>
+  <li><strong>HPA</strong> increases pod replicas when request load rises.</li>
+  <li>New pods go <strong>Pending</strong> if existing nodes lack capacity.</li>
+  <li><strong>Cluster Autoscaler</strong> detects unschedulable pods and picks a MachineSet that can satisfy the request.</li>
+  <li><strong>MachineAutoscaler</strong> bounds constrain how many new Machines (nodes) that MachineSet can add.</li>
+  <li>The MachineSet creates a new <strong>Machine</strong> &rarr; the Machine API provisions a VM/instance &rarr; it joins as a new worker node.</li>
+  <li>Pending pods are scheduled onto the new node.</li>
+  <li>When load drops, HPA reduces replicas, the Cluster Autoscaler detects underused nodes, and scales them down (respecting PDBs).</li>
+</ol>
+
+<div class="callout success">
+<strong>Recommendation:</strong> Start HPA with real application metrics (requests-per-second, queue depth) rather than raw CPU alone &mdash; CPU utilisation is often a lagging indicator. Use VPA in <em>Off</em> mode first to gather recommendations before enabling <em>Auto</em>. Always set <code>maxNodesTotal</code> on the Cluster Autoscaler to prevent runaway costs. Create one MachineAutoscaler per MachineSet per availability zone, and set <code>minReplicas &ge; 1</code> to maintain HA spread.
+</div>
+
+<div class="callout tryit">
+  <strong>Try it:</strong> <code>oc autoscale deployment/my-app --min=2 --max=8 --cpu-percent=60</code> &mdash; then generate load with <code>oc run load --image=busybox --restart=Never -- /bin/sh -c "while true; do wget -q -O- http://my-app:8080; done"</code> and watch replicas scale with <code>oc get hpa -w</code>.
+</div>
+
+<button class="mark-read" onclick="markRead(this,19)">&#10003; Mark section as read</button>
 </div>
 
 <!-- ================ SECTION 13: INSTALLATION & BOOTSTRAP ================ -->
@@ -6478,6 +6924,11 @@ EOF
   </div>
 </div>
 
+<div class="diagram-box">
+  <div class="diagram-title">OCP Console &mdash; PVCs Bound to ODF StorageClasses (RWO ceph-rbd + RWX cephfs)</div>
+  <img loading="lazy" src="images/odf-rwo-rwx.png" alt="OpenShift Console PersistentVolumeClaims — rwo-01 Bound to ocs-storagecluster-ceph-rbd (1 GiB RWO), rwx-01 Bound to ocs-storagecluster-cephfs (1 GiB RWX)" style="width:100%;border-radius:8px"/>
+</div>
+
 <div class="callout success">
 <strong>Recommendation:</strong> Start with internal-attached mode using at least 3 nodes with dedicated disks (minimum 512 GiB each). Use <code>ocs-storagecluster-ceph-rbd</code> as the default StorageClass for most workloads. Reserve CephFS for workloads that genuinely need RWX shared access. Monitor cluster health via the ODF dashboard in the OpenShift console or <code>ceph status</code> from the Rook toolbox pod.
 </div>
@@ -6519,6 +6970,21 @@ EOF
 <li><strong>ObjectBucketClaim (OBC)</strong> &mdash; Kubernetes-native way to provision S3 buckets. Creates a ConfigMap (endpoint, bucket name) and Secret (access key, secret key) in the claiming namespace.</li>
 <li><strong>Use cases</strong> &mdash; OADP backup target, ACM observability (Thanos), Loki log storage, ML datasets, and application object storage without external S3 dependency.</li>
 </ul>
+
+<div class="diagram-box">
+  <div class="diagram-title">OCP Console &mdash; Object Bucket Claims (Loki OBC bound to NooBaa)</div>
+  <img loading="lazy" src="images/odf-object-create.png" alt="OpenShift Console Object Storage — Object Bucket Claims tab showing OBC 'loki' in openshift-storage namespace, Bound status, Secret 'loki', StorageClass openshift-storage.noobaa.io" style="width:100%;border-radius:8px"/>
+</div>
+
+<div class="diagram-box">
+  <div class="diagram-title">OCP Console &mdash; Bucket Contents (object upload &amp; browsing)</div>
+  <img loading="lazy" src="images/odf-object-upload.png" alt="OpenShift Console Object Storage — Loki bucket detail showing Objects tab with uploaded file acm-gevernance.png (79.76 KiB), MCG badge, Created via OBC, Bound status, drag-and-drop upload area" style="width:100%;border-radius:8px"/>
+</div>
+
+<div class="diagram-box">
+  <div class="diagram-title">OCP Console &mdash; Presigned URL Sharing (time-limited S3 access)</div>
+  <img loading="lazy" src="images/odf-object-presigned.png" alt="OpenShift Console Object Storage — Share object with presigned URL dialog, granting third-party access to acm-gevernance.png with expiry, copy presigned URL button" style="width:100%;border-radius:8px"/>
+</div>
 
 <h3>Disaster Recovery: Metro-DR vs Regional-DR</h3>
 <p>ODF supports two DR topologies, both orchestrated with <strong>ACM</strong> and the <strong>Ramen</strong> (OpenShift DR) operators. <strong>Metro-DR</strong> stretches a single Ceph cluster synchronously across two sites (RPO zero, distance-limited). <strong>Regional-DR</strong> asynchronously replicates between two independent ODF clusters (minutes of RPO, unlimited distance). Since ODF 4.20, DR-protected VMs can fail over <em>individually</em> rather than only as a whole namespace.</p>
@@ -7249,6 +7715,198 @@ EOF
   </svg>
 </div>
 
+<h2>EUS-to-EUS Upgrades</h2>
+<p><strong>Extended Update Support (EUS)</strong> releases are even-numbered minor versions (4.14, 4.16, 4.18, etc.) that receive an extended maintenance window. An <strong>EUS-to-EUS upgrade</strong> lets you skip the intermediate odd-numbered minor version (e.g. 4.14 &rarr; 4.16, bypassing 4.15) while <strong>pausing worker MachineConfigPools</strong> so worker nodes reboot only <strong>once</strong> instead of twice.</p>
+<p>The control plane still updates through the intermediate version internally, but because the worker MCP is paused, worker nodes remain on their current config. Once the control plane reaches the target EUS version, you unpause the worker pool and nodes roll forward in a single reboot.</p>
+
+<h3>Update Channels</h3>
+<table>
+  <thead><tr><th>Channel</th><th>Contents</th><th>Use</th></tr></thead>
+  <tbody>
+    <tr><td><code>stable-4.x</code></td><td>Thoroughly tested releases; delayed availability</td><td>Production clusters requiring maximum stability</td></tr>
+    <tr><td><code>fast-4.x</code></td><td>All GA releases as soon as they pass CI</td><td>Non-production or early adopter environments</td></tr>
+    <tr><td><code>candidate-4.x</code></td><td>Release candidates; may contain bugs</td><td>Pre-release testing only</td></tr>
+    <tr><td><code>eus-4.x</code></td><td>EUS releases only (even-numbered minors)</td><td>EUS-to-EUS upgrade paths; long-lifecycle clusters</td></tr>
+  </tbody>
+</table>
+
+<h3>EUS-to-EUS Upgrade Procedure</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># 1. Pause the worker MachineConfigPool</span>
+<span class="kw">oc</span> patch mcp/worker --type merge -p <span class="str">'{"spec":{"paused":true}}'</span>
+
+<span class="cmt"># 2. Set the target EUS channel and start upgrade</span>
+<span class="kw">oc</span> adm upgrade channel eus-<span class="val">4.16</span>
+<span class="kw">oc</span> adm upgrade --to-latest
+
+<span class="cmt"># 3. Wait for control plane to reach the target version</span>
+<span class="kw">oc</span> adm upgrade   <span class="cmt"># repeat until "Cluster version is &lt;target&gt;"</span>
+<span class="kw">oc</span> get mcp       <span class="cmt"># workers show UPDATED=False, UPDATING=False (paused)</span>
+
+<span class="cmt"># 4. Unpause the worker pool &mdash; workers roll once</span>
+<span class="kw">oc</span> patch mcp/worker --type merge -p <span class="str">'{"spec":{"paused":false}}'</span></pre>
+
+<div class="callout warn">
+  <strong>Do not leave pools paused longer than the upgrade window.</strong> While paused, the MachineConfigPool also blocks certificate rotation, security patches, and configuration rollout. Unpause as soon as the control plane reaches the target version.
+</div>
+
+<h2>MachineConfig &amp; MachineConfigPool</h2>
+<p>A <strong>MachineConfig</strong> (<code>machineconfiguration.openshift.io/v1</code>) is a declarative, Ignition-based specification for node OS configuration: files, systemd units, kernel arguments, container-runtime settings, and registry config. A <strong>MachineConfigPool (MCP)</strong> groups nodes by label (e.g. <code>master</code>, <code>worker</code>, or custom pools like <code>infra</code>) and the <strong>Machine Config Operator (MCO)</strong> merges all matching MachineConfigs into a single <strong>rendered</strong> MachineConfig, then rolls it out node-by-node respecting <code>maxUnavailable</code>.</p>
+<p>This is the same cordon &rarr; drain &rarr; apply &rarr; reboot &rarr; uncordon sequence shown in the <strong>Cluster Upgrade Flow</strong> diagram above. Every cluster upgrade produces new MachineConfigs, and every MachineConfig change triggers the MCO rolling update.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">MachineConfig Rendering &amp; Rolling Update</div>
+  <svg width="820" height="378" viewBox="0 0 820 378" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs>
+      <marker id="aMC" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--blue)"/></marker>
+      <marker id="aMCg" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--green)"/></marker>
+      <marker id="aMCp" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--purple)"/></marker>
+    </defs>
+
+    <!-- MachineConfig objects -->
+    <text x="100" y="18" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".08em">MACHINECONFIGS</text>
+    <g class="d-node" data-tip="mc-chrony">
+      <rect x="10" y="28" width="180" height="38" rx="7" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="100" y="44" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="9">99-worker-chrony</text>
+      <text x="100" y="58" text-anchor="middle" fill="var(--text-dim)" font-size="7">NTP / chrony config file</text>
+    </g>
+    <g class="d-node" data-tip="mc-kargs">
+      <rect x="10" y="74" width="180" height="38" rx="7" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="100" y="90" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="9">99-worker-kargs</text>
+      <text x="100" y="104" text-anchor="middle" fill="var(--text-dim)" font-size="7">Kernel arguments</text>
+    </g>
+    <g class="d-node" data-tip="mc-kubelet">
+      <rect x="10" y="120" width="180" height="38" rx="7" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="100" y="136" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="9">01-worker-kubelet</text>
+      <text x="100" y="150" text-anchor="middle" fill="var(--text-dim)" font-size="7">kubelet configuration</text>
+    </g>
+    <g class="d-node" data-tip="mc-registry">
+      <rect x="10" y="166" width="180" height="38" rx="7" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="100" y="182" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="9">99-worker-registries</text>
+      <text x="100" y="196" text-anchor="middle" fill="var(--text-dim)" font-size="7">Mirror registry config</text>
+    </g>
+
+    <!-- Merge arrows -->
+    <line x1="190" y1="47" x2="250" y2="110" stroke="var(--blue)" stroke-width="1.2" marker-end="url(#aMC)"/>
+    <line x1="190" y1="93" x2="250" y2="110" stroke="var(--blue)" stroke-width="1.2" marker-end="url(#aMC)"/>
+    <line x1="190" y1="139" x2="250" y2="115" stroke="var(--blue)" stroke-width="1.2" marker-end="url(#aMC)"/>
+    <line x1="190" y1="185" x2="250" y2="120" stroke="var(--blue)" stroke-width="1.2" marker-end="url(#aMC)"/>
+
+    <!-- MCO -->
+    <g class="d-node" data-tip="mc-mco">
+      <rect x="250" y="80" width="140" height="52" rx="8" fill="rgba(167,139,250,.06)" stroke="var(--purple)" stroke-opacity=".5"/>
+      <text x="320" y="101" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="10">MCO</text>
+      <text x="320" y="118" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Machine Config Operator</text>
+    </g>
+
+    <!-- Arrow MCO -> Rendered -->
+    <line x1="390" y1="106" x2="430" y2="106" stroke="var(--purple)" stroke-width="1.5" marker-end="url(#aMCp)"/>
+
+    <!-- Rendered MachineConfig -->
+    <g class="d-node" data-tip="mc-rendered">
+      <rect x="430" y="80" width="175" height="52" rx="8" fill="rgba(74,222,128,.06)" stroke="var(--green)" stroke-opacity=".5"/>
+      <text x="517" y="101" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="10">Rendered MC</text>
+      <text x="517" y="118" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Merged final config</text>
+    </g>
+
+    <!-- Arrow Rendered -> MCP -->
+    <line x1="605" y1="106" x2="645" y2="106" stroke="var(--green)" stroke-width="1.5" marker-end="url(#aMCg)"/>
+
+    <!-- MachineConfigPool -->
+    <g class="d-node" data-tip="mcp-worker">
+      <rect x="645" y="72" width="165" height="68" rx="8" fill="rgba(245,166,35,.06)" stroke="var(--amber)" stroke-opacity=".5"/>
+      <text x="727" y="95" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="10">MCP: worker</text>
+      <text x="727" y="112" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">maxUnavailable: 1</text>
+      <text x="727" y="126" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">paused: false</text>
+    </g>
+
+    <!-- Rolling Update Section -->
+    <g transform="translate(0,35)">
+    <text x="410" y="175" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".08em">MCO ROLLING NODE UPDATE (maxUnavailable: 1)</text>
+
+    <!-- Worker Nodes -->
+    <g class="d-node" data-tip="mc-node-updating">
+      <rect x="20" y="195" width="150" height="55" rx="8" fill="rgba(251,113,133,.06)" stroke="var(--rose)" stroke-opacity=".5"/>
+      <text x="95" y="215" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9.5">worker-0</text>
+      <text x="95" y="232" text-anchor="middle" fill="var(--rose)" font-size="8">UPDATING</text>
+      <text x="95" y="244" text-anchor="middle" fill="var(--text-dim)" font-size="7">cordon &rarr; drain &rarr; reboot</text>
+    </g>
+
+    <g class="d-node" data-tip="mc-node-waiting">
+      <rect x="185" y="195" width="150" height="55" rx="8" fill="var(--bg-elevated)" stroke="var(--border)"/>
+      <text x="260" y="215" text-anchor="middle" fill="var(--text)" font-weight="600" font-size="9.5">worker-1</text>
+      <text x="260" y="232" text-anchor="middle" fill="var(--text-muted)" font-size="8">WAITING</text>
+      <text x="260" y="244" text-anchor="middle" fill="var(--text-dim)" font-size="7">queued for update</text>
+    </g>
+
+    <g class="d-node" data-tip="mc-node-waiting">
+      <rect x="350" y="195" width="150" height="55" rx="8" fill="var(--bg-elevated)" stroke="var(--border)"/>
+      <text x="425" y="215" text-anchor="middle" fill="var(--text)" font-weight="600" font-size="9.5">worker-2</text>
+      <text x="425" y="232" text-anchor="middle" fill="var(--text-muted)" font-size="8">WAITING</text>
+      <text x="425" y="244" text-anchor="middle" fill="var(--text-dim)" font-size="7">queued for update</text>
+    </g>
+
+    <g class="d-node" data-tip="mc-node-done">
+      <rect x="515" y="195" width="150" height="55" rx="8" fill="rgba(74,222,128,.06)" stroke="var(--green)" stroke-opacity=".5"/>
+      <text x="590" y="215" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9.5">worker-3</text>
+      <text x="590" y="232" text-anchor="middle" fill="var(--green)" font-size="8">UPDATED &#10003;</text>
+      <text x="590" y="244" text-anchor="middle" fill="var(--text-dim)" font-size="7">rendered-worker-abc</text>
+    </g>
+
+    <g class="d-node" data-tip="mcp-custom">
+      <rect x="680" y="195" width="130" height="55" rx="8" fill="rgba(54,214,181,.06)" stroke="var(--teal)" stroke-opacity=".5" stroke-dasharray="4 2"/>
+      <text x="745" y="215" text-anchor="middle" fill="var(--teal)" font-weight="600" font-size="9.5">MCP: infra</text>
+      <text x="745" y="232" text-anchor="middle" fill="var(--teal)" font-size="8">custom pool</text>
+      <text x="745" y="244" text-anchor="middle" fill="var(--text-dim)" font-size="7">separate rollout</text>
+    </g>
+
+    <!-- Annotation -->
+    <g class="d-node" data-tip="mc-maxunavail">
+      <rect x="10" y="268" width="800" height="28" rx="6" fill="var(--bg-elevated)" stroke="var(--border)"/>
+      <text x="410" y="287" text-anchor="middle" fill="var(--text)" font-size="9">maxUnavailable controls how many nodes update concurrently. Default: 1. Increase for faster rollout (risk: more simultaneous capacity loss).</text>
+    </g>
+
+    <!-- Pause warning -->
+    <g class="d-node" data-tip="mc-pause">
+      <rect x="10" y="304" width="800" height="28" rx="6" fill="rgba(245,166,35,.04)" stroke="var(--amber)" stroke-opacity=".3"/>
+      <text x="410" y="323" text-anchor="middle" fill="var(--amber)" font-size="9">Paused MCP: nodes will NOT update. Used during EUS-to-EUS upgrades. Unpause to resume rolling updates.</text>
+    </g>
+    </g>
+  </svg>
+</div>
+
+<h3>Example MachineConfig (kernel argument)</h3>
+<div class="acc-item"><div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> MachineConfig &mdash; add kernel argument</div><div class="acc-body">
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">machineconfiguration.openshift.io/v1</span>
+<span class="key">kind</span>: <span class="str">MachineConfig</span>
+<span class="key">metadata</span>:
+  <span class="key">labels</span>:
+    <span class="key">machineconfiguration.openshift.io/role</span>: <span class="str">worker</span>
+  <span class="key">name</span>: <span class="str">99-worker-kargs-nosmt</span>
+<span class="key">spec</span>:
+  <span class="key">kernelArguments</span>:
+    - <span class="str">nosmt</span>                <span class="cmt"># disable hyper-threading</span>
+    - <span class="str">audit=0</span>             <span class="cmt"># disable kernel audit (example)</span></pre>
+</div></div>
+
+<h3>Example MachineConfigPool</h3>
+<div class="acc-item"><div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> MachineConfigPool &mdash; custom infra pool</div><div class="acc-body">
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">machineconfiguration.openshift.io/v1</span>
+<span class="key">kind</span>: <span class="str">MachineConfigPool</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">infra</span>
+<span class="key">spec</span>:
+  <span class="key">machineConfigSelector</span>:
+    <span class="key">matchExpressions</span>:
+      - <span class="key">key</span>: <span class="str">machineconfiguration.openshift.io/role</span>
+        <span class="key">operator</span>: <span class="str">In</span>
+        <span class="key">values</span>: [<span class="str">worker</span>, <span class="str">infra</span>]
+  <span class="key">nodeSelector</span>:
+    <span class="key">matchLabels</span>:
+      <span class="key">node-role.kubernetes.io/infra</span>: <span class="str">""</span>
+  <span class="key">maxUnavailable</span>: <span class="val">1</span>
+  <span class="key">paused</span>: <span class="val">false</span></pre>
+</div></div>
+
 <h2>etcd Backup</h2>
 <p><strong>etcd</strong> is the key-value store that holds <strong>ALL cluster state</strong> &mdash; every resource, secret, config, and status. Regular backups are critical.</p>
 
@@ -7279,6 +7937,197 @@ EOF
   <li><strong>Force new rollout</strong> for kube-apiserver, kube-controller-manager, and kube-scheduler</li>
 </ol>
 
+<h2>OADP &mdash; Application Backup &amp; Restore</h2>
+<p><strong>OADP</strong> (OpenShift API for Data Protection) is the Red Hat-supported operator that packages <strong>Velero</strong> with CSI snapshots and file-system backup (Kopia/restic). It backs up <strong>namespaced Kubernetes resources + persistent volume data</strong> to S3-compatible object storage (AWS S3, ODF MCG/NooBaa, MinIO).</p>
+<p>Contrast with <strong>etcd backup</strong>: etcd captures the entire cluster control-plane state as a single snapshot. OADP provides <strong>selective, application-level</strong> backup and restore &mdash; choose specific namespaces, label selectors, or resource types. OADP is also used for <strong>namespace migration</strong> and <strong>cluster-to-cluster migration</strong>.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">OADP Backup &amp; Restore Architecture</div>
+  <svg width="820" height="360" viewBox="0 0 820 360" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs>
+      <marker id="aOADP" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--blue)"/></marker>
+      <marker id="aOADPg" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--green)"/></marker>
+      <marker id="aOADPa" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--amber)"/></marker>
+      <marker id="aOADPp" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--purple)"/></marker>
+      <marker id="aOADPt" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--teal)"/></marker>
+    </defs>
+
+    <!-- BACKUP FLOW -->
+    <text x="410" y="18" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".08em">BACKUP FLOW</text>
+    <rect x="10" y="24" width="800" height="140" rx="10" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".15" stroke-dasharray="6 3"/>
+
+    <!-- Backup CR -->
+    <g class="d-node" data-tip="oadp-backup">
+      <rect x="20" y="40" width="130" height="50" rx="8" fill="rgba(91,156,245,.08)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="85" y="60" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="10">Backup CR</text>
+      <text x="85" y="78" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">velero.io/v1</text>
+    </g>
+
+    <!-- Arrow Backup -> Velero -->
+    <line x1="150" y1="65" x2="185" y2="65" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aOADP)"/>
+
+    <!-- Velero -->
+    <g class="d-node" data-tip="oadp-velero">
+      <rect x="185" y="36" width="140" height="58" rx="8" fill="rgba(167,139,250,.08)" stroke="var(--purple)" stroke-opacity=".5"/>
+      <text x="255" y="58" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="11">Velero</text>
+      <text x="255" y="76" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">backup controller</text>
+      <text x="255" y="88" text-anchor="middle" fill="var(--text-dim)" font-size="7">+ CSI plugin</text>
+    </g>
+
+    <!-- K8s Resources branch -->
+    <line x1="325" y1="55" x2="385" y2="45" stroke="var(--blue)" stroke-width="1.2" marker-end="url(#aOADP)"/>
+    <g class="d-node" data-tip="oadp-k8s-resources">
+      <rect x="385" y="30" width="160" height="38" rx="7" fill="rgba(91,156,245,.06)" stroke="var(--blue)" stroke-opacity=".4"/>
+      <text x="465" y="46" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="9">K8s Resources</text>
+      <text x="465" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="7">Deployments, Services, CMs...</text>
+    </g>
+
+    <!-- PV Data branch -->
+    <line x1="325" y1="75" x2="385" y2="90" stroke="var(--amber)" stroke-width="1.2" marker-end="url(#aOADPa)"/>
+    <g class="d-node" data-tip="oadp-pv-data">
+      <rect x="385" y="76" width="160" height="38" rx="7" fill="rgba(245,166,35,.06)" stroke="var(--amber)" stroke-opacity=".4"/>
+      <text x="465" y="92" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="9">PV Data</text>
+      <text x="465" y="106" text-anchor="middle" fill="var(--text-dim)" font-size="7">CSI snapshot / Kopia</text>
+    </g>
+
+    <!-- Arrows to Object Storage -->
+    <line x1="545" y1="49" x2="625" y2="75" stroke="var(--blue)" stroke-width="1.2" marker-end="url(#aOADP)"/>
+    <line x1="545" y1="95" x2="625" y2="85" stroke="var(--amber)" stroke-width="1.2" marker-end="url(#aOADPa)"/>
+
+    <!-- Object Storage -->
+    <g class="d-node" data-tip="oadp-objstore">
+      <rect x="625" y="40" width="175" height="80" rx="10" fill="rgba(54,214,181,.06)" stroke="var(--teal)" stroke-opacity=".5" stroke-width="2"/>
+      <text x="712" y="65" text-anchor="middle" fill="var(--teal)" font-weight="700" font-size="11">Object Storage</text>
+      <text x="712" y="82" text-anchor="middle" fill="var(--text-dim)" font-size="8">S3 / MCG (NooBaa)</text>
+      <text x="712" y="98" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">resources.json + PV tarballs</text>
+      <text x="712" y="112" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">or CSI VolumeSnapshots</text>
+    </g>
+
+    <!-- Schedule CR -->
+    <g class="d-node" data-tip="oadp-schedule">
+      <rect x="20" y="105" width="130" height="40" rx="7" fill="rgba(74,222,128,.06)" stroke="var(--green)" stroke-opacity=".4"/>
+      <text x="85" y="122" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9">Schedule CR</text>
+      <text x="85" y="138" text-anchor="middle" fill="var(--text-dim)" font-size="7">cron-based auto-backup</text>
+    </g>
+    <line x1="150" y1="122" x2="183" y2="85" stroke="var(--green)" stroke-width="1" stroke-dasharray="4 2" marker-end="url(#aOADPg)"/>
+
+    <!-- RESTORE FLOW -->
+    <text x="410" y="190" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".08em">RESTORE FLOW</text>
+    <rect x="10" y="196" width="800" height="115" rx="10" fill="rgba(74,222,128,.03)" stroke="var(--green)" stroke-opacity=".15" stroke-dasharray="6 3"/>
+
+    <!-- Object Storage (restore source) -->
+    <g class="d-node" data-tip="oadp-objstore">
+      <rect x="625" y="210" width="175" height="55" rx="10" fill="rgba(54,214,181,.06)" stroke="var(--teal)" stroke-opacity=".5" stroke-width="2"/>
+      <text x="712" y="233" text-anchor="middle" fill="var(--teal)" font-weight="700" font-size="11">Object Storage</text>
+      <text x="712" y="250" text-anchor="middle" fill="var(--text-dim)" font-size="8">backup data source</text>
+    </g>
+
+    <!-- Restore CR -->
+    <g class="d-node" data-tip="oadp-restore">
+      <rect x="20" y="215" width="130" height="50" rx="8" fill="rgba(74,222,128,.08)" stroke="var(--green)" stroke-opacity=".5"/>
+      <text x="85" y="235" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="10">Restore CR</text>
+      <text x="85" y="253" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">velero.io/v1</text>
+    </g>
+
+    <!-- Arrow Restore -> Velero -->
+    <line x1="150" y1="240" x2="185" y2="240" stroke="var(--green)" stroke-width="1.5" marker-end="url(#aOADPg)"/>
+
+    <!-- Velero restore -->
+    <g class="d-node" data-tip="oadp-velero">
+      <rect x="185" y="212" width="140" height="56" rx="8" fill="rgba(167,139,250,.08)" stroke="var(--purple)" stroke-opacity=".5"/>
+      <text x="255" y="234" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="11">Velero</text>
+      <text x="255" y="252" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">restore controller</text>
+    </g>
+
+    <!-- Arrow Object Storage -> Velero (restore reads) -->
+    <line x1="625" y1="240" x2="327" y2="240" stroke="var(--teal)" stroke-width="1.2" marker-end="url(#aOADPt)"/>
+
+    <!-- Recreated resources -->
+    <line x1="255" y1="268" x2="255" y2="290" stroke="var(--green)" stroke-width="1.2" marker-end="url(#aOADPg)"/>
+    <g class="d-node" data-tip="oadp-restored-ns">
+      <rect x="145" y="290" width="220" height="38" rx="7" fill="rgba(74,222,128,.06)" stroke="var(--green)" stroke-opacity=".4"/>
+      <text x="255" y="306" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9">Restored Namespace</text>
+      <text x="255" y="320" text-anchor="middle" fill="var(--text-dim)" font-size="7">resources recreated + PVs restored</text>
+    </g>
+
+    <!-- DPA note -->
+    <g class="d-node" data-tip="oadp-dpa">
+      <rect x="410" y="290" width="390" height="38" rx="7" fill="var(--bg-elevated)" stroke="var(--border)"/>
+      <text x="605" y="306" text-anchor="middle" fill="var(--text)" font-weight="600" font-size="9">DataProtectionApplication (DPA)</text>
+      <text x="605" y="320" text-anchor="middle" fill="var(--text-dim)" font-size="7">oadp.openshift.io/v1alpha1 &mdash; configures Velero, plugins, and backup locations</text>
+    </g>
+  </svg>
+</div>
+
+<div class="callout">
+  <strong>OADP Use Cases:</strong> disaster recovery (restore namespaces after accidental deletion), namespace migration (move workloads between clusters), cluster-to-cluster migration (rebuild on new infrastructure), and scheduled backups for compliance.
+</div>
+
+<h3>DataProtectionApplication (DPA)</h3>
+<div class="acc-item"><div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> DPA &mdash; configure Velero with S3 backend</div><div class="acc-body">
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">oadp.openshift.io/v1alpha1</span>
+<span class="key">kind</span>: <span class="str">DataProtectionApplication</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">velero-dpa</span>
+  <span class="key">namespace</span>: <span class="str">openshift-adp</span>
+<span class="key">spec</span>:
+  <span class="key">configuration</span>:
+    <span class="key">velero</span>:
+      <span class="key">defaultPlugins</span>:
+        - <span class="str">openshift</span>          <span class="cmt"># OpenShift-specific resource handling</span>
+        - <span class="str">aws</span>                <span class="cmt"># S3-compatible object storage</span>
+        - <span class="str">csi</span>                <span class="cmt"># CSI VolumeSnapshot integration</span>
+    <span class="key">nodeAgent</span>:
+      <span class="key">enable</span>: <span class="val">true</span>
+      <span class="key">uploaderType</span>: <span class="str">kopia</span> <span class="cmt"># file-system backup (replaces restic)</span>
+  <span class="key">backupLocations</span>:
+    - <span class="key">velero</span>:
+        <span class="key">provider</span>: <span class="str">aws</span>
+        <span class="key">default</span>: <span class="val">true</span>
+        <span class="key">objectStorage</span>:
+          <span class="key">bucket</span>: <span class="str">oadp-backups</span>
+          <span class="key">prefix</span>: <span class="str">velero</span>
+        <span class="key">config</span>:
+          <span class="key">region</span>: <span class="str">us-east-1</span>
+          <span class="key">s3ForcePathStyle</span>: <span class="str">"true"</span>   <span class="cmt"># required for MCG/MinIO</span>
+          <span class="key">s3Url</span>: <span class="str">https://s3.openshift-storage.svc</span>
+        <span class="key">credential</span>:
+          <span class="key">name</span>: <span class="str">cloud-credentials</span>
+          <span class="key">key</span>: <span class="str">cloud</span></pre>
+</div></div>
+
+<h3>Backup &amp; Restore CRs</h3>
+<div class="acc-item"><div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> Backup &mdash; back up a namespace</div><div class="acc-body">
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">velero.io/v1</span>
+<span class="key">kind</span>: <span class="str">Backup</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">myapp-backup</span>
+  <span class="key">namespace</span>: <span class="str">openshift-adp</span>
+<span class="key">spec</span>:
+  <span class="key">includedNamespaces</span>:
+    - <span class="str">myapp-prod</span>
+  <span class="key">storageLocation</span>: <span class="str">velero-dpa-1</span>
+  <span class="key">ttl</span>: <span class="str">720h</span>                   <span class="cmt"># retain for 30 days</span>
+  <span class="key">defaultVolumesToFsBackup</span>: <span class="val">false</span>  <span class="cmt"># use CSI snapshots by default</span></pre>
+</div></div>
+
+<div class="acc-item"><div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> Restore &mdash; restore from backup</div><div class="acc-body">
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">velero.io/v1</span>
+<span class="key">kind</span>: <span class="str">Restore</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">myapp-restore</span>
+  <span class="key">namespace</span>: <span class="str">openshift-adp</span>
+<span class="key">spec</span>:
+  <span class="key">backupName</span>: <span class="str">myapp-backup</span>
+  <span class="key">includedNamespaces</span>:
+    - <span class="str">myapp-prod</span>
+  <span class="key">restorePVs</span>: <span class="val">true</span></pre>
+</div></div>
+
+<div class="callout warn">
+  <strong>OADP does not back up cluster-scoped resources by default.</strong> CRDs, ClusterRoles, and StorageClasses must be explicitly included or recreated separately. Always test restore in a non-production namespace first.
+</div>
+
 <h2>Essential Day-2 Commands</h2>
 <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># Check cluster version and upgrade status</span>
 <span class="kw">oc</span> get clusterversion
@@ -7296,6 +8145,50 @@ EOF
 
 <span class="cmt"># etcd backup</span>
 <span class="kw">oc</span> debug node/&lt;master-node&gt; -- chroot /host /usr/local/bin/cluster-backup.sh /home/core/backup</pre>
+
+<h2>must-gather &amp; Insights</h2>
+<p><strong><code>oc adm must-gather</code></strong> collects cluster-wide diagnostic data &mdash; logs, resource definitions, events, and operator status &mdash; into a local tarball for Red Hat support case attachment. It supports <strong>targeted collection</strong> via <code>--image</code> for specific components (ODF, networking, OADP, etc.). For individual resources, <strong><code>oc adm inspect</code></strong> exports a single resource or namespace. At the node level, <strong><code>sosreport</code></strong> (via <code>oc debug node</code>) collects OS-level diagnostics.</p>
+<p>The <strong>Insights Operator</strong> runs continuously, sending anonymized cluster telemetry to <strong>console.redhat.com</strong>. It surfaces proactive risk recommendations, security advisories, and upgrade readiness checks directly in the OpenShift web console. This data is part of the broader <strong>Telemetry</strong> system and can be disabled in disconnected environments.</p>
+
+<h3>Diagnostic Tools Comparison</h3>
+<table>
+  <thead><tr><th>Tool</th><th>What It Collects</th><th>When to Use</th></tr></thead>
+  <tbody>
+    <tr><td><code>oc adm must-gather</code></td><td>Cluster-wide: operator logs, CRDs, events, node status, image info. Extensible via <code>--image</code> for ODF, SR-IOV, Logging, etc.</td><td>Opening a Red Hat support case; broad cluster diagnostics</td></tr>
+    <tr><td><code>oc adm inspect</code></td><td>Single resource or namespace: YAML definitions, events, related objects</td><td>Quick inspection of a specific resource (e.g. a failing ClusterOperator)</td></tr>
+    <tr><td><code>sosreport</code> (via debug node)</td><td>OS-level: system logs, hardware info, kernel config, network state, storage</td><td>Node-level issues: kernel panics, storage failures, network driver problems</td></tr>
+    <tr><td>Insights Operator</td><td>Anonymized telemetry: cluster version, operator health, configuration risks, CVE exposure</td><td>Proactive &mdash; runs automatically; check console.redhat.com for recommendations</td></tr>
+  </tbody>
+</table>
+
+<h3>Common Diagnostic Commands</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># Collect full cluster diagnostics (default must-gather)</span>
+<span class="kw">oc</span> adm must-gather
+
+<span class="cmt"># Targeted must-gather for ODF</span>
+<span class="kw">oc</span> adm must-gather --image=registry.redhat.io/odf4/ocs-must-gather-rhel9:latest
+
+<span class="cmt"># Targeted must-gather for networking</span>
+<span class="kw">oc</span> adm must-gather --image=registry.redhat.io/openshift4/network-tools-rhel8:latest
+
+<span class="cmt"># Inspect a specific ClusterOperator</span>
+<span class="kw">oc</span> adm inspect clusteroperator/kube-apiserver
+
+<span class="cmt"># Inspect an entire namespace</span>
+<span class="kw">oc</span> adm inspect ns/openshift-monitoring
+
+<span class="cmt"># Node-level sosreport via debug pod</span>
+<span class="kw">oc</span> debug node/&lt;node-name&gt;
+<span class="kw">chroot</span> /host
+<span class="kw">sosreport</span> --batch --tmp-dir /host/var/tmp
+
+<span class="cmt"># Check Insights status</span>
+<span class="kw">oc</span> get clusteroperator insights
+<span class="kw">oc</span> get insightsoperator cluster -o yaml</pre>
+
+<div class="callout warn">
+  <strong>must-gather output may contain secrets.</strong> The tarball can include ConfigMaps, environment variables, and certificate details. Review before sharing outside your organization. Use <code>--dest-dir</code> to control output location.
+</div>
 
 <h2>Compliance Operator</h2>
 <p>The Compliance Operator enables automated compliance scanning and remediation against security benchmarks (CIS, NIST, PCI-DSS).</p>
@@ -7864,6 +8757,32 @@ const T = {
   'comp-remediation':{t:'Remediation',b:'ComplianceRemediation resources contain MachineConfig patches to fix failures. Can be auto-applied or reviewed first. Nodes may reboot.'},
   'comp-note':{t:'Remediation Warning',b:'Applying remediations creates MachineConfig changes that trigger the MCO to cordon, drain, and reboot nodes. Always review before applying in production.'},
 
+  // MachineConfig & MachineConfigPool
+  'mc-chrony':{t:'MachineConfig: chrony',b:'A MachineConfig that writes an NTP/chrony configuration file to worker nodes. Example of file-based node customization via Ignition. Applied by the MCO when the MCP detects a config change.'},
+  'mc-kargs':{t:'MachineConfig: kernel args',b:'A MachineConfig that sets kernel boot arguments (e.g. nosmt, audit=0). Changes require a node reboot. Applied via the MCO rolling update process.'},
+  'mc-kubelet':{t:'MachineConfig: kubelet',b:'A MachineConfig managing kubelet configuration (e.g. maxPods, eviction thresholds). Part of the platform-generated MachineConfigs created during installation and upgrades.'},
+  'mc-registry':{t:'MachineConfig: registries',b:'A MachineConfig that configures container registry mirrors and trusted CAs. Essential for disconnected/air-gapped clusters using a local mirror registry.'},
+  'mc-mco':{t:'Machine Config Operator (MCO)',b:'The operator that watches MachineConfigPools, merges all matching MachineConfigs into a single rendered config, and rolls it out node-by-node. Controls the cordon/drain/apply/reboot/uncordon sequence.'},
+  'mc-rendered':{t:'Rendered MachineConfig',b:'The merged output of all MachineConfigs matching a pool. Named rendered-worker-<hash>. Each node in the pool targets this single rendered config. A new rendered config triggers a rolling update.'},
+  'mcp-worker':{t:'MachineConfigPool: worker',b:'Groups all nodes with the worker role. Controls maxUnavailable (how many nodes update concurrently) and paused (halt all updates). The MCO rolls the rendered config to each node in the pool.'},
+  'mcp-custom':{t:'Custom MCP (e.g. infra)',b:'A user-created MachineConfigPool for specialized nodes (infra, GPU, edge). Nodes labeled node-role.kubernetes.io/infra match this pool. Allows separate rollout cadence and config from the default worker pool.'},
+  'mc-node-updating':{t:'Node: Updating',b:'This node is currently being updated by the MCO. It has been cordoned (no new pods scheduled), drained (existing pods evicted), and is applying the new rendered MachineConfig. A reboot follows.'},
+  'mc-node-waiting':{t:'Node: Waiting',b:'This node is queued for update. It continues running workloads normally until the MCO finishes the currently-updating node and moves to this one. Controlled by maxUnavailable.'},
+  'mc-node-done':{t:'Node: Updated',b:'This node has been successfully updated to the latest rendered MachineConfig. It has been uncordoned and is accepting workloads again. The MCO moves on to the next node.'},
+  'mc-maxunavail':{t:'maxUnavailable',b:'Controls how many nodes in the pool can be updating simultaneously. Default is 1. Increasing speeds up rollouts but reduces available capacity during updates. Set via the MachineConfigPool spec.'},
+  'mc-pause':{t:'Paused MCP',b:'When paused:true, the MCO will not roll out any config changes to nodes in this pool. Used during EUS-to-EUS upgrades to hold workers while the control plane updates. Also blocks certificate rotation and security patches.'},
+
+  // OADP
+  'oadp-backup':{t:'Backup CR',b:'A velero.io/v1 Backup resource that defines what to back up: included namespaces, label selectors, resource types, and volume snapshot method. Creates a point-in-time backup stored in object storage.'},
+  'oadp-velero':{t:'Velero',b:'The core backup/restore engine deployed by the OADP operator. Runs as a Deployment in openshift-adp namespace. Processes Backup and Restore CRs, coordinates with CSI and file-system backup plugins.'},
+  'oadp-k8s-resources':{t:'K8s Resources Backup',b:'Velero exports Kubernetes resource definitions (Deployments, Services, ConfigMaps, Secrets, etc.) as JSON to object storage. During restore, these definitions are recreated in the target namespace.'},
+  'oadp-pv-data':{t:'PV Data Backup',b:'Persistent volume data backed up via CSI VolumeSnapshots (fast, storage-level) or Kopia/restic file-system backup (portable, any storage). CSI snapshots are preferred when the storage driver supports them.'},
+  'oadp-objstore':{t:'Object Storage (S3/MCG)',b:'The backup destination. S3-compatible object storage: AWS S3, ODF MCG (NooBaa), MinIO, or any S3 endpoint. Stores both resource JSON and PV data tarballs/snapshots. Configured in the DPA backupLocations.'},
+  'oadp-schedule':{t:'Schedule CR',b:'A velero.io/v1 Schedule resource that creates Backup CRs on a cron schedule. Supports TTL for automatic expiration. Use for regular automated backups (e.g. daily, weekly).'},
+  'oadp-restore':{t:'Restore CR',b:'A velero.io/v1 Restore resource that restores from a named Backup. Recreates K8s resources and restores PV data. Can filter by namespace, resource type, or label selector. Supports namespace remapping.'},
+  'oadp-restored-ns':{t:'Restored Namespace',b:'The target namespace where Velero recreates backed-up resources and restores persistent volumes. Can be the original namespace or a different one (namespace remapping for migration).'},
+  'oadp-dpa':{t:'DataProtectionApplication (DPA)',b:'The oadp.openshift.io/v1alpha1 CR that configures the OADP operator: which Velero plugins to deploy (openshift, aws, csi), backup storage locations, snapshot locations, and node agent settings (Kopia/restic).'},
+
   // Quay
   'quay-users':{t:'Developers',b:'Push and pull container images to/from Quay using podman, docker, or skopeo CLI tools. Authenticate via OAuth, LDAP, or Quay-native credentials.'},
   'quay-cicd':{t:'CI/CD Pipelines',b:'Automated systems (Tekton, Jenkins, GitLab CI) use Robot Accounts to push built images and pull base images. Robot Accounts provide scoped, auditable credentials without sharing human passwords.'},
@@ -7894,6 +8813,18 @@ const T = {
   'quay-geo-db':{t:'Shared PostgreSQL + Redis',b:'Single metadata database plus shared Redis, both shared across all Quay geo-replicated instances. PostgreSQL stores users, repos, tags, permissions; Redis handles events and locks. Can be managed (operator) or external (RDS, CloudSQL). All regions connect to these shared services.'},
   'quay-geo-quay':{t:'Quay Instance (Region)',b:'Regional Quay deployment serving local users and clusters. Shares metadata DB with other regions. Stores image blobs in its own regional S3 backend for low-latency pulls.'},
   'quay-geo-storage':{t:'Regional S3 Storage',b:'S3-compatible object store local to this region. Stores a full copy of all image blobs. Push to any region triggers async replication to all other regional stores.'},
+
+  // Autoscaling
+  'as-hpa':{t:'HPA — Horizontal Pod Autoscaler',b:'Watches CPU, memory, or custom metrics and adjusts the replica count on a Deployment, StatefulSet, or ReplicaSet. Uses the autoscaling/v2 API. Control loop runs every 15 seconds by default.'},
+  'as-vpa':{t:'VPA — Vertical Pod Autoscaler',b:'Analyses resource usage history and right-sizes CPU/memory requests and limits. Delivered by the VerticalPodAutoscaler Operator on OpenShift. Modes: Off (recommend only), Initial (set at pod creation), Auto (evict and recreate with new values).'},
+  'as-metrics':{t:'Metrics Server',b:'Cluster add-on that collects CPU and memory utilisation from kubelets. HPA and VPA both rely on it for resource metrics. Installed by default on OpenShift.'},
+  'as-pod-replica':{t:'Pod Replica',b:'An individual pod instance managed by a workload controller (Deployment, StatefulSet). HPA scales the number of these replicas horizontally based on observed metrics vs target thresholds.'},
+  'as-vpa-pod':{t:'Right-Sized Pod',b:'A pod whose CPU and memory requests have been adjusted by VPA. The new values reflect actual observed usage patterns, eliminating over-provisioning (wasted resources) and under-provisioning (OOM kills, throttling).'},
+  'as-cluster-autoscaler':{t:'Cluster Autoscaler',b:'Cluster-scoped singleton CR (autoscaling.openshift.io/v1, kind ClusterAutoscaler, must be named "default"). Adds nodes when pods are unschedulable due to insufficient resources. Removes underutilised nodes when their pods can be rescheduled. Configured with maxNodesTotal, core/memory limits, and scale-down delays.'},
+  'as-machineautoscaler':{t:'MachineAutoscaler',b:'Per-MachineSet CR (autoscaling.openshift.io/v1beta1) that sets minReplicas and maxReplicas bounds. Create one per MachineSet (typically per availability zone). The Cluster Autoscaler respects these bounds when scaling.'},
+  'as-machineset':{t:'MachineSet',b:'Kubernetes resource (machine.openshift.io/v1beta1) that manages a pool of identical Machine objects. Each Machine maps to a VM or bare-metal host. The MachineAutoscaler adjusts the MachineSet replica count; the Machine API controller provisions or deprovisions the underlying infrastructure.'},
+  'as-new-node':{t:'New Worker Node',b:'A worker node provisioned by the Machine API when the MachineSet replica count increases. The node registers with the API server, becomes Ready, and accepts pod scheduling — resolving the pending-pod condition that triggered the scale-up.'},
+  'as-pending-pods':{t:'Pending Pods (Unschedulable)',b:'Pods stuck in Pending state because no existing node has enough allocatable CPU, memory, or other resources. The Cluster Autoscaler detects these and triggers a node scale-up via the appropriate MachineSet.'},
 };
 
 // Navigation
