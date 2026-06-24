@@ -7503,26 +7503,26 @@ EOF
 </div>
 
 <h4>Live Example &mdash; Mirroring from quay.io to Internal Quay</h4>
-<p>Mirror an upstream image (<code>quay.io/rh_ee_swongpai/openwebui</code>) into an internal Quay instance. Configure the mirror with a Robot Account for pull credentials, tag filters, and a sync schedule &mdash; then watch the image appear with Clair scan results.</p>
+<p>Mirror an upstream image (<code>quay.io/rh_ee_swongpai/fast-localtime-check</code>) into an internal Quay instance as repository <code>swongpai/timesync</code>. Set up a Robot Account for pull credentials, configure the mirror with a tag filter and sync schedule, trigger a sync, then watch the mirrored tag appear with a Clair scan.</p>
 
 <div class="diagram-box">
-  <div class="diagram-title">Step 1 &mdash; Source Image on quay.io (upstream)</div>
-  <img loading="lazy" src="images/quay-public-repo.png" alt="Quay.io public repository rh_ee_swongpai/openwebui — latest tag, 1.7 GiB, Clair scan showing 2 Critical and 104 fixable CVEs" style="width:100%;border-radius:8px"/>
+  <div class="diagram-title">Step 1 &mdash; Robot Account for Mirror Pull Credentials</div>
+  <img loading="lazy" src="images/quay-mirror-robot-account.png" alt="Red Hat Quay swongpai organization Robot accounts tab — robot account swongpai+robot, no teams, 1 repository, created Jun 23 2026, used as mirror pull credentials" style="width:100%;border-radius:8px"/>
 </div>
 
 <div class="diagram-box">
   <div class="diagram-title">Step 2 &mdash; Mirror Configuration on Internal Quay</div>
-  <img loading="lazy" src="images/quay-internal-mirroring-setup.png" alt="Internal Quay mirror config — external repository quay.io/rh_ee_swongpai/openwebui, tag filter latest/*, sync interval, Robot User swongpai+mirrorrobot, Sync Now button" style="width:100%;border-radius:8px"/>
+  <img loading="lazy" src="images/quay-internal-mirroring-setup.png" alt="Red Hat Quay Repository Mirroring config for swongpai/timesync — Enabled, Registry Location quay.io/rh_ee_swongpai/fast-localtime-check, Tags rhhi-latest, All architectures, next sync date, Sync Now button" style="width:100%;border-radius:8px"/>
 </div>
 
 <div class="diagram-box">
   <div class="diagram-title">Step 3 &mdash; Sync Logs Show Successful Mirror</div>
-  <img loading="lazy" src="images/quay-internal-mirroring-status.png" alt="Internal Quay usage logs — mirror started, push of latest tag by mirrorrobot, mirror finished successfully with timestamp and IP" style="width:100%;border-radius:8px"/>
+  <img loading="lazy" src="images/quay-internal-mirroring-status.png" alt="Red Hat Quay usage logs chart for swongpai/timesync — Push to repository, Started Repository Mirror, Repository Mirror sync success, and Repository Mirror tag sync successful each show count 3" style="width:100%;border-radius:8px"/>
 </div>
 
 <div class="diagram-box">
   <div class="diagram-title">Step 4 &mdash; Mirrored Tag Appears in Internal Quay</div>
-  <img loading="lazy" src="images/quay-internal-tag-appear.png" alt="Internal Quay repository tags — latest tag mirrored, 1.7 GiB, SHA256 digest, OCI labels showing image source and description" style="width:100%;border-radius:8px"/>
+  <img loading="lazy" src="images/quay-internal-tag-appear.png" alt="Red Hat Quay Tags tab for swongpai/timesync — rhhi-latest tag mirrored, 24.9 kB to 59.5 MB, linux/amd64 child manifest, security None Detected, SHA256 manifest digest" style="width:100%;border-radius:8px"/>
 </div>
 
 <h3>Geo-Replication</h3>
