@@ -399,6 +399,15 @@ li::marker { color:var(--text-dim); }
 .back-to-top:hover { border-color:var(--blue); color:var(--blue); }
 .back-to-top.show { display:flex; }
 
+/* ═══ Disclaimer ═══ */
+.disclaimer {
+  text-align:center; padding:20px 24px; margin:40px 32px 0;
+  background: var(--amber-dim); border:1px solid var(--amber);
+  border-radius: var(--radius-sm);
+  font-size:.78rem; color: var(--text-muted); line-height:1.5;
+}
+.disclaimer strong { color: var(--amber); }
+
 /* ═══ Dark Mode Toggle ═══ */
 .theme-toggle {
   background:none; border:1px solid var(--border); color:var(--text-muted);
@@ -8457,6 +8466,11 @@ EOF
 </div>
 
 </div><!-- /mainContent -->
+
+<!-- ═══ Disclaimer ═══ -->
+<div class="disclaimer">
+  <p>⚠️ <strong>Unofficial Document</strong> — This content is not affiliated with, endorsed by, or officially associated with Red Hat, Inc. or IBM. It is created for educational and reference purposes only. OpenShift, Red Hat, and related trademarks are the property of Red Hat, Inc.</p>
+</div>
 
 <!-- ═══ Tooltip ═══ -->
 <div class="tooltip-popup" id="tooltip"></div>
