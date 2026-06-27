@@ -115,6 +115,7 @@ body {
   overflow-y:auto; padding:20px 0;
   scrollbar-width:thin; scrollbar-color:var(--border) transparent;
   z-index:100;
+  transition:transform .25s ease;
 }
 .sidebar::-webkit-scrollbar { width:4px; }
 .sidebar::-webkit-scrollbar-thumb { background:var(--bg-elevated); border-radius:2px; }
@@ -162,6 +163,20 @@ body {
 .main {
   margin-left:var(--sidebar-w); margin-top:var(--topbar-h);
   padding:40px 48px 100px; max-width:960px;
+  transition:margin-left .25s ease;
+}
+
+/* ═══ Desktop sidebar collapse ═══ */
+.collapse-btn {
+  background:none; border:1px solid var(--border); color:var(--text-muted);
+  width:32px; height:32px; border-radius:var(--radius-xs); cursor:pointer;
+  font-size:.85rem; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; transition:all .15s; margin-right:4px;
+}
+.collapse-btn:hover { border-color:var(--blue); color:var(--blue); }
+@media (min-width:901px) {
+  body.sidebar-collapsed .sidebar { transform:translateX(-100%); }
+  body.sidebar-collapsed .main { margin-left:0; }
 }
 
 .page { display:none; opacity:0; transform:translateY(8px); }
@@ -435,6 +450,7 @@ html.dark code { color:#5b9cf5; }
 /* ═══ Responsive ═══ */
 @media (max-width:900px) {
   .hamburger { display:flex; }
+  .collapse-btn { display:none; }
   .sidebar { transform:translateX(-100%); transition:transform .3s; z-index:150; }
   .sidebar.open { transform:translateX(0); }
   .main { margin-left:0; padding:28px 20px 80px; }
@@ -449,6 +465,7 @@ html.dark code { color:#5b9cf5; }
 <!-- ═══════════════ TOPBAR ═══════════════ -->
 <div class="topbar">
   <button class="hamburger" id="hamburger" onclick="toggleSidebar()">&#9776;</button>
+  <button class="collapse-btn" id="collapseBtn" onclick="toggleCollapse()" title="Hide sidebar">&#11164;</button>
   <div class="logo">
     <div class="logo-mark">
       <svg viewBox="0 0 38 38" fill="none"><path d="M19 0C8.507 0 0 8.507 0 19s8.507 19 19 19 19-8.507 19-19S29.493 0 19 0z" fill="#fff" fill-opacity=".2"/><path d="M28.5 18.2l-5.4-3.1v-6.2l-4.1-2.4-4.1 2.4v6.2L9.5 18.2v4.9l4.1 2.3 4.4-2.5 4.4 2.5 4.1-2.3v-4.9z" fill="#fff"/></svg>
@@ -4088,7 +4105,198 @@ EOF
 
 
 <h2>Multus CNI</h2>
-<p><strong>Multus</strong> is a meta-plugin that enables pods to have <strong>multiple network interfaces</strong>. The primary interface uses OVN-Kubernetes; additional interfaces can use SR-IOV, macvlan, bridge, or other CNI plugins. Common for telco, NFV, and high-performance workloads.</p>
+<p><strong>Multus</strong> is a <strong>meta-plugin</strong> &mdash; it does not provide networking itself but <em>delegates</em> to other CNI plugins. Every OpenShift pod already gets a primary interface (<code>eth0</code>) from OVN-Kubernetes. Multus lets you attach <strong>additional interfaces</strong> (e.g., <code>net1</code>, <code>net2</code>) using plugins like macvlan, SR-IOV, bridge, or IPVLAN. This is essential for telco/NFV workloads that need dedicated data-plane networks, storage networks, or direct L2 access to physical infrastructure.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">Multus CNI &mdash; Multiple Network Interfaces per Pod</div>
+  <svg width="780" height="400" viewBox="0 0 780 400" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs>
+      <marker id="aMultus" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--blue)"/></marker>
+      <marker id="aMultusG" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--green)"/></marker>
+      <marker id="aMultusP" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--purple)"/></marker>
+    </defs>
+
+    <!-- ═══ Node boundary ═══ -->
+    <rect x="10" y="10" width="760" height="385" rx="14" fill="var(--bg-secondary)" stroke="var(--border)" stroke-dasharray="6"/>
+    <text x="30" y="34" fill="var(--text-dim)" font-weight="700" font-size="11">Worker Node</text>
+
+    <!-- ═══ Pod ═══ -->
+    <g class="d-node" data-tip="multus-meta">
+      <rect x="40" y="50" width="260" height="230" rx="12" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="60" y="73" fill="var(--blue)" font-weight="700" font-size="12">Pod: my-telco-app</text>
+    </g>
+
+    <!-- eth0 — top -->
+    <g class="d-node" data-tip="multus-eth0">
+      <rect x="60" y="88" width="220" height="44" rx="8" fill="var(--bg-primary)" stroke="var(--blue)" stroke-opacity=".4"/>
+      <text x="170" y="108" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="10">eth0 &mdash; 10.128.2.15</text>
+      <text x="170" y="124" text-anchor="middle" fill="var(--text-dim)" font-size="8">primary (OVN-K cluster network)</text>
+    </g>
+
+    <!-- net1 macvlan — middle -->
+    <g class="d-node" data-tip="multus-net1">
+      <rect x="60" y="142" width="220" height="44" rx="8" fill="var(--bg-primary)" stroke="var(--green)" stroke-opacity=".4"/>
+      <text x="170" y="162" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="10">net1 (macvlan) &mdash; 192.168.1.50</text>
+      <text x="170" y="178" text-anchor="middle" fill="var(--text-dim)" font-size="8">secondary &bull; VLAN 100</text>
+    </g>
+
+    <!-- net2 sriov — bottom -->
+    <g class="d-node" data-tip="multus-sriov">
+      <rect x="60" y="196" width="220" height="44" rx="8" fill="var(--bg-primary)" stroke="var(--purple)" stroke-opacity=".4"/>
+      <text x="170" y="216" text-anchor="middle" fill="var(--purple)" font-weight="600" font-size="10">net2 (SR-IOV VF) &mdash; 10.10.10.5</text>
+      <text x="170" y="232" text-anchor="middle" fill="var(--text-dim)" font-size="8">secondary &bull; hardware passthrough</text>
+    </g>
+
+    <!-- ═══ Multus delegator bar ═══ -->
+    <g class="d-node" data-tip="multus-meta">
+      <rect x="40" y="300" width="260" height="40" rx="8" fill="var(--amber-dim)" stroke="var(--amber)" stroke-opacity=".5"/>
+      <text x="170" y="325" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="11">Multus CNI (meta-plugin / delegator)</text>
+    </g>
+
+    <!-- ═══ CNI plugin boxes ═══ -->
+    <rect x="40" y="355" width="75" height="30" rx="6" fill="var(--bg-primary)" stroke="var(--blue)" stroke-opacity=".3"/>
+    <text x="77" y="375" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="9">OVN-K</text>
+
+    <rect x="130" y="355" width="75" height="30" rx="6" fill="var(--bg-primary)" stroke="var(--green)" stroke-opacity=".3"/>
+    <text x="167" y="375" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9">Macvlan</text>
+
+    <rect x="220" y="355" width="75" height="30" rx="6" fill="var(--bg-primary)" stroke="var(--purple)" stroke-opacity=".3"/>
+    <text x="257" y="375" text-anchor="middle" fill="var(--purple)" font-weight="600" font-size="9">SR-IOV</text>
+
+    <!-- ═══ Right side: Physical networks (aligned with interfaces) ═══ -->
+    <rect x="440" y="72" width="300" height="70" rx="10" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".3"/>
+    <text x="590" y="94" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="10">OVN-K Overlay (Geneve)</text>
+    <text x="590" y="110" text-anchor="middle" fill="var(--text-dim)" font-size="9">Cluster network &bull; Pod CIDR &bull; Services &bull; NetworkPolicy</text>
+    <text x="590" y="126" text-anchor="middle" fill="var(--text-dim)" font-size="8">br-int &#8594; Geneve tunnel (UDP 6081) &#8594; remote nodes</text>
+
+    <rect x="440" y="158" width="300" height="50" rx="10" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".3"/>
+    <text x="590" y="180" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="10">Physical Network (VLAN 100)</text>
+    <text x="590" y="196" text-anchor="middle" fill="var(--text-dim)" font-size="9">Direct L2 access &bull; No overlay &bull; No NetworkPolicy</text>
+
+    <rect x="440" y="224" width="300" height="50" rx="10" fill="var(--purple-dim)" stroke="var(--purple)" stroke-opacity=".3"/>
+    <text x="590" y="246" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="10">High-Perf Network (SR-IOV PF)</text>
+    <text x="590" y="262" text-anchor="middle" fill="var(--text-dim)" font-size="9">Hardware VF passthrough &bull; Near-native NIC perf</text>
+
+    <!-- ═══ NetworkAttachmentDefinition ═══ -->
+    <g class="d-node" data-tip="multus-nad">
+      <rect x="440" y="310" width="300" height="45" rx="8" fill="var(--amber-dim)" stroke="var(--amber)" stroke-opacity=".4" stroke-dasharray="5"/>
+      <text x="590" y="330" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="10">NetworkAttachmentDefinition CRs</text>
+      <text x="590" y="345" text-anchor="middle" fill="var(--text-dim)" font-size="8">Define each secondary network &bull; Referenced by pod annotation</text>
+    </g>
+
+    <!-- ═══ Curves: Pod interfaces → networks (no overlap) ═══ -->
+    <!-- eth0 → OVN-K: gentle curve, both at ~y=110 -->
+    <path d="M280,110 C360,110 380,107 438,107" fill="none" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aMultus)"/>
+    <!-- net1 → Physical: gentle curve, both at ~y=164 -->
+    <path d="M280,164 C360,164 380,183 438,183" fill="none" stroke="var(--green)" stroke-width="1.5" marker-end="url(#aMultusG)"/>
+    <!-- net2 → SR-IOV: gentle curve, both at ~y=218/249 -->
+    <path d="M280,218 C360,218 380,249 438,249" fill="none" stroke="var(--purple)" stroke-width="1.5" marker-end="url(#aMultusP)"/>
+
+    <!-- ═══ Dashed: Multus → CNI plugins ═══ -->
+    <line x1="77" y1="340" x2="77" y2="353" stroke="var(--blue)" stroke-width="1" stroke-dasharray="3"/>
+    <line x1="167" y1="340" x2="167" y2="353" stroke="var(--green)" stroke-width="1" stroke-dasharray="3"/>
+    <line x1="257" y1="340" x2="257" y2="353" stroke="var(--purple)" stroke-width="1" stroke-dasharray="3"/>
+
+    <!-- ═══ Dashed: Pod → Multus ═══ -->
+    <line x1="120" y1="280" x2="120" y2="298" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="3"/>
+    <line x1="220" y1="280" x2="220" y2="298" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="3"/>
+  </svg>
+</div>
+
+<div class="callout warn">
+  <strong>No NetworkPolicy on secondary interfaces:</strong> NetworkPolicy only applies to the primary interface (eth0 / OVN-K). Traffic on Multus-attached interfaces (macvlan, SR-IOV, bridge) bypasses NetworkPolicy entirely. Plan security for secondary networks at the infrastructure level (VLAN ACLs, firewall rules).
+</div>
+
+<div class="callout">
+  <strong>Multus is pre-installed</strong> on every OpenShift 4.x cluster &mdash; no operator needed for macvlan, bridge, or IPVLAN plugins. SR-IOV requires the <strong>SR-IOV Network Operator</strong> from OperatorHub (configures VFs on physical NICs and manages the <code>SriovNetwork</code> CRs).
+</div>
+
+<h3>Secondary CNI Plugin Comparison</h3>
+<table>
+<tr><th>Plugin</th><th>Layer</th><th>Use Case</th><th>Operator Needed</th></tr>
+<tr><td><strong>Macvlan</strong></td><td>L2</td><td>Direct physical network access &mdash; pod gets its own MAC on the host NIC</td><td>No</td></tr>
+<tr><td><strong>SR-IOV</strong></td><td>Hardware</td><td>Telco / NFV &mdash; VF passthrough, near-native NIC performance, DPDK</td><td>Yes (SR-IOV Network Operator)</td></tr>
+<tr><td><strong>Bridge</strong></td><td>L2</td><td>Pod-to-pod on same node via Linux bridge</td><td>No</td></tr>
+<tr><td><strong>IPVLAN</strong></td><td>L3</td><td>Like macvlan but shared MAC address &mdash; fewer switch-level issues</td><td>No</td></tr>
+<tr><td><strong>Host-device</strong></td><td>L2</td><td>Move entire host NIC into pod network namespace</td><td>No</td></tr>
+</table>
+
+<div class="acc-item">
+  <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> NetworkAttachmentDefinition &mdash; Macvlan Example</div>
+  <div class="acc-body">
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">k8s.cni.cncf.io/v1</span>
+<span class="key">kind</span>: <span class="str">NetworkAttachmentDefinition</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">macvlan-conf</span>
+  <span class="key">namespace</span>: <span class="str">my-project</span>
+<span class="key">spec</span>:
+  <span class="key">config</span>: <span class="str">'{
+    "cniVersion": "0.3.1",
+    "type": "macvlan",
+    "master": "ens4",
+    "mode": "bridge",
+    "ipam": {
+      "type": "whereabouts",
+      "range": "192.168.1.0/24",
+      "exclude": ["192.168.1.0/32", "192.168.1.1/32"]
+    }
+  }'</span></pre>
+  </div>
+</div>
+
+<div class="acc-item">
+  <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> Pod with Secondary Interface Annotation</div>
+  <div class="acc-body">
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">v1</span>
+<span class="key">kind</span>: <span class="str">Pod</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">my-multi-nic-pod</span>
+  <span class="key">annotations</span>:
+    <span class="key">k8s.v1.cni.cncf.io/networks</span>: <span class="str">macvlan-conf</span>   <span class="cmt"># attach net1</span>
+<span class="key">spec</span>:
+  <span class="key">containers</span>:
+  - <span class="key">name</span>: <span class="str">app</span>
+    <span class="key">image</span>: <span class="str">registry.redhat.io/ubi9/ubi:latest</span>
+    <span class="key">command</span>: [<span class="str">"sleep"</span>, <span class="str">"infinity"</span>]
+
+<span class="cmt"># Verify inside the pod:</span>
+<span class="cmt"># oc exec my-multi-nic-pod -- ip a</span>
+<span class="cmt">#   eth0  → 10.128.2.15  (OVN-K, cluster network)</span>
+<span class="cmt">#   net1  → 192.168.1.50 (macvlan, physical network)</span></pre>
+  </div>
+</div>
+
+<div class="acc-item">
+  <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> SR-IOV NetworkAttachmentDefinition (via Operator)</div>
+  <div class="acc-body">
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># Step 1: SriovNetworkNodePolicy — configure VFs on physical NIC</span>
+<span class="key">apiVersion</span>: <span class="str">sriovnetwork.openshift.io/v1</span>
+<span class="key">kind</span>: <span class="str">SriovNetworkNodePolicy</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">policy-dpdk</span>
+  <span class="key">namespace</span>: <span class="str">openshift-sriov-network-operator</span>
+<span class="key">spec</span>:
+  <span class="key">nodeSelector</span>:
+    <span class="key">feature.node.kubernetes.io/network-sriov.capable</span>: <span class="str">"true"</span>
+  <span class="key">numVfs</span>: <span class="str">8</span>
+  <span class="key">nicSelector</span>:
+    <span class="key">pfNames</span>: [<span class="str">"ens5f0"</span>]
+  <span class="key">deviceType</span>: <span class="str">vfio-pci</span>          <span class="cmt"># for DPDK; use netdevice for kernel driver</span>
+  <span class="key">resourceName</span>: <span class="str">dpdk_nic</span>
+
+<span class="cmt">---</span>
+<span class="cmt"># Step 2: SriovNetwork — auto-creates NetworkAttachmentDefinition</span>
+<span class="key">apiVersion</span>: <span class="str">sriovnetwork.openshift.io/v1</span>
+<span class="key">kind</span>: <span class="str">SriovNetwork</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">sriov-dpdk-net</span>
+  <span class="key">namespace</span>: <span class="str">openshift-sriov-network-operator</span>
+<span class="key">spec</span>:
+  <span class="key">networkNamespace</span>: <span class="str">my-project</span>
+  <span class="key">resourceName</span>: <span class="str">dpdk_nic</span>
+  <span class="key">ipam</span>: <span class="str">'{ "type": "whereabouts", "range": "10.10.10.0/24" }'</span></pre>
+  </div>
+</div>
 
 <h2>Deployment Strategies via Routes</h2>
 <div class="card-grid">
@@ -8332,6 +8540,11 @@ const T = {
   'ni-crio':{t:'CRI-O (Container Runtime)',b:'Lightweight OCI-compliant container runtime. Implements Kubernetes CRI via gRPC socket (/var/run/crio/crio.sock). Replaces Docker entirely. Handles: RunPodSandbox, CreateContainer, StartContainer, StopContainer, RemoveContainer. Uses runc/crun as low-level OCI runtime. Version matches Kubernetes version (OCP 4.14 = K8s 1.27 = CRI-O 1.27). Config managed by MCO — never edit /etc/crio/ directly.'},
   'ni-mcd':{t:'Machine Config Daemon (MCD)',b:'DaemonSet agent of the Machine Config Operator (MCO). Compares current node config with rendered MachineConfig target. Delivers: files, systemd units, kernel args, SSH keys, registry config. Most changes trigger reboot: cordon → drain → apply → reboot → uncordon. One node at a time per pool. All OS config is declarative via CRDs — no SSH needed.'},
   'ni-ovn-detail':{t:'OVN-Kubernetes (CNI)',b:'Default CNI plugin since OCP 4.12. Built on Open Virtual Network (OVN) + Open vSwitch (OVS). Geneve tunnel encapsulation for cross-node pod traffic. Replaces kube-proxy — service load balancing done natively in OVN via OVS flows. Creates logical switches (one per node), routers, ports, ACLs (NetworkPolicy), and load balancers. Supports EgressIP, EgressFirewall, and Multus for secondary network interfaces.'},
+  'multus-meta':{t:'Multus CNI (Meta-Plugin)',b:'Multus does not provide networking itself — it delegates to other CNI plugins. Acts as a "multiplexer": the primary interface (eth0) always goes to OVN-Kubernetes, while additional interfaces (net1, net2, ...) are delegated to macvlan, SR-IOV, bridge, or other plugins. Configuration is driven by NetworkAttachmentDefinition CRs. Pre-installed on every OpenShift 4.x cluster.'},
+  'multus-eth0':{t:'eth0 — Primary Interface',b:'Every pod gets eth0 from OVN-Kubernetes (the default CNI). This interface carries cluster network traffic: pod-to-pod via Geneve overlay, Service load balancing, and NetworkPolicy enforcement. IP assigned from the pod CIDR (e.g., 10.128.0.0/14). This is the only interface that NetworkPolicy applies to.'},
+  'multus-net1':{t:'net1 — Macvlan Interface',b:'Secondary interface attached via macvlan plugin. Pod gets its own MAC address on the host physical NIC, appearing as a separate device on the physical network. Direct L2 access — no overlay, no encapsulation. Useful for accessing VLAN-segmented networks, legacy infrastructure, or storage networks. IP managed by IPAM plugin (whereabouts or static).'},
+  'multus-sriov':{t:'net2 — SR-IOV VF Interface',b:'Secondary interface using SR-IOV (Single Root I/O Virtualization). The physical NIC is split into Virtual Functions (VFs) at the hardware level. Each VF is passed directly to a pod — near-native NIC performance with minimal CPU overhead. Requires SR-IOV Network Operator. Used for telco/NFV workloads, DPDK, and high-throughput data planes. deviceType can be netdevice (kernel driver) or vfio-pci (userspace/DPDK).'},
+  'multus-nad':{t:'NetworkAttachmentDefinition',b:'Custom Resource that defines a secondary network for Multus. Specifies: CNI plugin type (macvlan, bridge, SR-IOV), master interface, VLAN, IPAM configuration. Pods request attachment via annotation: k8s.v1.cni.cncf.io/networks: <nad-name>. Namespace-scoped — pods can only attach to NADs in their own namespace. For SR-IOV, the SriovNetwork CR auto-generates the NAD.'},
   'ni-ovs':{t:'Open vSwitch (OVS)',b:'Programmable virtual switch on every node. OVN-Kubernetes uses OVS to implement pod networking, service load balancing, and NetworkPolicy enforcement via flow rules. The br-int bridge connects all pod interfaces. Geneve tunnels (UDP 6081) carry cross-node pod traffic. OVS is managed by the ovnkube-node DaemonSet pod — never configure OVS directly.'},
   'ni-mco':{t:'Machine Config Operator (MCO)',b:'Cluster-level operator that manages OS configuration across all nodes. Renders MachineConfig CRs into ignition configs. The Machine Config Daemon (MCD) DaemonSet on each node applies changes: files, systemd units, kernel arguments, SSH keys, registry mirrors. Changes to kernel args or systemd require node reboot (rolling, one node at a time per MachineConfigPool).'},
   'ni-coredns':{t:'CoreDNS (Cluster DNS)',b:'Cluster DNS server providing service discovery. Resolves <service>.<namespace>.svc.cluster.local → ClusterIP. For headless Services (clusterIP: None), returns individual pod IPs. Runs as DaemonSet (dns-default) in openshift-dns namespace — one pod per node. Managed by DNS Operator. Listens on port 53 UDP/TCP. Forwards non-cluster queries to upstream DNS.'},
@@ -8922,6 +9135,22 @@ searchBox.addEventListener('input', () => {
     n.style.display = (el && el.textContent.toLowerCase().includes(q)) ? '' : 'none';
   });
 });
+
+// Desktop sidebar collapse
+function applyCollapse(collapsed) {
+  document.body.classList.toggle('sidebar-collapsed', collapsed);
+  const btn = document.getElementById('collapseBtn');
+  btn.innerHTML = collapsed ? '&#11166;' : '&#11164;';
+  btn.title = collapsed ? 'Show sidebar' : 'Hide sidebar';
+}
+function toggleCollapse() {
+  const collapsed = !document.body.classList.contains('sidebar-collapsed');
+  applyCollapse(collapsed);
+  localStorage.setItem('ocp101-sidebar', collapsed ? '1' : '0');
+}
+(function() {
+  if (localStorage.getItem('ocp101-sidebar') === '1') applyCollapse(true);
+})();
 
 // Mobile sidebar toggle
 function toggleSidebar() {
