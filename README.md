@@ -9,6 +9,6 @@ A collection of OpenShift Container Platform presentations and workshops, hosted
 - [F5 GTM Diagram](f5-gtm-diagram.html) — F5 GTM architecture diagram
 - [OpenShift Cluster Manage Network Explanation](openshift-cluster-manage-network-explaination.html) — OpenShift cluster management network explanation
 
-## View Online
+## View Online~
 
 Visit the GitHub Pages site: [https://surote.github.io/ocp-public/](https://surote.github.io/ocp-public/)
