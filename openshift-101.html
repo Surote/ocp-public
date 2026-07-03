@@ -282,6 +282,10 @@ strong { color:var(--text-bright); font-weight:600; }
 .callout.success { border-left-color:var(--green); background:var(--green-dim); }
 .callout.tryit { border-left-color:var(--teal); background:var(--teal-dim); }
 
+/* ═══ Cross-section links ═══ */
+.xlink { color:var(--blue); cursor:pointer; font-weight:600; text-decoration:none; border-bottom:1px dashed var(--blue); }
+.xlink:hover { border-bottom-style:solid; }
+
 /* ═══ Tables ═══ */
 table { width:100%; border-collapse:collapse; margin:14px 0 18px; font-size:.84rem; }
 th {
@@ -488,7 +492,7 @@ html.dark code { color:#5b9cf5; }
     <span class="search-kbd">&#8984;K</span>
   </div>
   <div class="progress-area">
-    <span class="progress-text" id="progressText">0 / 19</span>
+    <span class="progress-text" id="progressText">0 / 22</span>
     <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
     <button onclick="resetProgress()" style="background:none;border:1px solid var(--border);color:var(--text-dim);padding:3px 10px;border-radius:5px;font-size:.68rem;cursor:pointer;font-family:inherit;white-space:nowrap;" title="Reset all progress">Reset</button>
     <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark/light theme">&#9790;</button>
@@ -503,6 +507,11 @@ html.dark code { color:#5b9cf5; }
   <div class="nav-item active" data-page="platform" data-idx="0">
     <span class="nav-icon">&#9670;</span>
     <span class="nav-label">What is OpenShift</span>
+    <span class="nav-check">&#10003;</span>
+  </div>
+  <div class="nav-item" data-page="virt" data-idx="20">
+    <span class="nav-icon">&#8862;</span>
+    <span class="nav-label">OpenShift Virtualization</span>
     <span class="nav-check">&#10003;</span>
   </div>
   <div class="nav-item" data-page="installation" data-idx="13">
@@ -583,6 +592,11 @@ html.dark code { color:#5b9cf5; }
   <div class="nav-item" data-page="operators" data-idx="7">
     <span class="nav-icon">&#9881;</span>
     <span class="nav-label">Operators &amp; OLM</span>
+    <span class="nav-check">&#10003;</span>
+  </div>
+  <div class="nav-item" data-page="gitops" data-idx="21">
+    <span class="nav-icon">&#8635;</span>
+    <span class="nav-label">GitOps &amp; Pipelines</span>
     <span class="nav-check">&#10003;</span>
   </div>
   <div class="nav-item" data-page="day2" data-idx="11">
@@ -799,7 +813,7 @@ html.dark code { color:#5b9cf5; }
       <rect x="15" y="68" width="90" height="24" rx="5" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".3"/>
       <text x="60" y="84" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">4.21</text>
     </g>
-    <text x="210" y="84" text-anchor="middle" fill="var(--text)" font-size="8.5">421.94.x</text>
+    <text x="210" y="84" text-anchor="middle" fill="var(--text)" font-size="8.5">421.96.x</text>
     <text x="390" y="84" text-anchor="middle" fill="var(--text)" font-size="8.5">1.34.x</text>
     <text x="570" y="84" text-anchor="middle" fill="var(--text)" font-size="8.5">1.34</text>
     <text x="740" y="84" text-anchor="middle" fill="var(--text)" font-size="8.5">RHEL 9.6</text>
@@ -871,7 +885,7 @@ html.dark code { color:#5b9cf5; }
     <rect x="10" y="278" width="800" height="42" rx="10" fill="var(--bg-surface)" stroke="var(--border)"/>
     <text x="22" y="296" fill="var(--text-bright)" font-weight="700" font-size="9">Key Rules:</text>
     <text x="22" y="312" fill="var(--text-muted)" font-size="8">&#8226; CRI-O major.minor always matches Kubernetes major.minor (e.g. CRI-O 1.34 = K8s 1.34)</text>
-    <text x="410" y="296" fill="var(--text-muted)" font-size="8">&#8226; RHCOS version embeds OCP version (e.g. 421.94 = OCP 4.21)</text>
+    <text x="410" y="296" fill="var(--text-muted)" font-size="8">&#8226; RHCOS version embeds OCP + RHEL version (e.g. 421.96 = OCP 4.21 on RHEL 9.6)</text>
     <text x="410" y="312" fill="var(--text-muted)" font-size="8">&#8226; No mixing: CVO enforces version integrity across all components</text>
   </svg>
 </div>
@@ -1249,6 +1263,7 @@ html.dark code { color:#5b9cf5; }
 <div class="callout">
   <strong>When to use OpenShift Virtualization:</strong> Legacy apps that can't be containerized, Windows workloads (Windows Server 2019/2022 supported), gradual VMware migration (MTV &mdash; Migration Toolkit for Virtualization imports VMs from vSphere), or running VMs and containers side-by-side during modernization.
 </div>
+<p>See the <span class="xlink" onclick="navigate('virt')">OpenShift Virtualization</span> section for the full KubeVirt architecture, VirtualMachine/DataVolume YAML, live migration mechanics, and MTV migration details.</p>
 
 <button class="mark-read" onclick="markRead(this,0)">&#10003; Mark section as read</button>
 </div>
@@ -3899,6 +3914,75 @@ html.dark code { color:#5b9cf5; }
   </svg>
 </div>
 
+<h2>MetalLB &mdash; LoadBalancer Services on Bare Metal</h2>
+<p>On a cloud provider, a <code>Service</code> of type <code>LoadBalancer</code> automatically gets a real external IP via the cloud's LB API. Bare-metal clusters have no such API &mdash; <strong>MetalLB</strong> fills that gap, assigning IPs from a pool you own and announcing them to the local network so external routers/switches know where to send traffic.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">MetalLB &mdash; IP Assignment &amp; Announcement</div>
+  <svg width="820" height="150" viewBox="0 0 820 150" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs><marker id="aMLB" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--blue)"/></marker></defs>
+    <g class="d-node" data-tip="ml-svc">
+      <rect x="15" y="35" width="170" height="70" rx="8" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="100" y="60" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="10.5">Service</text>
+      <text x="100" y="76" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">type: LoadBalancer</text>
+      <text x="100" y="90" text-anchor="middle" fill="var(--text-dim)" font-size="7">status.loadBalancer.ingress pending</text>
+    </g>
+    <line x1="185" y1="70" x2="228" y2="70" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aMLB)"/>
+    <g class="d-node" data-tip="ml-controller">
+      <rect x="228" y="30" width="200" height="80" rx="8" fill="var(--purple-dim)" stroke="var(--purple)" stroke-opacity=".5"/>
+      <text x="328" y="52" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="10.5">MetalLB Controller</text>
+      <text x="328" y="70" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Assigns IP from IPAddressPool</text>
+      <text x="328" y="84" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Writes status.loadBalancer.ingress</text>
+      <text x="328" y="98" text-anchor="middle" fill="var(--text-dim)" font-size="7">Single Deployment (leader elected)</text>
+    </g>
+    <line x1="428" y1="70" x2="471" y2="70" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aMLB)"/>
+    <g class="d-node" data-tip="ml-speaker">
+      <rect x="471" y="30" width="210" height="80" rx="8" fill="var(--teal-dim)" stroke="var(--teal)" stroke-opacity=".5"/>
+      <text x="576" y="52" text-anchor="middle" fill="var(--teal)" font-weight="700" font-size="10.5">speaker (DaemonSet)</text>
+      <text x="576" y="70" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">L2: ARP/NDP from one elected node</text>
+      <text x="576" y="84" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">BGP: route advertised from every node</text>
+      <text x="576" y="98" text-anchor="middle" fill="var(--text-dim)" font-size="7">Runs on every node</text>
+    </g>
+    <line x1="681" y1="70" x2="724" y2="70" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aMLB)"/>
+    <g>
+      <rect x="724" y="35" width="80" height="70" rx="8" fill="var(--bg-elevated)" stroke="var(--border)"/>
+      <text x="764" y="65" text-anchor="middle" fill="var(--text)" font-weight="600" font-size="9">Router /</text>
+      <text x="764" y="79" text-anchor="middle" fill="var(--text)" font-weight="600" font-size="9">Switch</text>
+    </g>
+  </svg>
+</div>
+
+<table>
+<tr><th>Mode</th><th>How Traffic Arrives</th><th>Trade-offs</th></tr>
+<tr><td><strong>Layer 2 (L2)</strong></td><td>One node is elected leader for each IP and answers ARP (IPv4) / NDP (IPv6) requests for it &mdash; all traffic for that IP enters through that single node.</td><td>Simple, no router config needed. Not true load balancing (one node is the bottleneck) and failover takes a few seconds.</td></tr>
+<tr><td><strong>BGP</strong></td><td>Every node peers with an upstream router and advertises a route for each service IP; the router ECMP-balances traffic across all nodes.</td><td>True multi-node load balancing and fast failover, but requires a BGP-speaking router and network team coordination.</td></tr>
+</table>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># Pool of external IPs MetalLB can hand out</span>
+<span class="key">apiVersion</span>: <span class="str">metallb.io/v1beta1</span>
+<span class="key">kind</span>: <span class="str">IPAddressPool</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">apps-pool</span>
+  <span class="key">namespace</span>: <span class="str">metallb-system</span>
+<span class="key">spec</span>:
+  <span class="key">addresses</span>:
+    - <span class="str">192.168.1.240-192.168.1.250</span>
+
+<span class="cmt">---</span>
+<span class="cmt"># Announce that pool via Layer 2 (ARP/NDP)</span>
+<span class="key">apiVersion</span>: <span class="str">metallb.io/v1beta1</span>
+<span class="key">kind</span>: <span class="str">L2Advertisement</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">apps-l2</span>
+  <span class="key">namespace</span>: <span class="str">metallb-system</span>
+<span class="key">spec</span>:
+  <span class="key">ipAddressPools</span>:
+    - <span class="str">apps-pool</span></pre>
+
+<div class="callout">
+  <strong>Common use:</strong> Front the Ingress Controller (HAProxy) itself with a MetalLB-assigned <code>LoadBalancer</code> Service instead of hand-configuring an external VIP &mdash; a frequent choice for bare-metal/UPI clusters covered in the <em>Installation &amp; Bootstrap</em> section.
+</div>
+
 <h2>Cluster Network Defaults</h2>
 <table>
   <thead><tr><th>Network</th><th>Default CIDR</th><th>Details</th></tr></thead>
@@ -4608,7 +4692,7 @@ EOF
     <tr><td>ReadWriteOnce</td><td>RWO</td><td>Single node read/write</td><td>All (EBS, Ceph RBD, vSphere VMDK)</td></tr>
     <tr><td>ReadOnlyMany</td><td>ROX</td><td>Multiple nodes read-only</td><td>NFS, CephFS, some CSI drivers</td></tr>
     <tr><td>ReadWriteMany</td><td>RWX</td><td>Multiple nodes read/write simultaneously</td><td>CephFS, NFS, Azure Files</td></tr>
-    <tr><td>ReadWriteOncePod</td><td>RWOP</td><td>Single pod read/write (tech preview)</td><td>CSI drivers with support</td></tr>
+    <tr><td>ReadWriteOncePod</td><td>RWOP</td><td>Single pod read/write (GA since OCP 4.16)</td><td>CSI drivers with support</td></tr>
   </tbody>
 </table>
 
@@ -5101,6 +5185,85 @@ EOF
   </svg>
 </div>
 
+<h2>cert-manager &mdash; Certificate Lifecycle</h2>
+<p><strong>cert-manager</strong> automates issuing and renewing X.509 certificates &mdash; the day-1 pain it removes is manually generating certs, copying them into Secrets, and remembering to rotate them before they expire.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">cert-manager &mdash; Certificate Request &amp; Renewal Flow</div>
+  <svg width="820" height="180" viewBox="0 0 820 180" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs><marker id="aCM" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--blue)"/></marker></defs>
+    <g class="d-node" data-tip="cm-certificate">
+      <rect x="15" y="30" width="160" height="70" rx="8" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="95" y="52" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="10.5">Certificate</text>
+      <text x="95" y="70" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">dnsNames, issuerRef,</text>
+      <text x="95" y="84" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">secretName</text>
+    </g>
+    <line x1="175" y1="65" x2="213" y2="65" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aCM)"/>
+    <g class="d-node" data-tip="cm-certrequest">
+      <rect x="213" y="30" width="160" height="70" rx="8" fill="var(--purple-dim)" stroke="var(--purple)" stroke-opacity=".5"/>
+      <text x="293" y="52" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="10">CertificateRequest</text>
+      <text x="293" y="70" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Carries the CSR</text>
+      <text x="293" y="84" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Submitted for signing</text>
+    </g>
+    <line x1="373" y1="65" x2="411" y2="65" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aCM)"/>
+    <g class="d-node" data-tip="cm-issuer">
+      <rect x="411" y="30" width="160" height="70" rx="8" fill="var(--amber-dim)" stroke="var(--amber)" stroke-opacity=".5"/>
+      <text x="491" y="52" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="10">Issuer / ClusterIssuer</text>
+      <text x="491" y="70" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Self-signed, internal CA,</text>
+      <text x="491" y="84" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">or ACME (Let's Encrypt)</text>
+    </g>
+    <line x1="571" y1="65" x2="609" y2="65" stroke="var(--green)" stroke-width="1.5" marker-end="url(#aCM)"/>
+    <g class="d-node" data-tip="cm-secret">
+      <rect x="609" y="30" width="105" height="70" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
+      <text x="661" y="52" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="10">TLS Secret</text>
+      <text x="661" y="70" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">tls.crt</text>
+      <text x="661" y="84" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">tls.key</text>
+    </g>
+    <line x1="714" y1="65" x2="750" y2="65" stroke="var(--rose)" stroke-width="1.5" marker-end="url(#aCM)"/>
+    <g class="d-node" data-tip="cm-route">
+      <rect x="750" y="35" width="60" height="60" rx="8" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".5"/>
+      <text x="780" y="60" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="9">Route /</text>
+      <text x="780" y="74" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="9">Ingress</text>
+    </g>
+    <rect x="15" y="118" width="795" height="45" rx="8" fill="var(--bg-surface)" stroke="var(--border)"/>
+    <text x="412" y="137" text-anchor="middle" fill="var(--text-bright)" font-weight="700" font-size="9.5">Automatic Renewal</text>
+    <text x="412" y="153" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">cert-manager re-runs this whole flow at ~2/3 of the certificate's lifetime and updates the Secret in place &mdash; no manual rotation.</text>
+  </svg>
+</div>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">cert-manager.io/v1</span>
+<span class="key">kind</span>: <span class="str">ClusterIssuer</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">letsencrypt-prod</span>
+<span class="key">spec</span>:
+  <span class="key">acme</span>:
+    <span class="key">server</span>: <span class="str">https://acme-v02.api.letsencrypt.org/directory</span>
+    <span class="key">email</span>: <span class="str">platform-team@example.com</span>
+    <span class="key">privateKeySecretRef</span>:
+      <span class="key">name</span>: <span class="str">letsencrypt-prod-key</span>
+    <span class="key">solvers</span>:
+      - <span class="key">http01</span>:
+          <span class="key">ingress</span>:
+            <span class="key">class</span>: <span class="str">openshift-default</span>
+
+<span class="cmt">---</span>
+<span class="key">apiVersion</span>: <span class="str">cert-manager.io/v1</span>
+<span class="key">kind</span>: <span class="str">Certificate</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">myapp-tls</span>
+  <span class="key">namespace</span>: <span class="str">my-app</span>
+<span class="key">spec</span>:
+  <span class="key">secretName</span>: <span class="str">myapp-tls-secret</span>
+  <span class="key">dnsNames</span>:
+    - <span class="str">myapp.apps.cluster.example.com</span>
+  <span class="key">issuerRef</span>:
+    <span class="key">name</span>: <span class="str">letsencrypt-prod</span>
+    <span class="key">kind</span>: <span class="str">ClusterIssuer</span></pre>
+
+<div class="callout">
+  <strong>Ingress/Route certs:</strong> Use the cert from the Secret cert-manager maintains in a Route (edge or re-encrypt termination) &mdash; either copy it into <code>spec.tls.certificate</code>/<code>key</code>, or reference the Secret directly via <code>spec.tls.externalCertificate</code> (newer OCP releases). Or use the <strong>cert-manager Operator for Red Hat OpenShift</strong> to manage the cluster's default Ingress Controller certificate and API server certificate the same declarative way &mdash; replacing the self-signed certs OpenShift ships with by default.
+</div>
+
 <button class="mark-read" onclick="markRead(this,6)">&#10003; Mark section as read</button>
 </div>
 
@@ -5533,7 +5696,7 @@ EOF
     <tr><td><strong>ODF</strong></td><td>Red Hat</td><td>Ceph storage cluster (block, file, object)</td></tr>
     <tr><td><strong>ACS</strong> (StackRox)</td><td>Red Hat</td><td>Container security: CVE scanning, admission control, runtime monitoring</td></tr>
     <tr><td><strong>ACM</strong></td><td>Red Hat</td><td>Multi-cluster lifecycle, governance, observability</td></tr>
-    <tr><td><strong>Cert-Manager</strong></td><td>Community</td><td>TLS certificate automation (Let's Encrypt, ACME)</td></tr>
+    <tr><td><strong>cert-manager</strong></td><td>Red Hat (community version also available)</td><td>TLS certificate automation (Let's Encrypt, ACME) &mdash; "cert-manager Operator for Red Hat OpenShift"</td></tr>
     <tr><td><strong>External Secrets</strong></td><td>Community</td><td>Sync secrets from external stores (Vault, AWS SM, Azure KV)</td></tr>
   </tbody>
 </table>
@@ -6029,6 +6192,7 @@ EOF
 
 <h2>Application Deployment</h2>
 <p>ACM delivers applications to managed clusters using <strong>ArgoCD ApplicationSets</strong> with ACM Placement. ArgoCD supports two deployment modes: <strong>Push</strong> (hub ArgoCD applies to remote clusters) and <strong>Pull</strong> (each cluster runs its own ArgoCD that pulls from Git). Both use the same ApplicationSet + Placement CRDs on the hub.</p>
+<p>For ArgoCD fundamentals (Application, AppProject, sync/health status, drift detection) that this multi-cluster model builds on, see the <span class="xlink" onclick="navigate('gitops')">GitOps &amp; Pipelines</span> section.</p>
 
 <div class="callout warn">
 <strong>Subscription model is removed.</strong> The legacy Subscription model (Channel + Subscription + PlacementRule) was deprecated in ACM 2.12 and is removed in current releases. Use <strong>ArgoCD ApplicationSet with ACM Placement</strong> for all multi-cluster application delivery.
@@ -6260,48 +6424,48 @@ EOF
 
     <!-- Hub zone -->
     <g class="d-node" data-tip="acm-obs-hub">
-      <rect x="20" y="20" width="780" height="210" rx="12" fill="var(--blue)" opacity="0.04" stroke="var(--blue)" stroke-dasharray="6 3"/>
+      <rect x="20" y="20" width="780" height="210" rx="12" fill="var(--blue)" fill-opacity="0.04" stroke="var(--blue)" stroke-opacity=".45" stroke-dasharray="6 3"/>
       <text x="410" y="42" text-anchor="middle" fill="var(--blue)" font-size="12" font-weight="700">ACM HUB CLUSTER</text>
     </g>
 
     <!-- Grafana -->
     <g class="d-node" data-tip="acm-grafana">
-      <rect x="50" y="58" width="150" height="50" rx="8" fill="var(--purple)" opacity="0.12" stroke="var(--purple)"/>
+      <rect x="50" y="58" width="150" height="50" rx="8" fill="var(--purple)" fill-opacity="0.12" stroke="var(--purple)" stroke-opacity=".45"/>
       <text x="125" y="80" text-anchor="middle" fill="var(--purple)" font-size="10" font-weight="600">Grafana</text>
       <text x="125" y="96" text-anchor="middle" fill="var(--text-dim)" font-size="8">Fleet dashboards</text>
     </g>
 
     <!-- Thanos Query -->
     <g class="d-node" data-tip="acm-thanos-query">
-      <rect x="230" y="58" width="160" height="50" rx="8" fill="var(--blue)" opacity="0.12" stroke="var(--blue)"/>
+      <rect x="230" y="58" width="160" height="50" rx="8" fill="var(--blue)" fill-opacity="0.12" stroke="var(--blue)" stroke-opacity=".45"/>
       <text x="310" y="80" text-anchor="middle" fill="var(--blue)" font-size="10" font-weight="600">Thanos Query</text>
       <text x="310" y="96" text-anchor="middle" fill="var(--text-dim)" font-size="8">Cross-cluster PromQL</text>
     </g>
 
     <!-- AlertManager -->
     <g class="d-node" data-tip="acm-alertmanager">
-      <rect x="620" y="58" width="160" height="50" rx="8" fill="var(--rose)" opacity="0.12" stroke="var(--rose)"/>
+      <rect x="620" y="58" width="160" height="50" rx="8" fill="var(--rose)" fill-opacity="0.12" stroke="var(--rose)" stroke-opacity=".45"/>
       <text x="700" y="80" text-anchor="middle" fill="var(--rose)" font-size="10" font-weight="600">Alertmanager</text>
       <text x="700" y="96" text-anchor="middle" fill="var(--text-dim)" font-size="8">Fleet-wide alerts</text>
     </g>
 
     <!-- Thanos Receive -->
     <g class="d-node" data-tip="acm-thanos-receive">
-      <rect x="230" y="130" width="160" height="50" rx="8" fill="var(--blue)" opacity="0.12" stroke="var(--blue)"/>
+      <rect x="230" y="130" width="160" height="50" rx="8" fill="var(--blue)" fill-opacity="0.12" stroke="var(--blue)" stroke-opacity=".45"/>
       <text x="310" y="152" text-anchor="middle" fill="var(--blue)" font-size="10" font-weight="600">Thanos Receive</text>
       <text x="310" y="168" text-anchor="middle" fill="var(--text-dim)" font-size="8">Ingests remote-write</text>
     </g>
 
     <!-- Object Store -->
     <g class="d-node" data-tip="acm-obs-s3">
-      <rect x="440" y="130" width="170" height="50" rx="8" fill="var(--green)" opacity="0.12" stroke="var(--green)"/>
+      <rect x="440" y="130" width="170" height="50" rx="8" fill="var(--green)" fill-opacity="0.12" stroke="var(--green)" stroke-opacity=".45"/>
       <text x="525" y="152" text-anchor="middle" fill="var(--green)" font-size="10" font-weight="600">Object Storage (S3)</text>
       <text x="525" y="168" text-anchor="middle" fill="var(--text-dim)" font-size="8">Long-term metrics</text>
     </g>
 
     <!-- Thanos Store Gateway -->
     <g class="d-node" data-tip="acm-thanos-store">
-      <rect x="440" y="58" width="150" height="50" rx="8" fill="var(--blue)" opacity="0.08" stroke="var(--blue)" stroke-dasharray="4 2"/>
+      <rect x="440" y="58" width="150" height="50" rx="8" fill="var(--blue)" fill-opacity="0.08" stroke="var(--blue)" stroke-opacity=".45" stroke-dasharray="4 2"/>
       <text x="515" y="80" text-anchor="middle" fill="var(--blue)" font-size="10" font-weight="600">Thanos Store</text>
       <text x="515" y="96" text-anchor="middle" fill="var(--text-dim)" font-size="8">Gateway to S3</text>
     </g>
@@ -6315,7 +6479,7 @@ EOF
     <line x1="590" y1="83" x2="618" y2="83" stroke="var(--text-dim)" stroke-width="1.2" marker-end="url(#acm-obs-arrow)"/>
 
     <!-- Managed Clusters zone -->
-    <rect x="20" y="250" width="780" height="130" rx="12" fill="var(--green)" opacity="0.03" stroke="var(--green)" stroke-dasharray="6 3"/>
+    <rect x="20" y="250" width="780" height="130" rx="12" fill="var(--green)" fill-opacity="0.03" stroke="var(--green)" stroke-opacity=".45" stroke-dasharray="6 3"/>
     <text x="410" y="272" text-anchor="middle" fill="var(--green)" font-size="11" font-weight="700">MANAGED CLUSTERS</text>
 
     <!-- Cluster 1 -->
@@ -6448,48 +6612,48 @@ EOF
 
     <!-- Central Zone -->
     <g class="d-node" data-tip="acs-central">
-      <rect x="20" y="15" width="780" height="155" rx="12" fill="var(--blue)" opacity="0.05" stroke="var(--blue)" stroke-dasharray="6 3"/>
+      <rect x="20" y="15" width="780" height="155" rx="12" fill="var(--blue)" fill-opacity="0.05" stroke="var(--blue)" stroke-opacity=".45" stroke-dasharray="6 3"/>
       <text x="410" y="38" text-anchor="middle" fill="var(--blue)" font-size="13" font-weight="700">ACS CENTRAL (Hub Cluster)</text>
     </g>
 
     <!-- Central API -->
     <g class="d-node" data-tip="acs-api">
-      <rect x="40" y="52" width="140" height="48" rx="8" fill="var(--blue)" opacity="0.12" stroke="var(--blue)"/>
+      <rect x="40" y="52" width="140" height="48" rx="8" fill="var(--blue)" fill-opacity="0.12" stroke="var(--blue)" stroke-opacity=".45"/>
       <text x="110" y="72" text-anchor="middle" fill="var(--blue)" font-size="10" font-weight="600">Central API</text>
       <text x="110" y="88" text-anchor="middle" fill="var(--text-dim)" font-size="8">REST + gRPC</text>
     </g>
 
     <!-- Central UI -->
     <g class="d-node" data-tip="acs-ui">
-      <rect x="195" y="52" width="120" height="48" rx="8" fill="var(--blue)" opacity="0.12" stroke="var(--blue)"/>
+      <rect x="195" y="52" width="120" height="48" rx="8" fill="var(--blue)" fill-opacity="0.12" stroke="var(--blue)" stroke-opacity=".45"/>
       <text x="255" y="72" text-anchor="middle" fill="var(--blue)" font-size="10" font-weight="600">Dashboard UI</text>
       <text x="255" y="88" text-anchor="middle" fill="var(--text-dim)" font-size="8">Risk + compliance</text>
     </g>
 
     <!-- Scanner V4 -->
     <g class="d-node" data-tip="acs-scanner">
-      <rect x="330" y="52" width="150" height="48" rx="8" fill="var(--amber)" opacity="0.12" stroke="var(--amber)"/>
+      <rect x="330" y="52" width="150" height="48" rx="8" fill="var(--amber)" fill-opacity="0.12" stroke="var(--amber)" stroke-opacity=".45"/>
       <text x="405" y="72" text-anchor="middle" fill="var(--amber)" font-size="10" font-weight="600">Scanner V4</text>
       <text x="405" y="88" text-anchor="middle" fill="var(--text-dim)" font-size="8">Image CVE analysis</text>
     </g>
 
     <!-- Policy Engine -->
     <g class="d-node" data-tip="acs-policy-engine">
-      <rect x="495" y="52" width="145" height="48" rx="8" fill="var(--rose)" opacity="0.12" stroke="var(--rose)"/>
+      <rect x="495" y="52" width="145" height="48" rx="8" fill="var(--rose)" fill-opacity="0.12" stroke="var(--rose)" stroke-opacity=".45"/>
       <text x="568" y="72" text-anchor="middle" fill="var(--rose)" font-size="10" font-weight="600">Policy Engine</text>
       <text x="568" y="88" text-anchor="middle" fill="var(--text-dim)" font-size="8">Built-in policy library</text>
     </g>
 
     <!-- Central DB -->
     <g class="d-node" data-tip="acs-centraldb">
-      <rect x="655" y="52" width="130" height="48" rx="8" fill="var(--green)" opacity="0.12" stroke="var(--green)"/>
+      <rect x="655" y="52" width="130" height="48" rx="8" fill="var(--green)" fill-opacity="0.12" stroke="var(--green)" stroke-opacity=".45"/>
       <text x="720" y="72" text-anchor="middle" fill="var(--green)" font-size="10" font-weight="600">Central DB</text>
       <text x="720" y="88" text-anchor="middle" fill="var(--text-dim)" font-size="8">PostgreSQL</text>
     </g>
 
     <!-- roxctl -->
     <g class="d-node" data-tip="acs-roxctl">
-      <rect x="40" y="115" width="130" height="40" rx="8" fill="var(--purple)" opacity="0.10" stroke="var(--purple)"/>
+      <rect x="40" y="115" width="130" height="40" rx="8" fill="var(--purple)" fill-opacity="0.10" stroke="var(--purple)" stroke-opacity=".45"/>
       <text x="105" y="133" text-anchor="middle" fill="var(--purple)" font-size="10" font-weight="600">roxctl CLI</text>
       <text x="105" y="147" text-anchor="middle" fill="var(--text-dim)" font-size="8">CI/CD integration</text>
     </g>
@@ -6513,7 +6677,7 @@ EOF
     <line x1="620" y1="170" x2="670" y2="215" stroke="var(--blue)" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#acs-arrow)"/>
 
     <!-- Secured Cluster Zone -->
-    <rect x="20" y="200" width="780" height="225" rx="12" fill="var(--green)" opacity="0.03" stroke="var(--green)" stroke-dasharray="6 3"/>
+    <rect x="20" y="200" width="780" height="225" rx="12" fill="var(--green)" fill-opacity="0.03" stroke="var(--green)" stroke-opacity=".45" stroke-dasharray="6 3"/>
     <text x="410" y="230" text-anchor="middle" fill="var(--green)" font-size="11" font-weight="700">SECURED CLUSTERS</text>
 
     <!-- Cluster 1 detail -->
@@ -6577,7 +6741,7 @@ EOF
 
     <!-- Policy Definition -->
     <g class="d-node" data-tip="acs-policy-def">
-      <rect x="20" y="30" width="155" height="70" rx="10" fill="var(--purple)" opacity="0.10" stroke="var(--purple)"/>
+      <rect x="20" y="30" width="155" height="70" rx="10" fill="var(--purple)" fill-opacity="0.10" stroke="var(--purple)" stroke-opacity=".45"/>
       <text x="98" y="55" text-anchor="middle" fill="var(--purple)" font-size="11" font-weight="600">Policy Definition</text>
       <text x="98" y="72" text-anchor="middle" fill="var(--text-dim)" font-size="8">Built-in or custom</text>
       <text x="98" y="86" text-anchor="middle" fill="var(--text-dim)" font-size="8">Criteria + scope + action</text>
@@ -6588,17 +6752,17 @@ EOF
 
     <!-- Three evaluation paths -->
     <g class="d-node" data-tip="acs-eval-build">
-      <rect x="205" y="15" width="170" height="40" rx="8" fill="var(--blue)" opacity="0.10" stroke="var(--blue)"/>
+      <rect x="205" y="15" width="170" height="40" rx="8" fill="var(--blue)" fill-opacity="0.10" stroke="var(--blue)" stroke-opacity=".45"/>
       <text x="290" y="33" text-anchor="middle" fill="var(--blue)" font-size="10" font-weight="600">&#9881; BUILD Check</text>
       <text x="290" y="48" text-anchor="middle" fill="var(--text-dim)" font-size="8">roxctl image scan in CI</text>
     </g>
     <g class="d-node" data-tip="acs-eval-deploy">
-      <rect x="205" y="62" width="170" height="40" rx="8" fill="var(--amber)" opacity="0.10" stroke="var(--amber)"/>
+      <rect x="205" y="62" width="170" height="40" rx="8" fill="var(--amber)" fill-opacity="0.10" stroke="var(--amber)" stroke-opacity=".45"/>
       <text x="290" y="80" text-anchor="middle" fill="var(--amber)" font-size="10" font-weight="600">&#9888; DEPLOY Check</text>
       <text x="290" y="95" text-anchor="middle" fill="var(--text-dim)" font-size="8">Admission Controller</text>
     </g>
     <g class="d-node" data-tip="acs-eval-runtime">
-      <rect x="205" y="110" width="170" height="40" rx="8" fill="var(--rose)" opacity="0.10" stroke="var(--rose)"/>
+      <rect x="205" y="110" width="170" height="40" rx="8" fill="var(--rose)" fill-opacity="0.10" stroke="var(--rose)" stroke-opacity=".45"/>
       <text x="290" y="128" text-anchor="middle" fill="var(--rose)" font-size="10" font-weight="600">&#128165; RUNTIME Check</text>
       <text x="290" y="143" text-anchor="middle" fill="var(--text-dim)" font-size="8">Collector (CO-RE BPF)</text>
     </g>
@@ -6610,7 +6774,7 @@ EOF
 
     <!-- Violation -->
     <g class="d-node" data-tip="acs-violation">
-      <rect x="415" y="45" width="140" height="55" rx="10" fill="var(--rose)" opacity="0.12" stroke="var(--rose)"/>
+      <rect x="415" y="45" width="140" height="55" rx="10" fill="var(--rose)" fill-opacity="0.12" stroke="var(--rose)" stroke-opacity=".45"/>
       <text x="485" y="68" text-anchor="middle" fill="var(--rose)" font-size="11" font-weight="600">Violation</text>
       <text x="485" y="88" text-anchor="middle" fill="var(--text-dim)" font-size="8">Severity: Critical &rarr; Low</text>
     </g>
@@ -6621,12 +6785,12 @@ EOF
     <line x1="557" y1="90" x2="613" y2="115" stroke="var(--text-dim)" stroke-width="1.2" marker-end="url(#acs-flow-arrow)"/>
 
     <g class="d-node" data-tip="acs-enforce">
-      <rect x="615" y="10" width="180" height="36" rx="8" fill="var(--rose)" opacity="0.08" stroke="var(--rose)"/>
+      <rect x="615" y="10" width="180" height="36" rx="8" fill="var(--rose)" fill-opacity="0.08" stroke="var(--rose)" stroke-opacity=".45"/>
       <text x="705" y="33" text-anchor="middle" fill="var(--rose)" font-size="9" font-weight="600">&#10007; Block / Fail Build</text>
     </g>
-    <rect x="615" y="55" width="180" height="36" rx="8" fill="var(--amber)" opacity="0.08" stroke="var(--amber)"/>
+    <rect x="615" y="55" width="180" height="36" rx="8" fill="var(--amber)" fill-opacity="0.08" stroke="var(--amber)" stroke-opacity=".45"/>
     <text x="705" y="78" text-anchor="middle" fill="var(--amber)" font-size="9" font-weight="600">&#9888; Alert (Slack/Jira/email)</text>
-    <rect x="615" y="100" width="180" height="36" rx="8" fill="var(--rose)" opacity="0.15" stroke="var(--rose)"/>
+    <rect x="615" y="100" width="180" height="36" rx="8" fill="var(--rose)" fill-opacity="0.15" stroke="var(--rose)" stroke-opacity=".45"/>
     <text x="705" y="123" text-anchor="middle" fill="var(--rose)" font-size="9" font-weight="600">&#128721; Kill Pod (runtime)</text>
 
     <!-- Example policies -->
@@ -7325,12 +7489,12 @@ EOF
 
     <!-- External Users -->
     <g class="d-node" data-tip="quay-users">
-      <rect x="30" y="50" width="120" height="50" rx="10" fill="var(--blue)" opacity="0.15" stroke="var(--blue)"/>
+      <rect x="30" y="50" width="120" height="50" rx="10" fill="var(--blue)" fill-opacity="0.15" stroke="var(--blue)" stroke-opacity=".45"/>
       <text x="90" y="72" text-anchor="middle" fill="var(--blue)" font-size="11" font-weight="600">Developers</text>
       <text x="90" y="88" text-anchor="middle" fill="var(--text-dim)" font-size="9">push / pull images</text>
     </g>
     <g class="d-node" data-tip="quay-cicd">
-      <rect x="30" y="110" width="120" height="50" rx="10" fill="var(--blue)" opacity="0.15" stroke="var(--blue)"/>
+      <rect x="30" y="110" width="120" height="50" rx="10" fill="var(--blue)" fill-opacity="0.15" stroke="var(--blue)" stroke-opacity=".45"/>
       <text x="90" y="132" text-anchor="middle" fill="var(--blue)" font-size="11" font-weight="600">CI/CD Pipelines</text>
       <text x="90" y="148" text-anchor="middle" fill="var(--text-dim)" font-size="9">Robot Accounts</text>
     </g>
@@ -7341,36 +7505,36 @@ EOF
 
     <!-- Quay Core Box -->
     <g class="d-node" data-tip="quay-core">
-      <rect x="200" y="50" width="390" height="200" rx="12" fill="var(--rose)" opacity="0.07" stroke="var(--rose)" stroke-dasharray="6 3"/>
+      <rect x="200" y="50" width="390" height="200" rx="12" fill="var(--rose)" fill-opacity="0.07" stroke="var(--rose)" stroke-opacity=".45" stroke-dasharray="6 3"/>
       <text x="395" y="72" text-anchor="middle" fill="var(--rose)" font-size="12" font-weight="700">Quay Application</text>
 
       <!-- API -->
       <g class="d-node" data-tip="quay-api">
-        <rect x="220" y="85" width="110" height="45" rx="8" fill="var(--rose)" opacity="0.15" stroke="var(--rose)"/>
+        <rect x="220" y="85" width="110" height="45" rx="8" fill="var(--rose)" fill-opacity="0.15" stroke="var(--rose)" stroke-opacity=".45"/>
         <text x="275" y="105" text-anchor="middle" fill="var(--rose)" font-size="10" font-weight="600">Quay API</text>
         <text x="275" y="119" text-anchor="middle" fill="var(--text-dim)" font-size="8">v2 Registry API</text>
       </g>
       <!-- UI -->
       <g class="d-node" data-tip="quay-ui">
-        <rect x="340" y="85" width="110" height="45" rx="8" fill="var(--rose)" opacity="0.15" stroke="var(--rose)"/>
+        <rect x="340" y="85" width="110" height="45" rx="8" fill="var(--rose)" fill-opacity="0.15" stroke="var(--rose)" stroke-opacity=".45"/>
         <text x="395" y="105" text-anchor="middle" fill="var(--rose)" font-size="10" font-weight="600">Quay UI</text>
         <text x="395" y="119" text-anchor="middle" fill="var(--text-dim)" font-size="8">v2 UI (default 3.16+)</text>
       </g>
       <!-- Mirror Workers -->
       <g class="d-node" data-tip="quay-mirror">
-        <rect x="460" y="85" width="115" height="45" rx="8" fill="var(--rose)" opacity="0.15" stroke="var(--rose)"/>
+        <rect x="460" y="85" width="115" height="45" rx="8" fill="var(--rose)" fill-opacity="0.15" stroke="var(--rose)" stroke-opacity=".45"/>
         <text x="518" y="105" text-anchor="middle" fill="var(--rose)" font-size="10" font-weight="600">Mirror Worker</text>
         <text x="518" y="119" text-anchor="middle" fill="var(--text-dim)" font-size="8">Repo sync jobs</text>
       </g>
       <!-- Clair -->
       <g class="d-node" data-tip="quay-clair">
-        <rect x="220" y="145" width="170" height="45" rx="8" fill="var(--amber)" opacity="0.15" stroke="var(--amber)"/>
+        <rect x="220" y="145" width="170" height="45" rx="8" fill="var(--amber)" fill-opacity="0.15" stroke="var(--amber)" stroke-opacity=".45"/>
         <text x="305" y="165" text-anchor="middle" fill="var(--amber)" font-size="10" font-weight="600">Clair Scanner</text>
         <text x="305" y="179" text-anchor="middle" fill="var(--text-dim)" font-size="8">CVE detection &amp; reporting</text>
       </g>
       <!-- Clair DB -->
       <g class="d-node" data-tip="quay-clairdb">
-        <rect x="400" y="145" width="170" height="45" rx="8" fill="var(--amber)" opacity="0.08" stroke="var(--amber)" stroke-dasharray="4 2"/>
+        <rect x="400" y="145" width="170" height="45" rx="8" fill="var(--amber)" fill-opacity="0.08" stroke="var(--amber)" stroke-opacity=".45" stroke-dasharray="4 2"/>
         <text x="485" y="165" text-anchor="middle" fill="var(--amber)" font-size="10" font-weight="600">Clair PostgreSQL</text>
         <text x="485" y="179" text-anchor="middle" fill="var(--text-dim)" font-size="8">Vulnerability DB</text>
       </g>
@@ -7391,19 +7555,19 @@ EOF
 
     <!-- PostgreSQL -->
     <g class="d-node" data-tip="quay-postgres">
-      <rect x="80" y="290" width="160" height="50" rx="8" fill="var(--green)" opacity="0.12" stroke="var(--green)"/>
+      <rect x="80" y="290" width="160" height="50" rx="8" fill="var(--green)" fill-opacity="0.12" stroke="var(--green)" stroke-opacity=".45"/>
       <text x="160" y="312" text-anchor="middle" fill="var(--green)" font-size="10" font-weight="600">PostgreSQL</text>
       <text x="160" y="328" text-anchor="middle" fill="var(--text-dim)" font-size="8">Metadata, users, permissions</text>
     </g>
     <!-- Redis -->
     <g class="d-node" data-tip="quay-redis">
-      <rect x="260" y="290" width="160" height="50" rx="8" fill="var(--green)" opacity="0.12" stroke="var(--green)"/>
+      <rect x="260" y="290" width="160" height="50" rx="8" fill="var(--green)" fill-opacity="0.12" stroke="var(--green)" stroke-opacity=".45"/>
       <text x="340" y="312" text-anchor="middle" fill="var(--green)" font-size="10" font-weight="600">Redis</text>
       <text x="340" y="328" text-anchor="middle" fill="var(--text-dim)" font-size="8">Build logs, real-time events</text>
     </g>
     <!-- Object Storage -->
     <g class="d-node" data-tip="quay-objstore">
-      <rect x="440" y="290" width="200" height="50" rx="8" fill="var(--green)" opacity="0.12" stroke="var(--green)"/>
+      <rect x="440" y="290" width="200" height="50" rx="8" fill="var(--green)" fill-opacity="0.12" stroke="var(--green)" stroke-opacity=".45"/>
       <text x="540" y="312" text-anchor="middle" fill="var(--green)" font-size="10" font-weight="600">Object Storage (S3 API)</text>
       <text x="540" y="328" text-anchor="middle" fill="var(--text-dim)" font-size="8">Image layers &amp; blobs</text>
     </g>
@@ -7415,7 +7579,7 @@ EOF
 
     <!-- MCG / ODF row -->
     <g class="d-node" data-tip="quay-mcg">
-      <rect x="410" y="370" width="260" height="80" rx="10" fill="var(--purple)" opacity="0.08" stroke="var(--purple)" stroke-dasharray="6 3"/>
+      <rect x="410" y="370" width="260" height="80" rx="10" fill="var(--purple)" fill-opacity="0.08" stroke="var(--purple)" stroke-opacity=".45" stroke-dasharray="6 3"/>
       <text x="540" y="392" text-anchor="middle" fill="var(--purple)" font-size="11" font-weight="600">MCG (Multicloud Object Gateway)</text>
       <text x="540" y="408" text-anchor="middle" fill="var(--text-dim)" font-size="9">S3-compatible &mdash; part of ODF</text>
       <text x="540" y="424" text-anchor="middle" fill="var(--text-dim)" font-size="8">ObjectBucketClaim &rarr; auto-provisions bucket</text>
@@ -7426,7 +7590,7 @@ EOF
 
     <!-- OCP Cluster pull -->
     <g class="d-node" data-tip="quay-cluster">
-      <rect x="670" y="90" width="120" height="60" rx="10" fill="var(--blue)" opacity="0.12" stroke="var(--blue)"/>
+      <rect x="670" y="90" width="120" height="60" rx="10" fill="var(--blue)" fill-opacity="0.12" stroke="var(--blue)" stroke-opacity=".45"/>
       <text x="730" y="116" text-anchor="middle" fill="var(--blue)" font-size="10" font-weight="600">OCP Clusters</text>
       <text x="730" y="132" text-anchor="middle" fill="var(--text-dim)" font-size="8">pull images</text>
     </g>
@@ -7445,7 +7609,7 @@ EOF
 
     <!-- Step 1: Developer Build -->
     <g class="d-node" data-tip="qf-build">
-      <rect x="20" y="60" width="130" height="80" rx="10" fill="var(--blue)" opacity="0.12" stroke="var(--blue)"/>
+      <rect x="20" y="60" width="130" height="80" rx="10" fill="var(--blue)" fill-opacity="0.12" stroke="var(--blue)" stroke-opacity=".45"/>
       <text x="85" y="85" text-anchor="middle" fill="var(--blue)" font-size="11" font-weight="600">&#9881; Build</text>
       <text x="85" y="102" text-anchor="middle" fill="var(--text-dim)" font-size="9">podman build</text>
       <text x="85" y="118" text-anchor="middle" fill="var(--text-dim)" font-size="9">or Tekton Pipeline</text>
@@ -7454,7 +7618,7 @@ EOF
     <!-- Step 2: Push -->
     <line x1="152" y1="100" x2="178" y2="100" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#quay-flow-arrow)"/>
     <g class="d-node" data-tip="qf-push">
-      <rect x="180" y="60" width="120" height="80" rx="10" fill="var(--rose)" opacity="0.12" stroke="var(--rose)"/>
+      <rect x="180" y="60" width="120" height="80" rx="10" fill="var(--rose)" fill-opacity="0.12" stroke="var(--rose)" stroke-opacity=".45"/>
       <text x="240" y="85" text-anchor="middle" fill="var(--rose)" font-size="11" font-weight="600">&#8593; Push</text>
       <text x="240" y="102" text-anchor="middle" fill="var(--text-dim)" font-size="9">podman push</text>
       <text x="240" y="118" text-anchor="middle" fill="var(--text-dim)" font-size="9">quay.example.com</text>
@@ -7463,7 +7627,7 @@ EOF
     <!-- Step 3: Scan -->
     <line x1="302" y1="100" x2="328" y2="100" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#quay-flow-arrow)"/>
     <g class="d-node" data-tip="qf-scan">
-      <rect x="330" y="60" width="130" height="80" rx="10" fill="var(--amber)" opacity="0.12" stroke="var(--amber)"/>
+      <rect x="330" y="60" width="130" height="80" rx="10" fill="var(--amber)" fill-opacity="0.12" stroke="var(--amber)" stroke-opacity=".45"/>
       <text x="395" y="85" text-anchor="middle" fill="var(--amber)" font-size="11" font-weight="600">&#128737; Clair Scan</text>
       <text x="395" y="102" text-anchor="middle" fill="var(--text-dim)" font-size="9">Auto on push</text>
       <text x="395" y="118" text-anchor="middle" fill="var(--text-dim)" font-size="9">CVE detection</text>
@@ -7472,7 +7636,7 @@ EOF
     <!-- Step 4: Store -->
     <line x1="462" y1="100" x2="488" y2="100" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#quay-flow-arrow)"/>
     <g class="d-node" data-tip="qf-store">
-      <rect x="490" y="60" width="130" height="80" rx="10" fill="var(--green)" opacity="0.12" stroke="var(--green)"/>
+      <rect x="490" y="60" width="130" height="80" rx="10" fill="var(--green)" fill-opacity="0.12" stroke="var(--green)" stroke-opacity=".45"/>
       <text x="555" y="85" text-anchor="middle" fill="var(--green)" font-size="11" font-weight="600">&#9744; Store</text>
       <text x="555" y="102" text-anchor="middle" fill="var(--text-dim)" font-size="9">S3 / MCG backend</text>
       <text x="555" y="118" text-anchor="middle" fill="var(--text-dim)" font-size="9">Geo-replicated</text>
@@ -7481,7 +7645,7 @@ EOF
     <!-- Step 5: Pull -->
     <line x1="622" y1="100" x2="648" y2="100" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#quay-flow-arrow)"/>
     <g class="d-node" data-tip="qf-pull">
-      <rect x="650" y="60" width="140" height="80" rx="10" fill="var(--blue)" opacity="0.12" stroke="var(--blue)"/>
+      <rect x="650" y="60" width="140" height="80" rx="10" fill="var(--blue)" fill-opacity="0.12" stroke="var(--blue)" stroke-opacity=".45"/>
       <text x="720" y="85" text-anchor="middle" fill="var(--blue)" font-size="11" font-weight="600">&#8595; Pull</text>
       <text x="720" y="102" text-anchor="middle" fill="var(--text-dim)" font-size="9">CRI-O on OCP node</text>
       <text x="720" y="118" text-anchor="middle" fill="var(--text-dim)" font-size="9">ImagePullSecret</text>
@@ -7489,12 +7653,12 @@ EOF
 
     <!-- Bottom: scan result flow -->
     <text x="395" y="175" text-anchor="middle" fill="var(--text)" font-size="10" font-weight="600">Scan Result Flow</text>
-    <rect x="120" y="190" width="140" height="36" rx="8" fill="var(--green)" opacity="0.10" stroke="var(--green)"/>
+    <rect x="120" y="190" width="140" height="36" rx="8" fill="var(--green)" fill-opacity="0.10" stroke="var(--green)" stroke-opacity=".45"/>
     <text x="190" y="213" text-anchor="middle" fill="var(--green)" font-size="9" font-weight="600">&#10003; No Critical CVEs</text>
     <line x1="262" y1="208" x2="298" y2="208" stroke="var(--green)" stroke-width="1.2" marker-end="url(#quay-flow-arrow)"/>
     <text x="340" y="213" fill="var(--green)" font-size="9">Image available for pull</text>
 
-    <rect x="120" y="232" width="140" height="36" rx="8" fill="var(--rose)" opacity="0.10" stroke="var(--rose)"/>
+    <rect x="120" y="232" width="140" height="36" rx="8" fill="var(--rose)" fill-opacity="0.10" stroke="var(--rose)" stroke-opacity=".45"/>
     <text x="190" y="255" text-anchor="middle" fill="var(--rose)" font-size="9" font-weight="600">&#10007; Critical CVEs Found</text>
     <line x1="262" y1="250" x2="298" y2="250" stroke="var(--rose)" stroke-width="1.2" marker-end="url(#quay-flow-arrow)"/>
     <text x="340" y="255" fill="var(--rose)" font-size="9">Notification &rarr; team alerted &rarr; fix &amp; rebuild</text>
@@ -7525,7 +7689,7 @@ EOF
 
     <!-- Quay Layer -->
     <g class="d-node" data-tip="quay-mcg-quay">
-      <rect x="30" y="30" width="760" height="70" rx="12" fill="var(--rose)" opacity="0.08" stroke="var(--rose)"/>
+      <rect x="30" y="30" width="760" height="70" rx="12" fill="var(--rose)" fill-opacity="0.08" stroke="var(--rose)" stroke-opacity=".45"/>
       <text x="410" y="55" text-anchor="middle" fill="var(--rose)" font-size="13" font-weight="700">Quay Application Pods</text>
       <text x="410" y="75" text-anchor="middle" fill="var(--text-dim)" font-size="10">quay-app, quay-mirror &mdash; read/write image blobs via S3 API</text>
     </g>
@@ -7536,7 +7700,7 @@ EOF
 
     <!-- ObjectBucketClaim -->
     <g class="d-node" data-tip="quay-mcg-obc">
-      <rect x="240" y="125" width="340" height="50" rx="10" fill="var(--blue)" opacity="0.12" stroke="var(--blue)"/>
+      <rect x="240" y="125" width="340" height="50" rx="10" fill="var(--blue)" fill-opacity="0.12" stroke="var(--blue)" stroke-opacity=".45"/>
       <text x="410" y="147" text-anchor="middle" fill="var(--blue)" font-size="11" font-weight="600">ObjectBucketClaim</text>
       <text x="410" y="163" text-anchor="middle" fill="var(--text-dim)" font-size="9">Requests bucket &rarr; generates Secret (access key, endpoint)</text>
     </g>
@@ -7546,7 +7710,7 @@ EOF
 
     <!-- MCG / NooBaa -->
     <g class="d-node" data-tip="quay-mcg-noobaa">
-      <rect x="140" y="200" width="540" height="55" rx="10" fill="var(--purple)" opacity="0.10" stroke="var(--purple)"/>
+      <rect x="140" y="200" width="540" height="55" rx="10" fill="var(--purple)" fill-opacity="0.10" stroke="var(--purple)" stroke-opacity=".45"/>
       <text x="410" y="222" text-anchor="middle" fill="var(--purple)" font-size="12" font-weight="600">MCG &mdash; Multicloud Object Gateway (NooBaa)</text>
       <text x="410" y="240" text-anchor="middle" fill="var(--text-dim)" font-size="9">S3-compatible object service &mdash; part of ODF</text>
     </g>
@@ -7879,6 +8043,9 @@ EOF
 <div class="page" id="page-day2">
 <h1>Day-2 Operations</h1>
 <p class="page-subtitle">Upgrading, monitoring, and maintaining your OpenShift cluster over its lifetime.</p>
+<div class="callout">
+  <strong>Declarative day-2 ops:</strong> Many of the operations on this page (MachineConfig rollouts, Compliance Operator policies, upgrade channel changes) are commonly managed the same way as application manifests &mdash; committed to Git and applied via ArgoCD. See the <span class="xlink" onclick="navigate('gitops')">GitOps &amp; Pipelines</span> section for the ArgoCD reconciliation model.
+</div>
 
 <h2>Cluster Upgrade Flow</h2>
 <div class="diagram-box">
@@ -8465,19 +8632,527 @@ EOF
 <button class="mark-read" onclick="markRead(this,11)">&#10003; Mark section as read</button>
 </div>
 
-</div><!-- /mainContent -->
+<!-- ================ SECTION 20: OPENSHIFT VIRTUALIZATION ================ -->
+<div class="page" id="page-virt">
+<h1>OpenShift Virtualization</h1>
+<p class="page-subtitle">Run traditional virtual machines alongside containers on the same cluster &mdash; built on KubeVirt, sharing the same storage, networking, and RBAC.</p>
+
+<h2>KubeVirt Architecture</h2>
+<p><strong>OpenShift Virtualization</strong> is Red Hat's productized distribution of the upstream <strong>KubeVirt</strong> project. It extends the Kubernetes API with VM-shaped CRDs and wraps QEMU/KVM inside ordinary pods, so a VM is scheduled, monitored, and governed exactly like any other workload.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">KubeVirt Control Plane &amp; Per-Node Components</div>
+  <svg width="820" height="330" viewBox="0 0 820 330" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs>
+      <marker id="aKVb" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--blue)"/></marker>
+      <marker id="aKVg" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--green)"/></marker>
+      <marker id="aKVr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--rose)"/></marker>
+    </defs>
+
+    <!-- Control plane -->
+    <text x="410" y="18" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".08em">CLUSTER CONTROL PLANE</text>
+    <rect x="10" y="24" width="800" height="100" rx="10" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".2" stroke-dasharray="6 3"/>
+
+    <g class="d-node" data-tip="kv-api">
+      <rect x="30" y="44" width="180" height="64" rx="8" fill="rgba(91,156,245,.08)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="120" y="66" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="11">virt-api</text>
+      <text x="120" y="82" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">Aggregated API + admission</text>
+      <text x="120" y="96" text-anchor="middle" fill="var(--text-dim)" font-size="7">Validates VM/VMI CRDs</text>
+    </g>
+
+    <rect x="330" y="52" width="160" height="48" rx="8" fill="var(--bg-elevated)" stroke="var(--border)"/>
+    <text x="410" y="72" text-anchor="middle" fill="var(--text)" font-weight="600" font-size="9">Kubernetes API Server</text>
+    <text x="410" y="86" text-anchor="middle" fill="var(--text-dim)" font-size="7">VM / VMI objects in etcd</text>
+
+    <g class="d-node" data-tip="kv-controller">
+      <rect x="610" y="44" width="180" height="64" rx="8" fill="rgba(167,139,250,.08)" stroke="var(--purple)" stroke-opacity=".5"/>
+      <text x="700" y="66" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="11">virt-controller</text>
+      <text x="700" y="82" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">Cluster-wide, watches VM/VMI</text>
+      <text x="700" y="96" text-anchor="middle" fill="var(--text-dim)" font-size="7">Creates virt-launcher Pod spec</text>
+    </g>
+
+    <line x1="210" y1="76" x2="328" y2="76" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aKVb)"/>
+    <text x="269" y="70" text-anchor="middle" fill="var(--blue)" font-size="7" font-weight="600">admission</text>
+    <line x1="610" y1="76" x2="492" y2="76" stroke="var(--purple)" stroke-width="1.5" marker-end="url(#aKVb)"/>
+    <text x="551" y="70" text-anchor="middle" fill="var(--purple)" font-size="7" font-weight="600">watch + create Pod</text>
+
+    <!-- Down arrows to worker node -->
+    <line x1="410" y1="100" x2="410" y2="150" stroke="var(--text-dim)" stroke-width="1" stroke-dasharray="4"/>
+
+    <!-- Worker node -->
+    <text x="410" y="148" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".08em">WORKER NODE (virt-handler runs as a DaemonSet on every node)</text>
+    <rect x="10" y="156" width="800" height="160" rx="10" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".2" stroke-dasharray="6 3"/>
+
+    <g class="d-node" data-tip="kv-handler">
+      <rect x="30" y="176" width="160" height="120" rx="8" fill="rgba(74,222,128,.08)" stroke="var(--green)" stroke-opacity=".5"/>
+      <text x="110" y="198" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="11">virt-handler</text>
+      <text x="110" y="216" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">DaemonSet &mdash; 1 per node</text>
+      <text x="110" y="232" text-anchor="middle" fill="var(--text-dim)" font-size="7">Talks to libvirt/QEMU locally</text>
+      <text x="110" y="246" text-anchor="middle" fill="var(--text-dim)" font-size="7">Reports VMI phase to API</text>
+      <text x="110" y="260" text-anchor="middle" fill="var(--text-dim)" font-size="7">Drives live migration on-node</text>
+      <text x="110" y="278" text-anchor="middle" fill="var(--text-dim)" font-size="7">Configures pod networking</text>
+    </g>
+
+    <line x1="190" y1="220" x2="218" y2="220" stroke="var(--green)" stroke-width="1.5" marker-end="url(#aKVg)"/>
+    <line x1="190" y1="250" x2="418" y2="250" stroke="var(--green)" stroke-width="1.5" marker-end="url(#aKVg)"/>
+
+    <g class="d-node" data-tip="kv-launcher">
+      <rect x="218" y="176" width="180" height="120" rx="8" fill="rgba(225,29,72,.06)" stroke="var(--rose)" stroke-opacity=".45"/>
+      <text x="308" y="196" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="10">virt-launcher Pod</text>
+      <text x="308" y="210" text-anchor="middle" fill="var(--text-dim)" font-size="7">1 pod = 1 running VM</text>
+      <g class="d-node" data-tip="kv-qemu"><rect x="230" y="220" width="75" height="32" rx="6" fill="var(--bg-primary)" stroke="var(--rose)" stroke-opacity=".3"/><text x="267" y="240" text-anchor="middle" fill="var(--rose)" font-size="7.5" font-weight="600">qemu-kvm</text></g>
+      <g class="d-node" data-tip="kv-guest"><rect x="312" y="220" width="75" height="32" rx="6" fill="var(--bg-primary)" stroke="var(--rose)" stroke-opacity=".3"/><text x="349" y="240" text-anchor="middle" fill="var(--rose)" font-size="7.5" font-weight="600">Guest OS</text></g>
+      <text x="308" y="270" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">guest OS runs inside qemu-kvm process</text>
+      <text x="308" y="284" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">scheduled like any other pod</text>
+    </g>
+
+    <g class="d-node" data-tip="kv-launcher">
+      <rect x="418" y="176" width="180" height="120" rx="8" fill="rgba(225,29,72,.06)" stroke="var(--rose)" stroke-opacity=".45"/>
+      <text x="508" y="196" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="10">virt-launcher Pod</text>
+      <text x="508" y="210" text-anchor="middle" fill="var(--text-dim)" font-size="7">1 pod = 1 running VM</text>
+      <g class="d-node" data-tip="kv-qemu"><rect x="430" y="220" width="75" height="32" rx="6" fill="var(--bg-primary)" stroke="var(--rose)" stroke-opacity=".3"/><text x="467" y="240" text-anchor="middle" fill="var(--rose)" font-size="7.5" font-weight="600">qemu-kvm</text></g>
+      <g class="d-node" data-tip="kv-guest"><rect x="512" y="220" width="75" height="32" rx="6" fill="var(--bg-primary)" stroke="var(--rose)" stroke-opacity=".3"/><text x="549" y="240" text-anchor="middle" fill="var(--rose)" font-size="7.5" font-weight="600">Guest OS</text></g>
+      <text x="508" y="270" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">guest OS runs inside qemu-kvm process</text>
+      <text x="508" y="284" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">scheduled like any other pod</text>
+    </g>
+
+    <g class="d-node" data-tip="kv-vmpod">
+      <rect x="618" y="176" width="182" height="120" rx="8" fill="var(--bg-surface)" stroke="var(--border)"/>
+      <text x="709" y="198" text-anchor="middle" fill="var(--text-bright)" font-weight="700" font-size="9.5">Key Concept: VM = Pod</text>
+      <text x="632" y="218" fill="var(--text-muted)" font-size="7.5">Same scheduler &amp; node affinity</text>
+      <text x="632" y="234" fill="var(--text-muted)" font-size="7.5">Same ResourceQuota / LimitRange</text>
+      <text x="632" y="250" fill="var(--text-muted)" font-size="7.5">Same RBAC / SCC / NetworkPolicy</text>
+      <text x="632" y="266" fill="var(--text-muted)" font-size="7.5">Same PVCs for VM disks</text>
+      <text x="632" y="282" fill="var(--text-muted)" font-size="7.5">oc get pods shows virt-launcher-*</text>
+    </g>
+  </svg>
+</div>
+
+<div class="callout">
+  <strong>virtctl:</strong> The <code>virtctl</code> CLI plugin (installed alongside the operator) wraps common VM operations &mdash; <code>virtctl start/stop/restart</code>, <code>virtctl console</code> (serial console), <code>virtctl vnc</code>, and <code>virtctl migrate</code>. Under the hood it manipulates the same VirtualMachine/VMI CRDs.
+</div>
+
+<div class="acc-item">
+  <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> VirtualMachine &mdash; Example YAML (Fedora VM with DataVolume)</div>
+  <div class="acc-body">
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">kubevirt.io/v1</span>
+<span class="key">kind</span>: <span class="str">VirtualMachine</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">fedora-vm</span>
+  <span class="key">namespace</span>: <span class="str">my-vms</span>
+<span class="key">spec</span>:
+  <span class="key">running</span>: <span class="val">true</span>
+  <span class="key">template</span>:
+    <span class="key">metadata</span>:
+      <span class="key">labels</span>:
+        <span class="key">kubevirt.io/domain</span>: <span class="str">fedora-vm</span>
+    <span class="key">spec</span>:
+      <span class="key">domain</span>:
+        <span class="key">cpu</span>:
+          <span class="key">cores</span>: <span class="val">2</span>
+        <span class="key">resources</span>:
+          <span class="key">requests</span>:
+            <span class="key">memory</span>: <span class="str">4Gi</span>
+        <span class="key">devices</span>:
+          <span class="key">disks</span>:
+            - <span class="key">name</span>: <span class="str">rootdisk</span>
+              <span class="key">disk</span>:
+                <span class="key">bus</span>: <span class="str">virtio</span>
+            - <span class="key">name</span>: <span class="str">cloudinitdisk</span>
+              <span class="key">disk</span>:
+                <span class="key">bus</span>: <span class="str">virtio</span>
+          <span class="key">interfaces</span>:
+            - <span class="key">name</span>: <span class="str">default</span>
+              <span class="key">masquerade</span>: <span class="str">{}</span>          <span class="cmt"># default pod network binding</span>
+      <span class="key">networks</span>:
+        - <span class="key">name</span>: <span class="str">default</span>
+          <span class="key">pod</span>: <span class="str">{}</span>
+      <span class="key">volumes</span>:
+        - <span class="key">name</span>: <span class="str">rootdisk</span>
+          <span class="key">dataVolume</span>:
+            <span class="key">name</span>: <span class="str">fedora-vm-rootdisk</span>
+        - <span class="key">name</span>: <span class="str">cloudinitdisk</span>
+          <span class="key">cloudInitNoCloud</span>:
+            <span class="key">userData</span>: <span class="str">|</span>
+              <span class="cmt">#cloud-config</span>
+              <span class="cmt">user: fedora</span>
+              <span class="cmt">password: changeme</span>
+              <span class="cmt">chpasswd: { expire: False }</span>
+  <span class="key">dataVolumeTemplates</span>:
+    - <span class="key">metadata</span>:
+        <span class="key">name</span>: <span class="str">fedora-vm-rootdisk</span>
+      <span class="key">spec</span>:
+        <span class="key">source</span>:
+          <span class="key">registry</span>:
+            <span class="key">url</span>: <span class="str">"docker://quay.io/containerdisks/fedora:39"</span>
+        <span class="key">storage</span>:
+          <span class="key">accessModes</span>: [<span class="str">ReadWriteOnce</span>]
+          <span class="key">resources</span>:
+            <span class="key">requests</span>:
+              <span class="key">storage</span>: <span class="str">30Gi</span></pre>
+  </div>
+</div>
+
+<div class="acc-item">
+  <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> VirtualMachineInstance &mdash; Auto-Generated Runtime Object</div>
+  <div class="acc-body">
+<p style="font-size:.85rem;color:var(--text-muted);margin-bottom:10px;">You rarely author a <code>VirtualMachineInstance</code> (VMI) directly &mdash; <code>virt-controller</code> creates one automatically from the VM's template whenever <code>spec.running</code> becomes <code>true</code>, the same way a Deployment creates ReplicaSets/Pods. It disappears when the VM stops.</p>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># oc get vmi fedora-vm -n my-vms -o yaml (excerpt)</span>
+<span class="key">apiVersion</span>: <span class="str">kubevirt.io/v1</span>
+<span class="key">kind</span>: <span class="str">VirtualMachineInstance</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">fedora-vm</span>
+  <span class="key">ownerReferences</span>:
+    - <span class="key">kind</span>: <span class="str">VirtualMachine</span>
+      <span class="key">name</span>: <span class="str">fedora-vm</span>
+<span class="key">status</span>:
+  <span class="key">phase</span>: <span class="str">Running</span>
+  <span class="key">nodeName</span>: <span class="str">worker-1</span>
+  <span class="key">interfaces</span>:
+    - <span class="key">ipAddress</span>: <span class="str">10.128.2.55</span>
+      <span class="key">interfaceName</span>: <span class="str">eth0</span></pre>
+  </div>
+</div>
+
+<h2>Live Migration</h2>
+<p>Live migration moves a running VM from one node to another with (typically) sub-second downtime &mdash; no reboot, no dropped connections. <code>virt-handler</code> on the source and destination nodes coordinate the copy while <code>virt-controller</code> tracks overall progress via a <code>VirtualMachineInstanceMigration</code> object.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">Live Migration &mdash; Pre-Copy Memory Transfer</div>
+  <svg width="820" height="185" viewBox="0 0 820 185" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs><marker id="aKVm" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--amber)"/></marker></defs>
+    <g class="d-node" data-tip="kv-migrate-src">
+      <rect x="20" y="15" width="230" height="95" rx="10" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".45"/>
+      <text x="135" y="36" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="10.5">Node: worker-1 (source)</text>
+      <text x="135" y="56" text-anchor="middle" fill="var(--text)" font-size="8.5">virt-launcher (fedora-vm)</text>
+      <text x="135" y="72" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">VM state: Running &rarr; Migrating</text>
+      <text x="135" y="88" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Streams memory pages to target</text>
+    </g>
+    <g class="d-node" data-tip="kv-migrate-dst">
+      <rect x="570" y="15" width="230" height="95" rx="10" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".45"/>
+      <text x="685" y="36" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="10.5">Node: worker-2 (destination)</text>
+      <text x="685" y="56" text-anchor="middle" fill="var(--text)" font-size="8.5">virt-launcher (fedora-vm) &mdash; new</text>
+      <text x="685" y="72" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Receives memory pages</text>
+      <text x="685" y="88" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Takes over on final cutover</text>
+    </g>
+    <line x1="250" y1="45" x2="568" y2="45" stroke="var(--amber)" stroke-width="1.5" marker-end="url(#aKVm)"/>
+    <text x="410" y="30" text-anchor="middle" fill="var(--amber)" font-size="7.5" font-weight="600">1. iterative pre-copy of memory (VM keeps running)</text>
+    <text x="410" y="60" text-anchor="middle" fill="var(--amber)" font-size="7.5" font-weight="600">2. brief pause &rarr; copy final dirty pages &rarr; resume on destination</text>
+    <g class="d-node" data-tip="kv-migrate-storage">
+      <rect x="280" y="128" width="260" height="45" rx="8" fill="var(--bg-surface)" stroke="var(--border)"/>
+      <text x="410" y="147" text-anchor="middle" fill="var(--text-bright)" font-weight="700" font-size="9">Shared RWX Storage (PVC)</text>
+      <text x="410" y="163" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">Both nodes mount the same VM disk &mdash; disk data is not copied</text>
+    </g>
+    <line x1="150" y1="110" x2="330" y2="128" stroke="var(--text-dim)" stroke-width="1" stroke-dasharray="3"/>
+    <line x1="670" y1="110" x2="490" y2="128" stroke="var(--text-dim)" stroke-width="1" stroke-dasharray="3"/>
+  </svg>
+</div>
+
+<div class="callout warn">
+  <strong>RWX storage is required.</strong> Live migration needs the VM's disk(s) to use a <code>ReadWriteMany</code> (RWX) StorageClass so both the source and destination nodes can mount it simultaneously &mdash; e.g. ODF's <code>ocs-storagecluster-ceph-rbd-virtualization</code>. With RWO-only storage, the VM can still be evicted and restarted elsewhere, but that causes downtime (<code>evictionStrategy: None</code> vs <code>LiveMigrate</code>).
+</div>
+
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># Trigger a live migration</span>
+<span class="kw">virtctl</span> migrate fedora-vm -n my-vms
+
+<span class="cmt"># ...or apply the CR directly</span>
+<span class="key">apiVersion</span>: <span class="str">kubevirt.io/v1</span>
+<span class="key">kind</span>: <span class="str">VirtualMachineInstanceMigration</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">migrate-fedora-vm</span>
+  <span class="key">namespace</span>: <span class="str">my-vms</span>
+<span class="key">spec</span>:
+  <span class="key">vmiName</span>: <span class="str">fedora-vm</span></pre>
+
+<h2>VM Networking &amp; Storage</h2>
+<p>VMs reuse the same cluster networking and storage stack as containers &mdash; there is no separate virtualization network or datastore to manage.</p>
+
+<h3>Networking &mdash; Interface Bindings</h3>
+<table>
+<tr><th>Binding</th><th>Network</th><th>Use Case</th></tr>
+<tr><td><strong>masquerade</strong></td><td>Default pod network (NAT)</td><td>Simplest option &mdash; outbound access via the pod network. Default for most VMs.</td></tr>
+<tr><td><strong>bridge</strong></td><td>Multus secondary network (L2)</td><td>VM needs its own MAC/IP directly on the physical LAN &mdash; e.g. legacy apps expecting a routable VM IP.</td></tr>
+<tr><td><strong>SR-IOV</strong></td><td>Multus + SR-IOV Network Operator</td><td>Near line-rate NIC passthrough for high packet-rate or latency-sensitive VM workloads.</td></tr>
+</table>
+<p>See the <span class="xlink" onclick="navigate('networking')">Networking &amp; Routes</span> section for the full Multus CNI plugin comparison (macvlan, bridge, SR-IOV, IPVLAN).</p>
+
+<h3>Storage &mdash; DataVolume &amp; CDI</h3>
+<p>The <strong>Containerized Data Importer (CDI)</strong> populates a PVC with a VM disk image before the VM starts, tracked by a <strong>DataVolume</strong> CRD.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">DataVolume Import Flow (CDI)</div>
+  <svg width="820" height="120" viewBox="0 0 820 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs><marker id="aKVc" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--teal)"/></marker></defs>
+    <g class="d-node" data-tip="kv-cdi-source">
+      <rect x="20" y="25" width="190" height="60" rx="8" fill="var(--amber-dim)" stroke="var(--amber)" stroke-opacity=".5"/>
+      <text x="115" y="50" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="10">Image Source</text>
+      <text x="115" y="68" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">http / registry / S3 / clone</text>
+    </g>
+    <line x1="210" y1="55" x2="290" y2="55" stroke="var(--teal)" stroke-width="1.5" marker-end="url(#aKVc)"/>
+    <g class="d-node" data-tip="kv-cdi-importer">
+      <rect x="290" y="20" width="230" height="70" rx="8" fill="var(--teal-dim)" stroke="var(--teal)" stroke-opacity=".5"/>
+      <text x="405" y="45" text-anchor="middle" fill="var(--teal)" font-weight="700" font-size="10">CDI Importer Pod</text>
+      <text x="405" y="63" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Streams &amp; converts image to disk</text>
+      <text x="405" y="78" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Tracked by DataVolume status</text>
+    </g>
+    <line x1="520" y1="55" x2="600" y2="55" stroke="var(--teal)" stroke-width="1.5" marker-end="url(#aKVc)"/>
+    <g class="d-node" data-tip="kv-cdi-pvc">
+      <rect x="600" y="25" width="200" height="60" rx="8" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="700" y="48" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="10">PVC (VM disk)</text>
+      <text x="700" y="66" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Attached to VM as rootdisk</text>
+    </g>
+  </svg>
+</div>
+
+<table>
+<tr><th>Source Type</th><th>Example</th></tr>
+<tr><td><strong>registry</strong></td><td>Container disk image, e.g. <code>quay.io/containerdisks/fedora:39</code></td></tr>
+<tr><td><strong>http</strong></td><td>qcow2/raw image fetched from a URL</td></tr>
+<tr><td><strong>pvc (clone)</strong></td><td>Clone an existing PVC &mdash; fast way to fan out a golden image</td></tr>
+<tr><td><strong>upload</strong></td><td><code>virtctl image-upload</code> streams a local file into a new DataVolume</td></tr>
+</table>
+
+<div class="acc-item">
+  <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> DataVolume &mdash; Import a VM Disk via CDI</div>
+  <div class="acc-body">
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">cdi.kubevirt.io/v1beta1</span>
+<span class="key">kind</span>: <span class="str">DataVolume</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">rhel9-import</span>
+  <span class="key">namespace</span>: <span class="str">my-vms</span>
+<span class="key">spec</span>:
+  <span class="key">source</span>:
+    <span class="key">http</span>:
+      <span class="key">url</span>: <span class="str">"https://example.com/images/rhel9.qcow2"</span>
+  <span class="key">storage</span>:
+    <span class="key">accessModes</span>: [<span class="str">ReadWriteMany</span>]     <span class="cmt"># RWX needed for live migration</span>
+    <span class="key">resources</span>:
+      <span class="key">requests</span>:
+        <span class="key">storage</span>: <span class="str">40Gi</span>
+    <span class="key">storageClassName</span>: <span class="str">ocs-storagecluster-ceph-rbd-virtualization</span></pre>
+  </div>
+</div>
+
+<p>See the <span class="xlink" onclick="navigate('storage')">Storage &amp; CSI Drivers</span> section for StorageClass and CSI driver fundamentals.</p>
+
+<h2>Migration Toolkit for Virtualization (MTV)</h2>
+<p><strong>MTV</strong> imports VMs from an existing hypervisor (primarily VMware vSphere, also oVirt/RHV and OpenStack) into OpenShift Virtualization. It connects to the source as a <strong>Provider</strong>, and a <strong>Plan</strong> groups the VMs to migrate and the target namespace/storage/network mappings; running the Plan creates a <strong>Migration</strong> CR that CDI executes disk-by-disk.</p>
+
+<div class="card-grid">
+  <div class="card-sm"><div class="card-icon">&#10052;</div><div class="card-title">Cold Migration</div><div class="card-desc">Source VM is powered off, disks are copied in full, then the VM boots on OpenShift. Simple and reliable; incurs downtime for the copy duration.</div></div>
+  <div class="card-sm"><div class="card-icon">&#9832;</div><div class="card-title">Warm Migration</div><div class="card-desc">Disks are pre-copied while the source VM keeps running; only a short final cutover (delta sync + power-off/on) causes downtime. Preferred for production VMs.</div></div>
+</div>
+
+<div class="callout warn">
+  <strong>Why this matters in 2026:</strong> Broadcom's post-acquisition VMware licensing changes &mdash; subscription-only terms, bundled SKUs, and steep cost increases &mdash; have pushed many enterprises to actively evaluate alternatives. OpenShift Virtualization plus MTV lets teams move VM estates onto a Kubernetes-native platform without rewriting applications, consolidating VMs and containers onto one cluster, one storage layer, and one RBAC/security model.
+</div>
+
+<button class="mark-read" onclick="markRead(this,20)">&#10003; Mark section as read</button>
+</div>
+
+<!-- ================ SECTION 21: GITOPS & PIPELINES ================ -->
+<div class="page" id="page-gitops">
+<h1>GitOps &amp; Pipelines</h1>
+<p class="page-subtitle">Declarative continuous delivery with OpenShift GitOps (ArgoCD) and CI automation with OpenShift Pipelines (Tekton).</p>
+
+<h2>OpenShift GitOps (ArgoCD)</h2>
+<p><strong>OpenShift GitOps</strong> deploys <strong>ArgoCD</strong> as an operator-managed instance (namespace <code>openshift-gitops</code>). Git becomes the single source of truth: ArgoCD continuously compares the manifests in a repo against the live state of the cluster and reconciles any difference.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">ArgoCD &mdash; Repo to Cluster Reconciliation Loop</div>
+  <svg width="820" height="270" viewBox="0 0 820 270" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs>
+      <marker id="aGTb" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--blue)"/></marker>
+      <marker id="aGTa" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--amber)"/></marker>
+    </defs>
+
+    <g class="d-node" data-tip="gt-repo">
+      <rect x="15" y="60" width="180" height="80" rx="10" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="105" y="85" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="11">Git Repository</text>
+      <text x="105" y="103" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">Manifests / Kustomize / Helm</text>
+      <text x="105" y="118" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Desired state (source of truth)</text>
+    </g>
+    <line x1="195" y1="100" x2="248" y2="100" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aGTb)"/>
+    <text x="221" y="92" text-anchor="middle" fill="var(--blue)" font-size="7" font-weight="600">poll / webhook</text>
+
+    <g class="d-node" data-tip="gt-app">
+      <rect x="248" y="30" width="230" height="145" rx="10" fill="var(--purple-dim)" stroke="var(--purple)" stroke-opacity=".5"/>
+      <text x="363" y="52" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="11">ArgoCD Application</text>
+      <text x="363" y="70" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">Compares desired (Git) vs live (cluster)</text>
+      <g class="d-node" data-tip="gt-sync"><rect x="262" y="80" width="94" height="34" rx="6" fill="var(--bg-primary)" stroke="var(--purple)" stroke-opacity=".3"/><text x="309" y="97" text-anchor="middle" fill="var(--purple)" font-size="7.5" font-weight="600">Sync Status</text><text x="309" y="109" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">Synced / OutOfSync</text></g>
+      <g class="d-node" data-tip="gt-health"><rect x="368" y="80" width="94" height="34" rx="6" fill="var(--bg-primary)" stroke="var(--purple)" stroke-opacity=".3"/><text x="415" y="97" text-anchor="middle" fill="var(--purple)" font-size="7.5" font-weight="600">Health Status</text><text x="415" y="109" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">Healthy / Degraded</text></g>
+      <g class="d-node" data-tip="gt-appproject"><rect x="262" y="122" width="200" height="40" rx="6" fill="var(--bg-primary)" stroke="var(--purple)" stroke-opacity=".3"/><text x="362" y="138" text-anchor="middle" fill="var(--purple)" font-size="7.5" font-weight="600">AppProject</text><text x="362" y="152" text-anchor="middle" fill="var(--text-dim)" font-size="6.5">Allowed repos / destinations / RBAC</text></g>
+    </g>
+
+    <line x1="478" y1="100" x2="530" y2="100" stroke="var(--blue)" stroke-width="1.5" marker-end="url(#aGTb)"/>
+    <text x="504" y="92" text-anchor="middle" fill="var(--blue)" font-size="7" font-weight="600">apply</text>
+
+    <g class="d-node" data-tip="gt-cluster">
+      <rect x="530" y="55" width="270" height="90" rx="10" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
+      <text x="665" y="78" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="11">OpenShift Cluster Resources</text>
+      <text x="665" y="98" text-anchor="middle" fill="var(--text-muted)" font-size="7.5">Deployments, Services, Routes, ConfigMaps&hellip;</text>
+      <text x="665" y="116" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Live state</text>
+      <text x="665" y="132" text-anchor="middle" fill="var(--text-dim)" font-size="7">namespace scoped via destination.namespace</text>
+    </g>
+
+    <path d="M665,145 C665,200 400,215 250,175" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#aGTa)"/>
+    <g class="d-node" data-tip="gt-drift">
+      <rect x="140" y="195" width="500" height="60" rx="8" fill="var(--amber-dim)" stroke="var(--amber)" stroke-opacity=".4"/>
+      <text x="390" y="215" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="9.5">Drift Detection &amp; Self-Heal</text>
+      <text x="390" y="233" text-anchor="middle" fill="var(--text)" font-size="7.5">A manual <tspan font-family="monospace">oc edit</tspan> / <tspan font-family="monospace">oc delete</tspan> on the cluster is detected as OutOfSync.</text>
+      <text x="390" y="248" text-anchor="middle" fill="var(--text)" font-size="7.5">With <tspan font-family="monospace" fill="var(--amber)">syncPolicy.automated.selfHeal: true</tspan>, ArgoCD reverts it back to match Git automatically.</text>
+    </g>
+  </svg>
+</div>
+
+<div class="callout">
+  <strong>App-of-Apps &amp; ApplicationSet:</strong> A single root <code>Application</code> can manage a set of child <code>Application</code> objects (app-of-apps), and <code>ApplicationSet</code> template-generates one Application per cluster/environment from a generator (list, cluster, Git directory, etc). ACM builds on <code>ApplicationSet</code> + <code>Placement</code> to drive multi-cluster delivery from a hub &mdash; see the <span class="xlink" onclick="navigate('acm')">ACM</span> section for the full push/pull architecture.
+</div>
+
+<div class="acc-item">
+  <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> ArgoCD Application &mdash; Example YAML</div>
+  <div class="acc-body">
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">argoproj.io/v1alpha1</span>
+<span class="key">kind</span>: <span class="str">Application</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">my-app</span>
+  <span class="key">namespace</span>: <span class="str">openshift-gitops</span>
+<span class="key">spec</span>:
+  <span class="key">project</span>: <span class="str">default</span>
+  <span class="key">source</span>:
+    <span class="key">repoURL</span>: <span class="str">https://github.com/my-org/my-app-manifests.git</span>
+    <span class="key">targetRevision</span>: <span class="str">main</span>
+    <span class="key">path</span>: <span class="str">overlays/production</span>
+  <span class="key">destination</span>:
+    <span class="key">server</span>: <span class="str">https://kubernetes.default.svc</span>
+    <span class="key">namespace</span>: <span class="str">my-app</span>
+  <span class="key">syncPolicy</span>:
+    <span class="key">automated</span>:
+      <span class="key">prune</span>: <span class="val">true</span>          <span class="cmt"># delete resources removed from Git</span>
+      <span class="key">selfHeal</span>: <span class="val">true</span>       <span class="cmt"># revert manual cluster drift</span>
+    <span class="key">syncOptions</span>:
+      - <span class="str">CreateNamespace=true</span></pre>
+  </div>
+</div>
+
+<h2>OpenShift Pipelines (Tekton)</h2>
+<p><strong>OpenShift Pipelines</strong> is a Kubernetes-native CI engine built on Tekton. Every pipeline step runs as a container in a pod &mdash; there is no separate build server to manage.</p>
+<ul>
+  <li><strong>Task</strong> &mdash; an ordered list of Steps (containers). The smallest reusable unit &mdash; e.g. <code>git-clone</code>, <code>buildah</code>, <code>openshift-client</code>.</li>
+  <li><strong>Pipeline</strong> &mdash; a DAG of Tasks with ordering (<code>runAfter</code>) and shared <strong>Workspaces</strong> (PVC-backed) for passing files between Tasks.</li>
+  <li><strong>PipelineRun / TaskRun</strong> &mdash; an execution instance. Each Task in a run becomes a TaskRun, which becomes a pod.</li>
+  <li><strong>Trigger</strong> &mdash; <code>EventListener</code> + <code>TriggerBinding</code> + <code>TriggerTemplate</code> turn an inbound webhook (e.g. GitHub push) into a new PipelineRun.</li>
+</ul>
+
+<div class="diagram-box">
+  <div class="diagram-title">Tekton &mdash; Webhook Trigger to Pipeline Execution</div>
+  <svg width="820" height="260" viewBox="0 0 820 260" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs><marker id="aGTt" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0L8,3L0,6" fill="var(--teal)"/></marker></defs>
+
+    <text x="410" y="16" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".08em">TRIGGER FLOW</text>
+    <rect x="10" y="22" width="800" height="70" rx="10" fill="var(--teal-dim)" stroke="var(--teal)" stroke-opacity=".2" stroke-dasharray="6 3"/>
+    <g class="d-node" data-tip="gt-webhook"><rect x="25" y="38" width="150" height="40" rx="8" fill="var(--bg-primary)" stroke="var(--teal)" stroke-opacity=".4"/><text x="100" y="62" text-anchor="middle" fill="var(--teal)" font-weight="600" font-size="9">git push webhook</text></g>
+    <line x1="175" y1="58" x2="215" y2="58" stroke="var(--teal)" stroke-width="1.5" marker-end="url(#aGTt)"/>
+    <g class="d-node" data-tip="gt-eventlistener"><rect x="215" y="38" width="170" height="40" rx="8" fill="var(--bg-primary)" stroke="var(--teal)" stroke-opacity=".4"/><text x="300" y="62" text-anchor="middle" fill="var(--teal)" font-weight="600" font-size="9">EventListener</text></g>
+    <line x1="385" y1="58" x2="425" y2="58" stroke="var(--teal)" stroke-width="1.5" marker-end="url(#aGTt)"/>
+    <g class="d-node" data-tip="gt-triggerbinding"><rect x="425" y="38" width="220" height="40" rx="8" fill="var(--bg-primary)" stroke="var(--teal)" stroke-opacity=".4"/><text x="535" y="62" text-anchor="middle" fill="var(--teal)" font-weight="600" font-size="9">TriggerBinding + TriggerTemplate</text></g>
+    <line x1="645" y1="58" x2="685" y2="58" stroke="var(--teal)" stroke-width="1.5" marker-end="url(#aGTt)"/>
+    <g class="d-node" data-tip="gt-pipelinerun"><rect x="685" y="30" width="110" height="56" rx="8" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".5"/><text x="740" y="54" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="9">creates<tspan x="740" dy="12">PipelineRun</tspan></text></g>
+
+    <line x1="740" y1="92" x2="740" y2="118" stroke="var(--text-dim)" stroke-width="1" stroke-dasharray="4"/>
+
+    <text x="410" y="118" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".08em">PIPELINE EXECUTION (DAG of Tasks)</text>
+    <rect x="10" y="124" width="800" height="120" rx="10" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".2" stroke-dasharray="6 3"/>
+    <g class="d-node" data-tip="gt-pipeline">
+      <rect x="25" y="140" width="770" height="90" rx="8" fill="var(--bg-surface)" stroke="var(--border)"/>
+      <text x="410" y="158" text-anchor="middle" fill="var(--text-bright)" font-weight="700" font-size="9.5">Pipeline: build-and-deploy</text>
+
+      <g class="d-node" data-tip="gt-task"><rect x="45" y="172" width="150" height="42" rx="6" fill="rgba(91,156,245,.08)" stroke="var(--blue)" stroke-opacity=".4"/><text x="120" y="190" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="8.5">fetch-source</text><text x="120" y="204" text-anchor="middle" fill="var(--text-dim)" font-size="7">Task: git-clone</text></g>
+      <line x1="195" y1="193" x2="223" y2="193" stroke="var(--text-dim)" stroke-width="1.2" marker-end="url(#aGTt)"/>
+      <g class="d-node" data-tip="gt-task"><rect x="223" y="172" width="150" height="42" rx="6" fill="rgba(91,156,245,.08)" stroke="var(--blue)" stroke-opacity=".4"/><text x="298" y="190" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="8.5">build-image</text><text x="298" y="204" text-anchor="middle" fill="var(--text-dim)" font-size="7">Task: buildah</text></g>
+      <line x1="373" y1="193" x2="401" y2="193" stroke="var(--text-dim)" stroke-width="1.2" marker-end="url(#aGTt)"/>
+      <g class="d-node" data-tip="gt-task"><rect x="401" y="172" width="150" height="42" rx="6" fill="rgba(91,156,245,.08)" stroke="var(--blue)" stroke-opacity=".4"/><text x="476" y="190" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="8.5">run-tests</text><text x="476" y="204" text-anchor="middle" fill="var(--text-dim)" font-size="7">Task: unit-test</text></g>
+      <line x1="551" y1="193" x2="579" y2="193" stroke="var(--text-dim)" stroke-width="1.2" marker-end="url(#aGTt)"/>
+      <g class="d-node" data-tip="gt-task"><rect x="579" y="172" width="200" height="42" rx="6" fill="rgba(91,156,245,.08)" stroke="var(--blue)" stroke-opacity=".4"/><text x="679" y="190" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="8.5">deploy</text><text x="679" y="204" text-anchor="middle" fill="var(--text-dim)" font-size="7">Task: openshift-client (oc apply)</text></g>
+    </g>
+  </svg>
+</div>
+
+<div class="callout">
+  <strong>Each Task = 1 TaskRun = 1 pod.</strong> Steps within a Task share a pod (and its filesystem); Tasks share data across pods via a mounted <strong>Workspace</strong> (PVC). Use <code>oc get pipelinerun</code> / <code>oc get taskrun</code> to watch execution, or the Developer Console's Pipelines view for the visual DAG.
+</div>
+
+<div class="acc-item">
+  <div class="acc-header" onclick="toggleAcc(this)"><span class="acc-arrow">&#9654;</span> Simple Tekton Pipeline &mdash; Example YAML</div>
+  <div class="acc-body">
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="key">apiVersion</span>: <span class="str">tekton.dev/v1</span>
+<span class="key">kind</span>: <span class="str">Pipeline</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">build-and-deploy</span>
+<span class="key">spec</span>:
+  <span class="key">params</span>:
+    - <span class="key">name</span>: <span class="str">git-url</span>
+  <span class="key">workspaces</span>:
+    - <span class="key">name</span>: <span class="str">shared-workspace</span>
+  <span class="key">tasks</span>:
+    - <span class="key">name</span>: <span class="str">fetch-source</span>
+      <span class="key">taskRef</span>: { <span class="key">name</span>: <span class="str">git-clone</span> }
+      <span class="key">workspaces</span>: [{ <span class="key">name</span>: <span class="str">output</span>, <span class="key">workspace</span>: <span class="str">shared-workspace</span> }]
+      <span class="key">params</span>: [{ <span class="key">name</span>: <span class="str">url</span>, <span class="key">value</span>: <span class="str">$(params.git-url)</span> }]
+    - <span class="key">name</span>: <span class="str">build-image</span>
+      <span class="key">runAfter</span>: [<span class="str">fetch-source</span>]
+      <span class="key">taskRef</span>: { <span class="key">name</span>: <span class="str">buildah</span> }
+      <span class="key">workspaces</span>: [{ <span class="key">name</span>: <span class="str">source</span>, <span class="key">workspace</span>: <span class="str">shared-workspace</span> }]
+    - <span class="key">name</span>: <span class="str">deploy</span>
+      <span class="key">runAfter</span>: [<span class="str">build-image</span>]
+      <span class="key">taskRef</span>: { <span class="key">name</span>: <span class="str">openshift-client</span> }
+      <span class="key">params</span>: [{ <span class="key">name</span>: <span class="str">SCRIPT</span>, <span class="key">value</span>: <span class="str">"oc rollout restart deploy/my-app"</span> }]
+<span class="cmt">---</span>
+<span class="key">apiVersion</span>: <span class="str">tekton.dev/v1</span>
+<span class="key">kind</span>: <span class="str">PipelineRun</span>
+<span class="key">metadata</span>:
+  <span class="key">generateName</span>: <span class="str">build-and-deploy-</span>
+<span class="key">spec</span>:
+  <span class="key">pipelineRef</span>: { <span class="key">name</span>: <span class="str">build-and-deploy</span> }
+  <span class="key">params</span>:
+    - <span class="key">name</span>: <span class="str">git-url</span>
+      <span class="key">value</span>: <span class="str">https://github.com/my-org/my-app.git</span>
+  <span class="key">workspaces</span>:
+    - <span class="key">name</span>: <span class="str">shared-workspace</span>
+      <span class="key">volumeClaimTemplate</span>:
+        <span class="key">spec</span>:
+          <span class="key">accessModes</span>: [<span class="str">ReadWriteOnce</span>]
+          <span class="key">resources</span>: { <span class="key">requests</span>: { <span class="key">storage</span>: <span class="str">1Gi</span> } }</pre>
+  </div>
+</div>
+
+<h2>Helm vs Operator vs GitOps &mdash; When to Use Which</h2>
+<table>
+<tr><th>Approach</th><th>What It Is</th><th>Best For</th></tr>
+<tr><td><strong>Helm</strong></td><td>Templated YAML packaged as a chart; installed/upgraded imperatively (<code>helm install/upgrade</code>) or via ArgoCD as a source type.</td><td>Parameterized app packaging &amp; reuse across environments. No ongoing reconciliation by itself.</td></tr>
+<tr><td><strong>Operator (OLM)</strong></td><td>A controller + CRDs that encode operational knowledge for one application (upgrades, backups, failover). See <span class="xlink" onclick="navigate('operators')">Operators &amp; OLM</span>.</td><td>Stateful, complex apps that need day-2 lifecycle automation beyond "apply YAML" &mdash; databases, message queues, the platform itself.</td></tr>
+<tr><td><strong>GitOps (ArgoCD)</strong></td><td>Continuous reconciliation of a Git repo's declared state against the live cluster, with drift detection and self-heal.</td><td>The delivery mechanism for everything above &mdash; deploying Helm charts, Operator subscriptions, or plain manifests, across any number of clusters, with a full audit trail.</td></tr>
+</table>
+<div class="callout success">
+  <strong>They compose, not compete.</strong> A typical production pipeline uses all three together: Tekton builds the image, Helm packages the app, an ArgoCD <code>Application</code> deploys it (as a Helm source), and Operators manage any stateful dependencies the app needs. GitOps is the delivery layer that ties Helm charts, Operator subscriptions, and raw manifests together under one reconciliation loop.
+</div>
+
+<button class="mark-read" onclick="markRead(this,21)">&#10003; Mark section as read</button>
+</div>
 
 <!-- ═══ Disclaimer ═══ -->
 <div class="disclaimer">
   <p>⚠️ <strong>Unofficial Document</strong> — This content is not affiliated with, endorsed by, or officially associated with Red Hat, Inc. or IBM. It is created for educational and reference purposes only. OpenShift, Red Hat, and related trademarks are the property of Red Hat, Inc.</p>
 </div>
 
+</div><!-- /mainContent -->
+
 <!-- ═══ Tooltip ═══ -->
 <div class="tooltip-popup" id="tooltip"></div>
 <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">&#8593;</button>
 
 <script>
-const PAGES = ['platform','installation','nodes','namespaces','resources','pods','deployments','taints','networking','netpol','storage','security','logging','operators','day2','acm','acs','odf','quay'];
+const PAGES = ['platform','installation','nodes','namespaces','resources','pods','deployments','autoscaling','taints','networking','netpol','storage','security','logging','operators','day2','acm','acs','odf','quay','virt','gitops'];
 const readState = JSON.parse(localStorage.getItem('ocp101-read') || '[]');
 const navItems = document.querySelectorAll('.nav-item[data-page]');
 
@@ -8529,7 +9204,7 @@ const T = {
   'arch-olm':{t:'OLM',b:'Manages optional operator lifecycle: install, upgrade, RBAC, dependency resolution. OperatorHub provides 200+ curated operators.'},
 
   // Version alignment
-  'ver-ocp421':{t:'OCP 4.21',b:'Latest release. Ships with Kubernetes 1.34, CRI-O 1.34, RHCOS 421.94.x, RHEL 9.6 kernel. All components tested and qualified together by Red Hat.'},
+  'ver-ocp421':{t:'OCP 4.21',b:'Latest release. Ships with Kubernetes 1.34, CRI-O 1.34, RHCOS 421.96.x, RHEL 9.6 kernel. All components tested and qualified together by Red Hat.'},
   'ver-ocp418':{t:'OCP 4.18',b:'Ships with Kubernetes 1.31, CRI-O 1.31, RHCOS 418.94.x, RHEL 9.4 kernel. EUS (Extended Update Support) release with longer support lifecycle.'},
   'ver-ocp416':{t:'OCP 4.16',b:'Ships with Kubernetes 1.29, CRI-O 1.29, RHCOS 416.94.x, RHEL 9.4 kernel. EUS release with longer support lifecycle.'},
   'ver-ocp-role':{t:'OpenShift Platform',b:'The CVO (Cluster Version Operator) orchestrates the entire upgrade. It fetches the release image containing exact versions of every component, then drives operators to update in the correct order. One oc adm upgrade command triggers everything.'},
@@ -9057,6 +9732,48 @@ const T = {
   'as-machineset':{t:'MachineSet',b:'Kubernetes resource (machine.openshift.io/v1beta1) that manages a pool of identical Machine objects. Each Machine maps to a VM or bare-metal host. The MachineAutoscaler adjusts the MachineSet replica count; the Machine API controller provisions or deprovisions the underlying infrastructure.'},
   'as-new-node':{t:'New Worker Node',b:'A worker node provisioned by the Machine API when the MachineSet replica count increases. The node registers with the API server, becomes Ready, and accepts pod scheduling — resolving the pending-pod condition that triggered the scale-up.'},
   'as-pending-pods':{t:'Pending Pods (Unschedulable)',b:'Pods stuck in Pending state because no existing node has enough allocatable CPU, memory, or other resources. The Cluster Autoscaler detects these and triggers a node scale-up via the appropriate MachineSet.'},
+
+  // OpenShift Virtualization / KubeVirt
+  'kv-api':{t:'virt-api',b:'Aggregated API server that extends the Kubernetes API with VirtualMachine, VirtualMachineInstance, and related CRDs. Runs admission webhooks that validate and mutate VM specs (e.g. rejecting invalid disk/interface combinations) before they reach etcd.'},
+  'kv-controller':{t:'virt-controller',b:'Cluster-wide controller (a Deployment, typically 2 replicas for HA). Watches VirtualMachine and VirtualMachineInstance objects and creates/deletes the corresponding virt-launcher Pod specs — the same reconcile-loop pattern as a Kubernetes Deployment controller managing ReplicaSets.'},
+  'kv-handler':{t:'virt-handler',b:'DaemonSet — one pod per node. Talks to libvirt/QEMU on the local node to start, stop, and monitor VMs. Reports VMI phase (Running, Paused, Failed) back to the API server, configures pod networking for VMs, and drives the local side of live migration.'},
+  'kv-launcher':{t:'virt-launcher Pod',b:'One pod per running VM, created by virt-controller. Contains a compute container that runs the QEMU/KVM process plus the guest OS, and a small "virt-launcher" management container. Scheduled, evicted, and governed exactly like any other pod — same scheduler, quotas, RBAC, and SCC.'},
+  'kv-qemu':{t:'QEMU/KVM Process',b:'The actual hypervisor process running inside the virt-launcher pod. KVM provides hardware-assisted virtualization via the kernel; QEMU emulates devices (disk, NIC, console) and exposes them to the guest OS.'},
+  'kv-guest':{t:'Guest OS',b:'The full operating system running inside the VM (RHEL, Windows, Fedora, Ubuntu, etc.), complete with its own kernel. Optionally runs qemu-guest-agent for graceful shutdown, file-system freeze/thaw, and IP reporting back to OpenShift.'},
+  'kv-vmpod':{t:'Key Concept: VM = Pod',b:'A running VM is, under the hood, an ordinary pod (virt-launcher). It consumes the same ResourceQuota/LimitRange, is subject to the same RBAC/SCC/NetworkPolicy, uses the same PVCs for disks, and shows up in `oc get pods`. This is what lets VMs and containers share one cluster with one operational model.'},
+  'kv-migrate-src':{t:'Source Node',b:'The node currently running the VM. During migration, virt-handler here streams memory pages to the destination while the VM keeps running (pre-copy). The VM only pauses briefly for the final delta-page copy.'},
+  'kv-migrate-dst':{t:'Destination Node',b:'The node the VM is migrating to. A new virt-launcher pod is created here to receive memory state. Once the final sync completes, this pod becomes the active VM and the source pod is torn down.'},
+  'kv-migrate-storage':{t:'Shared RWX Storage',b:'The VM disk itself is not copied during live migration — both source and destination nodes mount the same PVC concurrently, which requires a ReadWriteMany (RWX) capable StorageClass. Only in-memory state (RAM, CPU registers) is transferred over the network.'},
+  'kv-cdi-source':{t:'Image Source',b:'Where CDI imports the VM disk from: an HTTP(S) URL (qcow2/raw), a container registry (containerDisk image), an S3 bucket, an existing PVC (clone), or a local file via `virtctl image-upload`.'},
+  'kv-cdi-importer':{t:'CDI Importer Pod',b:'A short-lived pod created by the Containerized Data Importer (CDI) operator. Streams the source image, converts it if needed, and writes it into the target PVC. Progress is reported on the DataVolume status field.'},
+  'kv-cdi-pvc':{t:'PVC (VM Disk)',b:'The resulting PersistentVolumeClaim, referenced from the VirtualMachine spec as a disk (via dataVolume or persistentVolumeClaim volume source). Uses the same StorageClasses and CSI drivers as any other workload.'},
+
+  // GitOps & Pipelines
+  'gt-repo':{t:'Git Repository',b:'The single source of truth for desired cluster state — plain YAML, Kustomize overlays, or a Helm chart. ArgoCD polls it (default ~3 min) and can also react instantly to a configured webhook.'},
+  'gt-app':{t:'ArgoCD Application',b:'The core ArgoCD CRD. Points at a Git repo + path/revision (source) and a cluster + namespace (destination), then continuously compares the two and reports Sync and Health status.'},
+  'gt-sync':{t:'Sync Status',b:'Synced means live cluster state matches Git exactly. OutOfSync means they differ — either Git changed, or something modified the cluster directly (drift). Manual or automated sync reconciles the difference.'},
+  'gt-health':{t:'Health Status',b:'Resource-aware readiness assessment (Healthy, Progressing, Degraded, Missing) built from Kubernetes conditions — e.g. a Deployment is Healthy once all replicas are available, Progressing while rolling out.'},
+  'gt-appproject':{t:'AppProject',b:'A guardrail CRD that scopes what an Application (or group of Applications) is allowed to do — permitted source repos, destination clusters/namespaces, and which resource kinds may be created. Used for multi-team RBAC.'},
+  'gt-cluster':{t:'OpenShift Cluster Resources',b:'The live objects ArgoCD manages — Deployments, Services, Routes, ConfigMaps, and anything else described in the Git source. Can target the local cluster (https://kubernetes.default.svc) or any remote cluster ArgoCD has credentials for.'},
+  'gt-drift':{t:'Drift Detection & Self-Heal',b:'Any out-of-band change (oc edit, oc delete, another controller) is detected as OutOfSync on the next comparison. With syncPolicy.automated.selfHeal: true, ArgoCD immediately reverts it to match Git — enforcing Git as the only path to change the cluster.'},
+  'gt-webhook':{t:'Git Push Webhook',b:'A repo push (or PR merge) fires an HTTP webhook at the EventListener, triggering an immediate pipeline run instead of waiting for a poll interval or manual trigger.'},
+  'gt-eventlistener':{t:'EventListener',b:'A Tekton Triggers resource that runs as a Deployment + Service, exposing an HTTP endpoint. Receives the webhook payload and routes it to the matching Trigger (TriggerBinding + TriggerTemplate).'},
+  'gt-triggerbinding':{t:'TriggerBinding + TriggerTemplate',b:'TriggerBinding extracts fields from the incoming webhook payload (e.g. commit SHA, branch, repo URL) into named params. TriggerTemplate uses those params to render and create a new PipelineRun.'},
+  'gt-pipelinerun':{t:'PipelineRun',b:'An execution instance of a Pipeline. Created either by a Trigger (webhook-driven) or manually (`tkn pipeline start` / oc apply). Tracks overall status and spawns one TaskRun per Task in the DAG.'},
+  'gt-pipeline':{t:'Pipeline (DAG of Tasks)',b:'Defines an ordered (or partially parallel) set of Tasks via runAfter dependencies, plus shared Workspaces (PVC-backed) so later Tasks can read files produced by earlier ones (e.g. build reads source cloned by fetch-source).'},
+  'gt-task':{t:'Task',b:'The smallest reusable Tekton unit — an ordered list of Steps, each a container. Common Tasks are pulled from the Tekton Hub (git-clone, buildah, openshift-client) or authored in-house. Each Task run becomes one TaskRun = one pod.'},
+
+  // MetalLB
+  'ml-svc':{t:'Service (type: LoadBalancer)',b:'A standard Kubernetes Service requesting an external IP. On cloud platforms this triggers the cloud provider\'s LB API; on bare metal, nothing happens until MetalLB is installed and watching for these Services.'},
+  'ml-controller':{t:'MetalLB Controller',b:'Cluster-wide controller (single active replica, leader-elected) that watches for unassigned LoadBalancer Services, picks a free IP from a matching IPAddressPool, and writes it to status.loadBalancer.ingress.'},
+  'ml-speaker':{t:'MetalLB speaker',b:'DaemonSet running on every node. Actually makes the assigned IP reachable — in L2 mode by answering ARP/NDP for it from one elected node, or in BGP mode by advertising a route for it from every node to upstream routers.'},
+
+  // cert-manager
+  'cm-issuer':{t:'Issuer / ClusterIssuer',b:'Configures a certificate authority cert-manager can request certs from — a self-signed CA, an internal CA (via a CA secret), or an ACME provider like Let\'s Encrypt. Issuer is namespace-scoped; ClusterIssuer is usable from any namespace.'},
+  'cm-certificate':{t:'Certificate',b:'Declares a desired TLS certificate: DNS names, an Issuer/ClusterIssuer reference, and a target Secret name. cert-manager creates a CertificateRequest, gets it signed, and stores the resulting key+cert pair in that Secret.'},
+  'cm-certrequest':{t:'CertificateRequest',b:'An intermediate, mostly-internal resource cert-manager creates from a Certificate. Carries the CSR (certificate signing request) and is submitted to the referenced Issuer for signing. Rarely authored by hand.'},
+  'cm-secret':{t:'TLS Secret',b:'A standard Kubernetes Secret of type kubernetes.io/tls holding tls.crt and tls.key. cert-manager keeps this Secret populated and automatically renews it before expiry (default: 2/3 of the certificate\'s lifetime).'},
+  'cm-route':{t:'Route (consumer)',b:'An OpenShift Route can reference the Secret\'s cert/key directly in spec.tls (edge/reencrypt termination), or a controller (e.g. an Ingress annotation shim) can sync the Secret contents into the Route automatically.'},
 };
 
 // Navigation
