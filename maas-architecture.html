@@ -304,6 +304,158 @@ details.yaml-block pre {
 .ladder-step h4 { font-family: var(--serif); font-size: 17px; margin-bottom: 8px; }
 .ladder-step p { font-size: 12px; line-height: 1.6; color: var(--text-secondary); margin: 0; }
 
+/* ── Pros/Cons table ── */
+.proscons { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+.proscons th {
+  font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--text-tertiary); text-align: left; padding: 10px 14px; border-bottom: 2px solid var(--border); background: var(--bg);
+}
+.proscons td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.55; }
+.proscons .pro { color: var(--green); }
+.proscons .con { color: var(--accent); }
+.proscons .pro::before { content: '✓ '; font-weight: 700; }
+.proscons .con::before { content: '✗ '; font-weight: 700; }
+
+/* ── Mode fit table ── */
+.mode-fit { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+.mode-fit th {
+  font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--text-tertiary); text-align: center; padding: 10px 14px; border-bottom: 2px solid var(--border); background: var(--bg);
+}
+.mode-fit th:first-child { text-align: left; }
+.mode-fit td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; text-align: center; }
+.mode-fit td:first-child { text-align: left; font-family: var(--mono); font-size: 12px; font-weight: 500; }
+.mode-fit .yes { color: var(--green); font-weight: 600; }
+.mode-fit .no { color: var(--text-tertiary); }
+.mode-fit .maybe { color: var(--orange); font-weight: 500; }
+.mode-fit tr:hover td { background: var(--bg); }
+
+/* ── Mode diagrams ── */
+.mode-diagram {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+  padding: 28px; margin: 20px 0; overflow-x: auto;
+}
+.mode-diagram-title {
+  font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 20px; text-align: center;
+}
+
+/* Unified diagram */
+.unified-diagram { display: flex; align-items: center; gap: 0; justify-content: center; min-width: 820px; }
+.ud-box {
+  border: 2px solid; border-radius: 10px; padding: 14px 16px; text-align: center; background: white;
+  position: relative; min-width: 120px;
+}
+.ud-box .ub-label { font-family: var(--mono); font-size: 10px; font-weight: 600; margin-bottom: 4px; }
+.ud-box .ub-detail { font-size: 9.5px; color: var(--text-secondary); line-height: 1.4; }
+.ud-arrow {
+  display: flex; align-items: center; padding: 0 6px; color: var(--border-strong);
+  font-family: var(--mono); font-size: 11px; white-space: nowrap; flex-shrink: 0;
+}
+.ud-arrow .arrow-line { width: 28px; height: 2px; background: var(--border-strong); margin: 0 4px; }
+.ud-arrow .arrow-text {
+  font-size: 8px; color: var(--text-tertiary); position: absolute; margin-top: -18px;
+  white-space: nowrap; letter-spacing: 0.5px;
+}
+.ud-pod-internal {
+  border: 2px solid var(--ns-model); border-radius: 10px; padding: 12px; background: white; min-width: 160px;
+}
+.ud-phase-bar {
+  display: flex; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); margin-top: 8px; height: 28px;
+}
+.ud-phase {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 9px; font-weight: 600;
+}
+.ud-phase.prefill-phase { background: #fff3e0; color: var(--orange); }
+.ud-phase.decode-phase { background: var(--purple-light); color: var(--purple); }
+.ud-pod-group { display: flex; flex-direction: column; gap: 10px; }
+
+/* P/D diagram */
+.pd-diagram { display: flex; align-items: stretch; gap: 0; justify-content: center; min-width: 900px; }
+.pd-pool {
+  border: 2px dashed; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  align-items: center; min-width: 180px;
+}
+.pd-pool.prefill-pool { border-color: var(--orange); }
+.pd-pool.decode-pool { border-color: var(--purple); }
+.pd-pool-label {
+  font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 1px;
+  text-transform: uppercase; padding: 2px 10px; border-radius: 3px;
+}
+.pd-pool.prefill-pool .pd-pool-label { background: var(--orange-light); color: var(--orange); }
+.pd-pool.decode-pool .pd-pool-label { background: var(--purple-light); color: var(--purple); }
+.pd-pod {
+  border: 2px solid; border-radius: 8px; padding: 10px 14px; text-align: center; background: white; width: 150px;
+}
+.pd-pod.prefill-pod { border-color: var(--orange); }
+.pd-pod.decode-pod { border-color: var(--purple); }
+.pd-pod .pd-name { font-family: var(--mono); font-size: 10px; font-weight: 600; margin-bottom: 3px; }
+.pd-pod .pd-det { font-size: 9px; color: var(--text-secondary); line-height: 1.4; }
+.pd-transfer {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 0 12px; min-width: 140px;
+}
+.pd-transfer-line {
+  width: 80px; height: 2px; background: var(--accent); position: relative;
+}
+.pd-transfer-line::after {
+  content: '▸'; position: absolute; right: -8px; top: -9px; color: var(--accent); font-size: 14px;
+}
+.pd-transfer-label {
+  font-family: var(--mono); font-size: 9px; font-weight: 600; color: var(--accent);
+  text-align: center; margin-top: 6px; line-height: 1.4;
+}
+.pd-transfer-sublabel {
+  font-size: 8px; color: var(--text-tertiary); text-align: center; margin-top: 2px;
+}
+
+/* Expert diagram */
+.expert-diagram { display: flex; align-items: stretch; gap: 20px; justify-content: center; min-width: 860px; }
+.expert-group {
+  border: 2px solid var(--orange); border-radius: 12px; padding: 16px; background: white; min-width: 200px;
+}
+.expert-group-label {
+  font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 1px;
+  text-transform: uppercase; background: var(--orange-light); color: var(--orange);
+  padding: 2px 10px; border-radius: 3px; display: inline-block; margin-bottom: 12px;
+}
+.expert-node {
+  border: 1.5px solid var(--border-strong); border-radius: 6px; padding: 8px 12px;
+  margin-bottom: 6px; background: var(--bg); text-align: center;
+}
+.expert-node.leader { border-color: var(--orange); background: var(--orange-light); }
+.expert-node .en-label { font-family: var(--mono); font-size: 9.5px; font-weight: 600; }
+.expert-node .en-det { font-size: 8.5px; color: var(--text-secondary); margin-top: 2px; }
+.expert-interconnect {
+  display: flex; align-items: center; justify-content: center; font-family: var(--mono);
+  font-size: 9px; color: var(--text-tertiary); padding: 4px 0;
+}
+.expert-interconnect::before, .expert-interconnect::after {
+  content: ''; width: 20px; height: 1.5px; background: var(--border-strong); margin: 0 6px;
+}
+
+/* ── Mode detail cards ── */
+.mode-card {
+  margin-top: 36px; padding: 28px 32px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 12px; border-left: 4px solid;
+}
+.mode-card.mode-unified { border-left-color: var(--ns-model); }
+.mode-card.mode-pd { border-left-color: var(--purple); }
+.mode-card.mode-expert { border-left-color: var(--orange); }
+.mode-card.mode-mixed { border-left-color: var(--blue); }
+.mode-card h4 { font-family: var(--serif); font-size: 20px; margin-bottom: 12px; }
+.mode-card p { font-size: 14px; line-height: 1.7; color: var(--text-secondary); margin-bottom: 12px; }
+.mode-card .mode-badge {
+  display: inline-block; font-family: var(--mono); font-size: 9px; font-weight: 600;
+  letter-spacing: 1px; text-transform: uppercase; padding: 3px 10px; border-radius: 4px;
+  margin-bottom: 14px;
+}
+.mode-card.mode-unified .mode-badge { background: var(--green-light); color: var(--green); }
+.mode-card.mode-pd .mode-badge { background: var(--purple-light); color: var(--purple); }
+.mode-card.mode-expert .mode-badge { background: var(--orange-light); color: var(--orange); }
+.mode-card.mode-mixed .mode-badge { background: var(--blue-light); color: var(--blue); }
+
 /* ── Legend / Footer ── */
 .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 30px; }
 .legend-item { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; font-weight: 500; color: var(--text-secondary); }
@@ -1011,6 +1163,516 @@ spec:
       </div>
     </div>
   </div>
+
+  <!-- ── MODE 1: Unified ── -->
+  <div class="mode-card mode-unified">
+    <span class="mode-badge">Mode 1 — This Cluster</span>
+    <h4>Unified Inference (Intelligent Scheduling)</h4>
+    <p>
+      Every pod runs both prefill and decode. The EPP scores replicas by queue depth and prefix-cache state, routing each request to the
+      optimal pod. This is the default when your <span class="code-inline">LLMInferenceService</span> has no <span class="code-inline">spec.prefill</span>
+      and no <span class="code-inline">spec.worker</span> — just <span class="code-inline">spec.replicas</span> and <span class="code-inline">spec.template</span>.
+    </p>
+
+    <div class="mode-diagram">
+      <div class="mode-diagram-title">Unified Mode — Request Flow</div>
+      <div class="unified-diagram">
+
+        <div class="ud-box" style="border-color: var(--text);">
+          <div class="ub-label">Client</div>
+          <div class="ub-detail">POST /v1/chat/completions</div>
+        </div>
+
+        <div class="ud-arrow"><div class="arrow-line"></div>›</div>
+
+        <div class="ud-box" style="border-color: var(--ns-gateway);">
+          <div class="ub-label">Gateway</div>
+          <div class="ub-detail">Envoy + Auth<br>+ Rate Limit</div>
+        </div>
+
+        <div class="ud-arrow"><div class="arrow-line"></div>›</div>
+
+        <div class="ud-box" style="border-color: var(--ns-model);">
+          <div class="ub-label">EPP Scheduler</div>
+          <div class="ub-detail">queue-scorer ×2<br>prefix-cache ×3<br>→ pick best pod</div>
+        </div>
+
+        <div class="ud-arrow"><div class="arrow-line"></div>›</div>
+
+        <div class="ud-pod-group">
+          <div class="ud-pod-internal">
+            <div class="ub-label" style="font-size:10px; color: var(--ns-model);">vLLM Pod 1 · GPU Slice 0</div>
+            <div class="ud-phase-bar">
+              <div class="ud-phase prefill-phase">PREFILL</div>
+              <div class="ud-phase decode-phase">DECODE</div>
+            </div>
+            <div class="ub-detail" style="margin-top:6px;">Both phases in same process<br>→ prefill blocks decode</div>
+          </div>
+          <div class="ud-pod-internal">
+            <div class="ub-label" style="font-size:10px; color: var(--ns-model);">vLLM Pod 2 · GPU Slice 1</div>
+            <div class="ud-phase-bar">
+              <div class="ud-phase prefill-phase">PREFILL</div>
+              <div class="ud-phase decode-phase">DECODE</div>
+            </div>
+            <div class="ub-detail" style="margin-top:6px;">EPP prefers this if it has<br>cached the user's prefix</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <p>
+      <strong>Core trade-off:</strong> Simplicity and resilience vs. potential prefill interference. When a pod is busy with a long prefill (processing a 10k-token prompt),
+      its in-flight decode requests stall — every user sharing that pod feels the latency spike. For small models and moderate QPS, this rarely matters.
+      For long-context, high-throughput workloads, it becomes the bottleneck.
+    </p>
+    <table class="proscons">
+      <thead><tr><th style="width:50%">Pros</th><th>Cons</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pro">Simplest config — just set replicas</span></td><td><span class="con">Prefill interference: long prompts stall decode on the same pod</span></td></tr>
+        <tr><td><span class="pro">Every pod is identical — any can serve any request</span></td><td><span class="con">Cannot optimize hardware separately for compute-heavy prefill vs. bandwidth-heavy decode</span></td></tr>
+        <tr><td><span class="pro">EPP prefix-cache routing already reduces redundant prefill</span></td><td><span class="con">At high QPS, tail latency grows as prefill contention increases</span></td></tr>
+        <tr><td><span class="pro">FailOpen — survives EPP death gracefully</span></td><td><span class="con">KV cache limited to local GPU memory per pod</span></td></tr>
+        <tr><td><span class="pro">Works on single-node / small GPU counts</span></td><td></td></tr>
+      </tbody>
+    </table>
+    <details class="yaml-block">
+      <summary>spec — unified mode (your current config)<span class="src-badge">live cluster</span></summary>
+      <pre>apiVersion: serving.kserve.io/v1alpha2
+kind: LLMInferenceService
+metadata:
+  name: redhataillama-31-8b-instruct
+  namespace: swongpai-maas
+spec:
+  model:
+    uri: oci://registry.redhat.io/rhelai1/modelcar-llama-3-1-8b-instruct:1.5
+  replicas: 2                              # both do prefill + decode
+  # no spec.prefill → unified mode
+  # no spec.worker  → single-node
+  template:
+    containers:
+    - name: main
+      resources:
+        limits: {nvidia.com/gpu: "1", cpu: "2", memory: "4Gi"}
+  router:
+    gateway:
+      refs: [{name: maas-default-gateway, namespace: openshift-ingress}]
+    route: {}
+    scheduler: {}</pre>
+    </details>
+    <p><strong>Best for:</strong> Models ≤ 70B, moderate QPS (&lt;50 req/s), short-to-medium context (&lt;8k tokens), single GPU node, getting started fast.</p>
+  </div>
+
+  <!-- ── MODE 2: P/D Disaggregation ── -->
+  <div class="mode-card mode-pd">
+    <span class="mode-badge">Mode 2 — Next Rung</span>
+    <h4>Prefill / Decode Disaggregation</h4>
+    <p>
+      Adding <span class="code-inline">spec.prefill</span> tells the controller to split inference into two specialized pod pools.
+      <strong>Prefill pods</strong> crunch the full prompt (compute-bound — all tokens processed in parallel),
+      then transfer the computed KV tensors to a <strong>decode pod</strong> via the <strong>NIXL v2</strong> connector
+      (<span class="code-inline">llm-d-routing-sidecar</span> with <span class="code-inline">--kv-connector=nixlv2</span>).
+      The decode pod skips prefill entirely and begins streaming tokens immediately.
+    </p>
+
+    <div class="mode-diagram">
+      <div class="mode-diagram-title">Prefill / Decode Disaggregation — KV Dataflow (request path detailed below)</div>
+      <div class="pd-diagram">
+
+        <div style="display:flex; flex-direction:column; justify-content:center; gap:10px;">
+          <div class="ud-box" style="border-color: var(--text); min-width:100px;">
+            <div class="ub-label">Client</div>
+            <div class="ub-detail">Prompt in</div>
+          </div>
+        </div>
+
+        <div class="ud-arrow"><div class="arrow-line"></div>›</div>
+
+        <div style="display:flex; flex-direction:column; justify-content:center; gap:10px;">
+          <div class="ud-box" style="border-color: var(--ns-gateway); min-width:110px;">
+            <div class="ub-label">Gateway</div>
+            <div class="ub-detail">Auth + Rate</div>
+          </div>
+        </div>
+
+        <div class="ud-arrow"><div class="arrow-line"></div>›</div>
+
+        <div style="display:flex; flex-direction:column; justify-content:center; gap:10px;">
+          <div class="ud-box" style="border-color: var(--ns-model); min-width:100px;">
+            <div class="ub-label">EPP</div>
+            <div class="ub-detail">picks decode pod +<br>prefill worker<br>(x-prefiller header)</div>
+          </div>
+        </div>
+
+        <div class="ud-arrow"><div class="arrow-line"></div>›</div>
+
+        <div class="pd-pool prefill-pool">
+          <span class="pd-pool-label">Prefill Pool</span>
+          <div class="pd-pod prefill-pod">
+            <div class="pd-name">Prefill Pod 1</div>
+            <div class="pd-det">Crunches full prompt<br>Builds KV tensors<br>GPU: compute-optimized</div>
+          </div>
+          <div class="pd-pod prefill-pod">
+            <div class="pd-name">Prefill Pod 2</div>
+            <div class="pd-det">Scales independently<br>--enable-chunked-prefill</div>
+          </div>
+        </div>
+
+        <div class="pd-transfer">
+          <div class="pd-transfer-line"></div>
+          <div class="pd-transfer-label">KV Cache Transfer</div>
+          <div class="pd-transfer-sublabel">NIXL v2 connector<br>RDMA ~100μs / TCP ~1-5ms</div>
+          <div style="margin-top:10px;">
+            <div class="pd-transfer-line"></div>
+          </div>
+        </div>
+
+        <div class="pd-pool decode-pool">
+          <span class="pd-pool-label">Decode Pool</span>
+          <div class="pd-pod decode-pod">
+            <div class="pd-name">Decode Pod 1</div>
+            <div class="pd-det">Receives KV tensors<br>Skips prefill entirely<br>Streams tokens out</div>
+          </div>
+          <div class="pd-pod decode-pod">
+            <div class="pd-name">Decode Pod 2</div>
+            <div class="pd-det">GPU: latency-optimized<br>Stable ITL, no interference</div>
+          </div>
+        </div>
+
+        <div class="ud-arrow"><div class="arrow-line"></div>›</div>
+
+        <div style="display:flex; flex-direction:column; justify-content:center; gap:10px;">
+          <div class="ud-box" style="border-color: var(--text); min-width:100px;">
+            <div class="ub-label">Client</div>
+            <div class="ub-detail">Tokens stream</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:16px; padding:12px 16px; background:var(--purple-light); border:1px solid var(--purple); border-radius:8px; font-size:12px; color:var(--text-secondary); line-height:1.65;">
+        <strong style="color:var(--purple); font-family:var(--mono); font-size:10px; letter-spacing:1px; text-transform:uppercase;">Actual request path (important)</strong><br>
+        The diagram above shows the <em>KV dataflow</em>. The HTTP request itself takes a different route: Envoy delivers it to the
+        <strong>decode pod's routing sidecar</strong> first. The sidecar reads the EPP's prefill-worker header, forwards the request to that
+        <strong>prefill pod</strong> (which computes the KV tensors and NIXL-transfers them to the decode pod's vLLM), then feeds the request to its
+        <strong>local vLLM (:8001)</strong>, which decodes using the received KV — token streaming starts immediately.
+      </div>
+
+      <div style="text-align:center; margin-top:12px; padding:12px; background:white; border:1px solid var(--border); border-radius:8px;">
+        <div style="font-family:var(--mono); font-size:10px; font-weight:600; color:var(--text-tertiary); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px;">Inside the Decode Pod</div>
+        <div style="display:flex; justify-content:center; gap:12px; align-items:center; flex-wrap:wrap;">
+          <div style="border:1.5px solid var(--purple); border-radius:6px; padding:6px 12px; font-family:var(--mono); font-size:10px; background:var(--purple-light);">
+            llm-d-routing-sidecar (pd-sidecar)<br><span style="font-size:8px; color:var(--text-secondary);">:8000 proxy · orchestrates prefill call,<br>then local decode · --kv-connector=nixlv2</span>
+          </div>
+          <span style="color:var(--border-strong);">→</span>
+          <div style="border:1.5px solid var(--ns-model); border-radius:6px; padding:6px 12px; font-family:var(--mono); font-size:10px; background:var(--green-light);">
+            vLLM engine<br><span style="font-size:8px; color:var(--text-secondary);">:8001 · receives KV via NIXL<br>starts decode immediately</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p>
+      <strong>Core trade-off:</strong> Eliminates prefill-decode interference completely, but adds KV transfer latency and operational complexity.
+      You now have two pools to scale, two sets of resources to right-size, and a dependency on the KV transfer channel.
+      The decode template on your cluster already bundles the <span class="code-inline">llm-d-routing-sidecar</span> init container with
+      NIXL v2 — it just activates when <span class="code-inline">spec.prefill</span> appears.
+    </p>
+    <table class="proscons">
+      <thead><tr><th style="width:50%">Pros</th><th>Cons</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pro">Zero prefill interference — decode latency is stable regardless of prompt length</span></td><td><span class="con">KV transfer adds latency (RDMA ~100μs, TCP ~1-5ms per transfer)</span></td></tr>
+        <tr><td><span class="pro">Each pool optimized for its bottleneck: prefill=compute, decode=memory bandwidth</span></td><td><span class="con">Two deployments to manage, scale, and monitor</span></td></tr>
+        <tr><td><span class="pro">Independent scaling — scale prefill for prompt-heavy, decode for streaming-heavy</span></td><td><span class="con">Needs RDMA/RoCE for best performance (TCP fallback exists but loses the speed advantage)</span></td></tr>
+        <tr><td><span class="pro">Better GPU utilization — prefill pods can use chunked-prefill (<span class="code-inline">--enable-chunked-prefill</span>)</span></td><td><span class="con">Minimum 2 GPUs (1 prefill + 1 decode) — no replica redundancy without 3+</span></td></tr>
+        <tr><td><span class="pro">Lower inter-token latency (ITL) at high QPS</span></td><td><span class="con">Debug surface grows: sidecar, NIXL channel, two pools of pods</span></td></tr>
+      </tbody>
+    </table>
+    <details class="yaml-block">
+      <summary>spec — disaggregated mode (example for this cluster)<span class="src-badge">example</span></summary>
+      <pre>apiVersion: serving.kserve.io/v1alpha2
+kind: LLMInferenceService
+metadata:
+  name: redhataillama-31-8b-instruct
+  namespace: swongpai-maas
+spec:
+  model:
+    uri: oci://registry.redhat.io/rhelai1/modelcar-llama-3-1-8b-instruct:1.5
+
+  # ── Decode pods (token generation — latency-sensitive)
+  replicas: 1
+  template:
+    containers:
+    - name: main
+      args: ["--enforce-eager"]
+      resources:
+        limits: {nvidia.com/gpu: "1", cpu: "2", memory: "4Gi"}
+
+  # ── Prefill pods (prompt processing — compute-heavy)
+  # Presence of spec.prefill triggers disaggregated mode
+  prefill:
+    replicas: 1
+    template:
+      containers:
+      - name: main
+        args: ["--enable-chunked-prefill"]
+        resources:
+          limits: {nvidia.com/gpu: "1", cpu: "2", memory: "4Gi"}
+
+  router:
+    gateway:
+      refs: [{name: maas-default-gateway, namespace: openshift-ingress}]
+    route: {}
+    scheduler: {}
+
+  # Controller auto-injects from v3-4-2-kserve-config-llm-decode-template:
+  #   llm-d-routing-sidecar initContainer with --kv-connector=nixlv2
+  #   Separate InferencePool per pool type</pre>
+    </details>
+    <details class="yaml-block">
+      <summary>Decode template — auto-injected NIXL sidecar<span class="src-badge">live cluster template</span></summary>
+      <pre># From LLMInferenceServiceConfig v3-4-2-kserve-config-llm-decode-template
+# Controller injects this into decode pods when spec.prefill is present:
+initContainers:
+- name: llm-d-routing-sidecar
+  image: registry.redhat.io/rhoai/odh-llm-d-routing-sidecar-rhel9@sha256:18dbf82a…
+  command: [/app/pd-sidecar]
+  args:
+  - --port=8000           # proxy port (replaces vLLM's external port)
+  - --vllm-port=8001      # vLLM actual port (moved behind sidecar)
+  - --kv-connector=nixlv2 # NVIDIA NIXL v2 for KV cache transfer
+  - --enable-ssrf-protection=true
+  - --pool-group=inference.networking.x-k8s.io
+  # TLS args injected when GlobalConfig.EnableTLS is true</pre>
+    </details>
+    <p><strong>Best for:</strong> Models 13B+, high QPS (&gt;50 req/s), long context (8k–128k tokens), latency-sensitive decode (chatbots, streaming), clusters with 4+ GPUs and RDMA networking.</p>
+  </div>
+
+  <!-- ── MODE 3: Wide Expert Parallelism ── -->
+  <div class="mode-card mode-expert">
+    <span class="mode-badge">Mode 3 — Large Scale</span>
+    <h4>Wide Expert Parallelism (Multi-Node)</h4>
+    <p>
+      For massive Mixture-of-Experts (MoE) models like DeepSeek-R1 (671B, 256 experts). The model is sharded across multiple GPUs/nodes using
+      <span class="code-inline">spec.parallelism</span> (tensor, pipeline, data, expert) and <span class="code-inline">spec.worker</span>
+      (which creates a LeaderWorkerSet — leader + N worker pods that form one serving group). Can be combined with
+      <span class="code-inline">spec.prefill</span> for disaggregated multi-node serving.
+    </p>
+
+    <div class="mode-diagram">
+      <div class="mode-diagram-title">Wide Expert Parallelism — Multi-Node Architecture</div>
+      <div class="expert-diagram">
+
+        <div style="display:flex; flex-direction:column; justify-content:center; gap:10px; min-width:100px;">
+          <div class="ud-box" style="border-color: var(--text);">
+            <div class="ub-label">Client</div>
+            <div class="ub-detail">Request</div>
+          </div>
+          <div class="ud-box" style="border-color: var(--ns-gateway);">
+            <div class="ub-label">Gateway</div>
+            <div class="ub-detail">+ EPP</div>
+          </div>
+          <div style="font-family:var(--mono); font-size:9px; color:var(--text-tertiary); text-align:center;">EPP picks a<br>serving group</div>
+        </div>
+
+        <div style="display:flex; align-items:center; padding:0 8px; color:var(--border-strong); font-size:18px;">›</div>
+
+        <div class="expert-group">
+          <div class="expert-group-label">Serving Group 1 — tensor=4</div>
+          <div class="expert-node leader">
+            <div class="en-label">Leader Pod (Node 1)</div>
+            <div class="en-det">GPU 0-3 · Experts 0-63<br>Coordinates all-reduce</div>
+          </div>
+          <div class="expert-interconnect">NVLink / InfiniBand</div>
+          <div class="expert-node">
+            <div class="en-label">Worker Pod 1 (Node 2)</div>
+            <div class="en-det">GPU 0-3 · Experts 64-127</div>
+          </div>
+          <div class="expert-interconnect">NVLink / InfiniBand</div>
+          <div class="expert-node">
+            <div class="en-label">Worker Pod 2 (Node 3)</div>
+            <div class="en-det">GPU 0-3 · Experts 128-191</div>
+          </div>
+          <div class="expert-interconnect">NVLink / InfiniBand</div>
+          <div class="expert-node">
+            <div class="en-label">Worker Pod 3 (Node 4)</div>
+            <div class="en-det">GPU 0-3 · Experts 192-255</div>
+          </div>
+          <div style="font-family:var(--mono); font-size:8px; color:var(--text-tertiary); text-align:center; margin-top:8px;">LeaderWorkerSet · 16 GPUs total</div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; justify-content:center; gap:8px; min-width:100px;">
+          <div style="font-family:var(--mono); font-size:9px; color:var(--text-tertiary); text-align:center; margin-bottom:8px;">data parallel<br>replica</div>
+          <div style="color:var(--border-strong); text-align:center; font-size:18px;">⟷</div>
+        </div>
+
+        <div class="expert-group">
+          <div class="expert-group-label">Serving Group 2 — tensor=4</div>
+          <div class="expert-node leader">
+            <div class="en-label">Leader Pod (Node 5)</div>
+            <div class="en-det">GPU 0-3 · Experts 0-63</div>
+          </div>
+          <div class="expert-interconnect">NVLink / InfiniBand</div>
+          <div class="expert-node">
+            <div class="en-label">Worker Pod 1 (Node 6)</div>
+            <div class="en-det">GPU 0-3 · Experts 64-127</div>
+          </div>
+          <div class="expert-interconnect">NVLink / InfiniBand</div>
+          <div class="expert-node">
+            <div class="en-label">Worker Pod 2 (Node 7)</div>
+            <div class="en-det">GPU 0-3 · Experts 128-191</div>
+          </div>
+          <div class="expert-interconnect">NVLink / InfiniBand</div>
+          <div class="expert-node">
+            <div class="en-label">Worker Pod 3 (Node 8)</div>
+            <div class="en-det">GPU 0-3 · Experts 192-255</div>
+          </div>
+          <div style="font-family:var(--mono); font-size:8px; color:var(--text-tertiary); text-align:center; margin-top:8px;">LeaderWorkerSet · 16 GPUs total</div>
+        </div>
+
+      </div>
+
+      <div style="display:flex; gap:16px; margin-top:16px; flex-wrap:wrap; justify-content:center;">
+        <div style="flex:1; min-width:240px; border:1px solid var(--border); border-radius:8px; padding:12px; background:white;">
+          <div style="font-family:var(--mono); font-size:9px; font-weight:600; color:var(--text-tertiary); letter-spacing:1px; text-transform:uppercase; margin-bottom:6px;">spec.parallelism</div>
+          <div style="font-size:11px; color:var(--text-secondary); line-height:1.6;">
+            <span class="code-inline">tensor: 4</span> — shard layers across 4 GPUs within a node<br>
+            <span class="code-inline">pipeline: 1</span> — no pipeline stages (optional for very deep models)<br>
+            <span class="code-inline">data: 2</span> — 2 data-parallel serving groups<br>
+            <span class="code-inline">expert: true</span> — enable MoE expert sharding
+          </div>
+        </div>
+        <div style="flex:1; min-width:240px; border:1px solid var(--border); border-radius:8px; padding:12px; background:white;">
+          <div style="font-family:var(--mono); font-size:9px; font-weight:600; color:var(--text-tertiary); letter-spacing:1px; text-transform:uppercase; margin-bottom:6px;">spec.worker</div>
+          <div style="font-size:11px; color:var(--text-secondary); line-height:1.6;">
+            Full PodSpec for worker pods in the LeaderWorkerSet.<br>
+            Leader = first pod (coordinates). Workers = remainder.<br>
+            All must share a high-speed interconnect (NVLink, IB, RoCE).
+          </div>
+        </div>
+        <div style="flex:1; min-width:240px; border:1px solid var(--border); border-radius:8px; padding:12px; background:white;">
+          <div style="font-family:var(--mono); font-size:9px; font-weight:600; color:var(--text-tertiary); letter-spacing:1px; text-transform:uppercase; margin-bottom:6px;">Combinable with P/D</div>
+          <div style="font-size:11px; color:var(--text-secondary); line-height:1.6;">
+            Add <span class="code-inline">spec.prefill</span> with its own <span class="code-inline">parallelism</span> to get<br>
+            multi-node prefill pool + multi-node decode pool.<br>
+            Each pool has independent LeaderWorkerSets.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p>
+      <strong>Core trade-off:</strong> The only way to serve models that don't fit on a single GPU, but it requires multi-node coordination,
+      high-bandwidth interconnects (NVLink/NVSwitch/InfiniBand), and significant operational expertise. The EPP's role grows from
+      "pick a pod" to "pick a serving group" across heterogeneous multi-node clusters.
+    </p>
+    <table class="proscons">
+      <thead><tr><th style="width:50%">Pros</th><th>Cons</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pro">Only way to serve models that exceed single-GPU memory</span></td><td><span class="con">Requires NVLink/InfiniBand — bandwidth between GPUs becomes the bottleneck</span></td></tr>
+        <tr><td><span class="pro">Expert parallelism with data-parallel attention — efficient for MoE architectures</span></td><td><span class="con">Pod scheduling is complex: leader/worker pods must be co-located with RDMA</span></td></tr>
+        <tr><td><span class="pro">Can combine with P/D disaggregation for maximum throughput</span></td><td><span class="con">Minimum hardware: 8+ GPUs across multiple nodes</span></td></tr>
+        <tr><td><span class="pro">Horizontal scaling of truly massive models (200B+)</span></td><td><span class="con">Significant operational complexity — LeaderWorkerSet, network topology, failure domains</span></td></tr>
+      </tbody>
+    </table>
+    <details class="yaml-block">
+      <summary>spec — multi-node with tensor parallelism (conceptual)<span class="src-badge">example</span></summary>
+      <pre>apiVersion: serving.kserve.io/v1alpha2
+kind: LLMInferenceService
+metadata:
+  name: deepseek-r1
+spec:
+  model:
+    uri: oci://…/deepseek-r1-671b:latest
+
+  replicas: 1
+  parallelism:
+    tensor: 8             # shard across 8 GPUs
+    data: 1               # data-parallel replicas
+    expert: true          # enable expert parallelism for MoE
+  worker:                 # LeaderWorkerSet: 1 leader + N workers
+    # full PodSpec — co-located worker pods
+    containers:
+    - name: main
+      resources:
+        limits: {nvidia.com/gpu: "8"}
+
+  # Optionally combine with P/D disaggregation:
+  # prefill:
+  #   replicas: 1
+  #   parallelism:
+  #     tensor: 8
+  #   template: …</pre>
+    </details>
+    <p><strong>Best for:</strong> MoE models (DeepSeek, Mixtral 8×22B+), dense 70B+ models that need tensor parallelism, multi-node GPU clusters with high-speed interconnects.</p>
+  </div>
+
+  <!-- ── MIXED MODE ── -->
+  <div class="mode-card mode-mixed">
+    <span class="mode-badge">Can You Mix Modes?</span>
+    <h4>Mixed-Mode Deployments</h4>
+    <p>
+      <strong>Yes — across models. No — within one model.</strong>
+    </p>
+    <p>
+      Each <span class="code-inline">LLMInferenceService</span> is an independent deployment with its own mode. On the same cluster you can run:
+    </p>
+    <ul class="step-list">
+      <li><strong>Llama 8B in unified mode</strong> (2 replicas, simple, fast cold-start) — for lightweight tasks</li>
+      <li><strong>Llama 70B in disaggregated mode</strong> (prefill pool + decode pool) — for long-context, latency-sensitive workloads</li>
+      <li><strong>DeepSeek-R1 in multi-node expert mode</strong> — for research/batch workloads needing the largest models</li>
+    </ul>
+    <p>
+      Each gets its own InferencePool, EPP, HTTPRoute, and MaaS policies. They share the Gateway and MaaS control plane (maas-api, Authorino, Limitador).
+      Subscriptions and rate limits are per-model — fully independent quota management.
+    </p>
+    <p>
+      <strong>What you cannot do:</strong> hybrid within a single model — e.g., "some replicas do both prefill+decode, some specialize."
+      The CRD is binary: <span class="code-inline">spec.prefill</span> present → all replicas disaggregate. Absent → all unified.
+      There is no partial-disaggregation mode.
+    </p>
+
+    <h4 style="margin-top: 28px; font-size: 18px;">What Fits on Your H100? (2 × 3g.40gb MIG slices)</h4>
+    <p>Your cluster has exactly 2 GPU slots. Here's what's physically possible:</p>
+    <table class="mode-fit">
+      <thead>
+        <tr><th style="width:300px">Configuration</th><th>Slot 1</th><th>Slot 2</th><th>Mode</th><th>Viable?</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Current: Llama 8B × 2 unified</td>
+          <td>vLLM replica 1</td><td>vLLM replica 2</td><td>Unified</td>
+          <td><span class="yes">✓ Running now</span></td>
+        </tr>
+        <tr>
+          <td>Llama 8B disaggregated</td>
+          <td>Prefill pod</td><td>Decode pod</td><td>P/D</td>
+          <td><span class="maybe">⚠ Works, but no redundancy and no RDMA benefit (same node)</span></td>
+        </tr>
+        <tr>
+          <td>Two different models unified</td>
+          <td>Model A × 1</td><td>Model B × 1</td><td>Mixed unified</td>
+          <td><span class="yes">✓ Both ≤ 40GB VRAM each</span></td>
+        </tr>
+        <tr>
+          <td>One model unified + one disaggregated</td>
+          <td colspan="2">Not enough slots — disaggregation needs ≥ 2 GPUs for one model</td><td>—</td>
+          <td><span class="no">✗ Need 3+ GPUs</span></td>
+        </tr>
+        <tr>
+          <td>Any multi-node / expert mode</td>
+          <td colspan="2">Requires multiple nodes with high-speed interconnect</td><td>—</td>
+          <td><span class="no">✗ Single node</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="margin-top: 16px;">
+      <strong>Practical recommendation for this cluster:</strong> Stay unified. Your 8B model prefills fast enough that disaggregation
+      adds overhead without payoff. If you add a second model (e.g., Granite 3B on the spare slice when current replicas drop to 1),
+      use unified for both — independent LLMInferenceServices, independent EPPs, both behind the same Gateway.
+    </p>
+  </div>
+
 </section>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
