@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MaaS on OpenShift — Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fafaf8;
+  --surface: #ffffff;
+  --border: #e2e0dc;
+  --border-strong: #c8c5be;
+  --text: #1a1a18;
+  --text-secondary: #6b6960;
+  --text-tertiary: #9c9890;
+  --accent: #c62828;
+  --accent-light: #fef2f2;
+  --blue: #1565c0;
+  --blue-light: #e8f0fe;
+  --green: #2e7d32;
+  --green-light: #e8f5e9;
+  --purple: #6a1b9a;
+  --purple-light: #f3e8fd;
+  --orange: #e65100;
+  --orange-light: #fff3e0;
+  --teal: #00695c;
+  --teal-light: #e0f2f1;
+  --ns-control: #ef5350;
+  --ns-gateway: #1e88e5;
+  --ns-model: #43a047;
+  --ns-maas: #8e24aa;
+  --ns-kuadrant: #f4511e;
+  --ns-observability: #00897b;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+  --serif: 'DM Serif Display', serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page { max-width: 1400px; margin: 0 auto; padding: 60px 40px; }
+
+/* ── Header ── */
+header { margin-bottom: 80px; border-bottom: 1px solid var(--border); padding-bottom: 40px; }
+header .eyebrow {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 16px;
+}
+header h1 { font-family: var(--serif); font-size: 48px; font-weight: 400; line-height: 1.15; margin-bottom: 16px; }
+header .subtitle { font-size: 18px; color: var(--text-secondary); font-weight: 300; max-width: 760px; }
+header .cluster-badge {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 20px;
+  padding: 6px 14px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; font-family: var(--mono); font-size: 12px; color: var(--text-secondary);
+}
+header .cluster-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ── Sections ── */
+.section-title { font-family: var(--serif); font-size: 32px; margin-bottom: 12px; }
+.section-subtitle { font-size: 15px; color: var(--text-secondary); margin-bottom: 40px; max-width: 680px; }
+.section-number {
+  font-family: var(--mono); font-size: 12px; font-weight: 600;
+  letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 8px;
+}
+.diagram-section { margin-bottom: 90px; }
+.diagram-container {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 48px; position: relative; overflow-x: auto;
+}
+
+/* ── Request Flow (horizontal) ── */
+.request-flow { display: flex; align-items: flex-start; gap: 0; min-width: 1220px; padding: 20px 0; }
+.flow-stage { display: flex; flex-direction: column; align-items: center; position: relative; flex-shrink: 0; }
+.flow-stage:not(:last-child)::after {
+  content: ''; position: absolute; right: -30px; top: 38px; width: 28px; height: 2px; background: var(--border-strong);
+}
+.flow-stage:not(:last-child)::before {
+  content: '›'; position: absolute; right: -17px; top: 28px; font-size: 20px; color: var(--border-strong); font-weight: 600;
+}
+.flow-node {
+  width: 132px; padding: 16px 10px; border-radius: 10px; text-align: center;
+  border: 2px solid; background: white; position: relative; transition: transform .2s, box-shadow .2s;
+}
+.flow-node:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.08); }
+.flow-node .icon { font-size: 24px; margin-bottom: 8px; }
+.flow-node .name { font-family: var(--mono); font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+.flow-node .detail { font-size: 10px; color: var(--text-secondary); line-height: 1.4; }
+.flow-node.client { border-color: var(--text); margin-right: 30px; }
+.flow-node.gateway { border-color: var(--ns-gateway); margin-right: 30px; }
+.flow-node.auth { border-color: var(--ns-kuadrant); margin-right: 30px; }
+.flow-node.rate { border-color: var(--orange); margin-right: 30px; }
+.flow-node.route { border-color: var(--ns-gateway); margin-right: 30px; }
+.flow-node.epp { border-color: var(--ns-model); margin-right: 30px; }
+.flow-node.vllm { border-color: var(--ns-model); }
+.flow-ns-label {
+  font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 1px;
+  text-transform: uppercase; margin-top: 10px; padding: 2px 8px; border-radius: 3px; white-space: nowrap;
+}
+.flow-ns-label.ns-ingress { background: var(--blue-light); color: var(--blue); }
+.flow-ns-label.ns-kuadrant { background: var(--orange-light); color: var(--orange); }
+.flow-ns-label.ns-model { background: var(--green-light); color: var(--green); }
+.replica-fan { display: flex; flex-direction: column; gap: 10px; }
+.replica-fan .flow-node { width: 126px; }
+.replica-label { font-family: var(--mono); font-size: 9px; color: var(--text-tertiary); text-align: center; margin-top: 2px; }
+
+/* ── Sequence Diagram ── */
+.sequence {
+  display: flex; flex-direction: column; gap: 0;
+}
+.seq-step {
+  display: grid; grid-template-columns: 56px 260px 1fr; gap: 20px;
+  padding: 18px 0; border-bottom: 1px solid var(--border); align-items: start;
+}
+.seq-step:last-child { border-bottom: none; }
+.seq-num {
+  font-family: var(--mono); font-size: 15px; font-weight: 600;
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg); border: 2px solid var(--border-strong); color: var(--text);
+}
+.seq-hop { font-family: var(--mono); font-size: 12px; font-weight: 600; line-height: 1.5; padding-top: 8px; }
+.seq-hop .proto {
+  display: inline-block; font-size: 9px; font-weight: 600; letter-spacing: .5px;
+  padding: 1px 7px; border-radius: 3px; margin-top: 6px;
+  background: var(--blue-light); color: var(--blue); text-transform: uppercase;
+}
+.seq-hop .proto.grpc { background: var(--purple-light); color: var(--purple); }
+.seq-hop .proto.https { background: var(--green-light); color: var(--green); }
+.seq-hop .proto.internal { background: var(--orange-light); color: var(--orange); }
+.seq-desc { font-size: 13.5px; color: var(--text-secondary); line-height: 1.65; padding-top: 8px; }
+.seq-desc strong { color: var(--text); font-weight: 600; }
+.seq-desc .fail {
+  display: inline-block; font-family: var(--mono); font-size: 10px; font-weight: 600;
+  padding: 1px 7px; border-radius: 3px; background: var(--accent-light); color: var(--accent); margin-left: 4px;
+}
+
+/* ── API Key Flow ── */
+.keyflow { display: flex; align-items: flex-start; min-width: 900px; padding: 16px 0; }
+.keyflow .flow-node { width: 150px; }
+.keyflow .flow-stage:not(:last-child)::after { right: -30px; }
+.keyflow .flow-stage:not(:last-child)::before { right: -17px; }
+.keyflow .flow-stage { margin-right: 30px; }
+.keyflow .flow-stage:last-child { margin-right: 0; }
+.flow-node.user { border-color: var(--text); }
+.flow-node.dashboard { border-color: var(--ns-control); }
+.flow-node.maasapi { border-color: var(--ns-control); }
+.flow-node.postgres { border-color: var(--teal); }
+.flow-node.key { border-color: var(--purple); }
+
+/* ── Control Plane ── */
+.control-plane { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 40px; }
+.ns-box { border: 2px solid; border-radius: 12px; padding: 20px; background: white; }
+.ns-box .ns-header {
+  font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+  text-transform: uppercase; padding: 3px 10px; border-radius: 4px; display: inline-block; margin-bottom: 16px;
+}
+.ns-box.ns-rhoai { border-color: var(--ns-control); }
+.ns-box.ns-rhoai .ns-header { background: var(--accent-light); color: var(--ns-control); }
+.ns-box.ns-model-ns { border-color: var(--ns-model); }
+.ns-box.ns-model-ns .ns-header { background: var(--green-light); color: var(--ns-model); }
+.ns-box.ns-maas-ns { border-color: var(--ns-maas); }
+.ns-box.ns-maas-ns .ns-header { background: var(--purple-light); color: var(--ns-maas); }
+.ns-box.ns-kuadrant-ns { border-color: var(--ns-kuadrant); }
+.ns-box.ns-kuadrant-ns .ns-header { background: var(--orange-light); color: var(--ns-kuadrant); }
+.ns-box.ns-ingress-ns { border-color: var(--ns-gateway); }
+.ns-box.ns-ingress-ns .ns-header { background: var(--blue-light); color: var(--ns-gateway); }
+.ns-box.ns-observability-ns { border-color: var(--ns-observability); }
+.ns-box.ns-observability-ns .ns-header { background: var(--teal-light); color: var(--ns-observability); }
+.resource-list { list-style: none; }
+.resource-list li {
+  padding: 8px 10px; border-radius: 6px; margin-bottom: 6px;
+  background: var(--bg); border: 1px solid var(--border); transition: background .15s;
+}
+.resource-list li:hover { background: var(--surface); border-color: var(--border-strong); }
+.resource-list .res-kind {
+  font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: .5px;
+  text-transform: uppercase; color: var(--text-tertiary); display: block; margin-bottom: 2px;
+}
+.resource-list .res-name { font-family: var(--mono); font-size: 12px; font-weight: 500; }
+.resource-list .res-detail { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
+
+/* ── Component Catalog ── */
+.catalog-layer {
+  font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
+  text-transform: uppercase; margin: 36px 0 12px; padding-bottom: 8px;
+  border-bottom: 2px solid var(--border-strong); color: var(--text);
+}
+.catalog-layer:first-child { margin-top: 0; }
+.components-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.components-table thead { background: var(--bg); }
+.components-table th {
+  font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--text-tertiary); text-align: left;
+  padding: 10px 14px; border-bottom: 2px solid var(--border);
+}
+.components-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.components-table td:first-child { font-family: var(--mono); font-size: 12px; font-weight: 500; white-space: nowrap; }
+.components-table tr:hover td { background: var(--bg); }
+.components-table .img-tag { font-family: var(--mono); font-size: 10.5px; color: var(--text-tertiary); word-break: break-all; }
+.components-table .port-tag {
+  display: inline-block; font-family: var(--mono); font-size: 10px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 3px;
+  padding: 0 6px; margin: 1px 2px 1px 0; white-space: nowrap;
+}
+
+/* ── Explanations ── */
+.explanation-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 60px; }
+.explanation-card, .explanation-full {
+  padding: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+}
+.explanation-full { margin-bottom: 40px; }
+.explanation-card h3, .explanation-full h3 { font-family: var(--serif); font-size: 22px; margin-bottom: 16px; }
+.explanation-card p, .explanation-full p { font-size: 14px; line-height: 1.7; color: var(--text-secondary); margin-bottom: 12px; }
+.step-list { list-style: none; counter-reset: steps; }
+.step-list li {
+  counter-increment: steps; padding: 10px 0 10px 36px; position: relative;
+  font-size: 13px; line-height: 1.6; color: var(--text-secondary); border-bottom: 1px solid var(--border);
+}
+.step-list li:last-child { border-bottom: none; }
+.step-list li::before {
+  content: counter(steps); position: absolute; left: 0; top: 10px;
+  width: 22px; height: 22px; border-radius: 50%; background: var(--bg);
+  border: 1px solid var(--border); font-family: var(--mono); font-size: 11px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; color: var(--text-secondary);
+}
+.code-inline {
+  font-family: var(--mono); font-size: 11px; background: var(--bg);
+  padding: 2px 6px; border-radius: 3px; border: 1px solid var(--border); color: var(--text);
+}
+
+/* ── Collapsible YAML ── */
+details.yaml-block {
+  margin: 16px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); overflow: hidden;
+}
+details.yaml-block summary {
+  font-family: var(--mono); font-size: 12px; font-weight: 600; padding: 12px 16px;
+  cursor: pointer; user-select: none; color: var(--text-secondary);
+  display: flex; align-items: center; gap: 8px; transition: background .15s;
+}
+details.yaml-block summary:hover { background: var(--surface); }
+details.yaml-block summary::before { content: '▸'; font-size: 11px; transition: transform .2s; }
+details.yaml-block[open] summary::before { transform: rotate(90deg); }
+details.yaml-block summary .src-badge {
+  margin-left: auto; font-size: 9px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase;
+  background: var(--green-light); color: var(--green); padding: 2px 8px; border-radius: 3px;
+}
+details.yaml-block pre {
+  padding: 16px 20px; overflow-x: auto; font-family: var(--mono); font-size: 11.5px;
+  line-height: 1.6; color: var(--text); background: var(--surface); border-top: 1px solid var(--border);
+}
+
+/* ── GPU ── */
+.gpu-diagram { display: flex; gap: 16px; align-items: center; margin: 20px 0; }
+.gpu-card { flex: 1; padding: 16px; border: 2px solid var(--ns-model); border-radius: 8px; text-align: center; background: var(--green-light); }
+.gpu-card .gpu-label { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--ns-model); }
+.gpu-card .gpu-detail { font-size: 10px; color: var(--text-secondary); margin-top: 4px; }
+.gpu-outer { border: 2px solid var(--text); border-radius: 10px; padding: 16px; display: inline-block; }
+.gpu-outer-label { font-family: var(--mono); font-size: 10px; font-weight: 600; text-align: center; margin-bottom: 10px; }
+
+/* ── Legend / Footer ── */
+.legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 30px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; font-weight: 500; color: var(--text-secondary); }
+.legend-item .swatch { width: 12px; height: 12px; border-radius: 3px; border: 2px solid; }
+footer {
+  margin-top: 80px; padding-top: 30px; border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--text-tertiary); display: flex; justify-content: space-between;
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div class="eyebrow">Architecture Reference — verified against live cluster</div>
+  <h1>Models as a Service on OpenShift</h1>
+  <p class="subtitle">How MaaS and llm-d serve LLMs behind an Envoy gateway with API-key authentication, token-based rate limiting, and prefix-cache-aware request routing on RHOAI 3.4</p>
+  <div class="cluster-badge">
+    <span class="dot"></span>
+    rosa-h100-jp &nbsp;·&nbsp; OpenShift 4.20 &nbsp;·&nbsp; RHOAI 3.4.2 &nbsp;·&nbsp; RHCL 1.3.5 &nbsp;·&nbsp; NVIDIA H100 80GB (MIG 2×3g.40gb)
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- 01 REQUEST FLOW -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<section class="diagram-section">
+  <div class="section-number">01 — The Big Picture</div>
+  <h2 class="section-title">Request Flow</h2>
+  <p class="section-subtitle">Every inference request passes seven checkpoints. The gateway is an Envoy proxy (Istio); auth and rate limiting are enforced <em>inside</em> Envoy via callouts to Authorino and Limitador — traffic never detours.</p>
+
+  <div class="legend">
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-gateway)"></span> openshift-ingress</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-kuadrant)"></span> kuadrant-system</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-model)"></span> swongpai-maas</div>
+  </div>
+
+  <div class="diagram-container">
+    <div class="request-flow">
+      <div class="flow-stage">
+        <div class="flow-node client">
+          <div class="icon">⬡</div>
+          <div class="name">Client</div>
+          <div class="detail">Bearer sk-oai-…<br>OpenAI-compatible API</div>
+        </div>
+      </div>
+      <div class="flow-stage">
+        <div class="flow-node gateway">
+          <div class="icon">⊞</div>
+          <div class="name">Envoy Gateway</div>
+          <div class="detail">maas-default-gateway<br>istio-proxy · TLS :443<br>AWS NLB in front</div>
+        </div>
+        <div class="flow-ns-label ns-ingress">openshift-ingress</div>
+      </div>
+      <div class="flow-stage">
+        <div class="flow-node auth">
+          <div class="icon">⊘</div>
+          <div class="name">Authorino</div>
+          <div class="detail">ext_authz gRPC :50051<br>key validation + OPA<br>group membership</div>
+        </div>
+        <div class="flow-ns-label ns-kuadrant">kuadrant-system</div>
+      </div>
+      <div class="flow-stage">
+        <div class="flow-node rate">
+          <div class="icon">◔</div>
+          <div class="name">Limitador</div>
+          <div class="detail">ratelimit gRPC :8081<br>1000 tokens/min<br>per user</div>
+        </div>
+        <div class="flow-ns-label ns-kuadrant">kuadrant-system</div>
+      </div>
+      <div class="flow-stage">
+        <div class="flow-node route">
+          <div class="icon">⇉</div>
+          <div class="name">HTTPRoute</div>
+          <div class="detail">path match +<br>URLRewrite strips<br>ns/model prefix</div>
+        </div>
+        <div class="flow-ns-label ns-model">swongpai-maas</div>
+      </div>
+      <div class="flow-stage">
+        <div class="flow-node epp">
+          <div class="icon">◎</div>
+          <div class="name">EPP Scheduler</div>
+          <div class="detail">gRPC :9002<br>queue-scorer ×2<br>prefix-cache-scorer ×3</div>
+        </div>
+        <div class="flow-ns-label ns-model">swongpai-maas</div>
+      </div>
+      <div class="flow-stage">
+        <div class="replica-fan">
+          <div class="flow-node vllm">
+            <div class="icon">▣</div>
+            <div class="name">vLLM Pod 1</div>
+            <div class="detail">Llama 3.1 8B<br>:8000 · MIG 3g.40gb</div>
+          </div>
+          <div class="flow-node vllm">
+            <div class="icon">▣</div>
+            <div class="name">vLLM Pod 2</div>
+            <div class="detail">Llama 3.1 8B<br>:8000 · MIG 3g.40gb</div>
+          </div>
+        </div>
+        <div class="flow-ns-label ns-model">swongpai-maas</div>
+        <div class="replica-label">2 replicas · same H100 node</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- 02 SEQUENCE -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<section class="diagram-section">
+  <div class="section-number">02 — On the Wire</div>
+  <h2 class="section-title">Step-by-Step Request Journey</h2>
+  <p class="section-subtitle">What actually happens, hop by hop, when a client sends <span class="code-inline">POST /swongpai-maas/redhataillama-31-8b-instruct/v1/chat/completions</span>. Every step below is verified against the live cluster configuration.</p>
+
+  <div class="diagram-container">
+    <div class="sequence">
+
+      <div class="seq-step">
+        <div class="seq-num">1</div>
+        <div class="seq-hop">Client → AWS NLB<br><span class="proto https">HTTPS 443</span></div>
+        <div class="seq-desc">
+          Client resolves <strong>maas.apps.rosa.rosa-h100-jp.g4b0.p3.openshiftapps.com</strong> (Route53 → NLB
+          <span class="code-inline">a83033…elb.amazonaws.com</span>) and sends the request with header
+          <span class="code-inline">Authorization: Bearer sk-oai-…</span>. The NLB forwards raw TCP to the gateway pod — no TLS termination here.
+        </div>
+      </div>
+
+      <div class="seq-step">
+        <div class="seq-num">2</div>
+        <div class="seq-hop">NLB → Envoy Gateway<br><span class="proto https">TLS terminate</span></div>
+        <div class="seq-desc">
+          Pod <strong>maas-default-gateway-openshift-default</strong> (an <span class="code-inline">istio-proxy</span> Envoy managed by
+          <span class="code-inline">istiod-openshift-gateway</span>) terminates TLS using the <span class="code-inline">maas-gateway-tls</span>
+          secret (ROSA wildcard cert). From here on, Kuadrant's WASM filter chain runs inside this Envoy for every request.
+        </div>
+      </div>
+
+      <div class="seq-step">
+        <div class="seq-num">3</div>
+        <div class="seq-hop">Envoy → Authorino<br><span class="proto grpc">gRPC ext_authz :50051</span></div>
+        <div class="seq-desc">
+          Envoy pauses the request and sends a <strong>CheckRequest</strong> to Authorino. The <span class="code-inline">AuthPolicy</span> matches the
+          key pattern <span class="code-inline">^Bearer sk-oai-.*</span> and validates the key by calling
+          <span class="code-inline">maas-api:8443/internal/v1/api-keys/validate</span> (which checks PostgreSQL); a second metadata call to
+          <span class="code-inline">/internal/v1/subscriptions/select</span> resolves the user's subscription. Two OPA/Rego
+          policies then run: <strong>auth-valid</strong> (is the credential valid?) and <strong>require-group-membership</strong>
+          (is the user in <span class="code-inline">cluster-admins</span> or <span class="code-inline">rhods-admins</span>?). Results are cached 60s.
+          Failure → <span class="fail">401 / 403</span>. OpenShift tokens are also accepted — but only for the <span class="code-inline">/v1/models</span> listing endpoint.
+        </div>
+      </div>
+
+      <div class="seq-step">
+        <div class="seq-num">4</div>
+        <div class="seq-hop">Authorino → Envoy<br><span class="proto internal">identity metadata</span></div>
+        <div class="seq-desc">
+          On success Authorino returns <strong>OK plus identity metadata</strong>: <span class="code-inline">userid</span>,
+          <span class="code-inline">selected_subscription</span> (e.g. <span class="code-inline">models-as-a-service/admin-sub@swongpai-maas/redhataillama-31-8b-instruct</span>),
+          and group list. Envoy stores these as dynamic metadata — the rate limiter and telemetry both read them downstream.
+        </div>
+      </div>
+
+      <div class="seq-step">
+        <div class="seq-num">5</div>
+        <div class="seq-hop">Envoy → Limitador<br><span class="proto grpc">gRPC ratelimit :8081</span></div>
+        <div class="seq-desc">
+          Envoy asks Limitador: does user <span class="code-inline">auth.identity.userid</span> still have token budget? The live
+          <span class="code-inline">TokenRateLimitPolicy</span> allows <strong>1000 tokens per 1-minute window</strong> per user for this subscription
+          (the <span class="code-inline">/v1/models</span> path is exempt). A gateway-wide <strong>deny-all-by-default</strong> policy
+          (limit 0) blocks any path that isn't a configured model or the maas-api. Over budget → <span class="fail">429</span>.
+        </div>
+      </div>
+
+      <div class="seq-step">
+        <div class="seq-num">6</div>
+        <div class="seq-hop">Envoy: HTTPRoute match<br><span class="proto internal">URLRewrite</span></div>
+        <div class="seq-desc">
+          The <span class="code-inline">HTTPRoute</span> has separate rules for <span class="code-inline">/v1/completions</span>,
+          <span class="code-inline">/v1/chat/completions</span>, and <span class="code-inline">/v1/responses</span> — each strips the
+          <span class="code-inline">/swongpai-maas/redhataillama-31-8b-instruct</span> prefix and forwards to the
+          <strong>InferencePool</strong> backend (a Gateway API extension, not a normal Service). A catch-all rule routes anything else
+          directly to the workload Service.
+        </div>
+      </div>
+
+      <div class="seq-step">
+        <div class="seq-num">7</div>
+        <div class="seq-hop">Envoy → EPP<br><span class="proto grpc">gRPC ext_proc :9002</span></div>
+        <div class="seq-desc">
+          Because the backend is an InferencePool, Envoy consults the <strong>Endpoint Picker (EPP)</strong> before choosing a pod.
+          The live EPP config runs three plugins: <span class="code-inline">queue-scorer</span> (weight 2 — prefer pods with shorter queues),
+          <span class="code-inline">prefix-cache-scorer</span> (weight 3 — prefer the pod that already has this prompt's prefix in KV cache),
+          and <span class="code-inline">max-score-picker</span> (choose the highest combined score). The EPP's tokenizer sidecar tokenizes
+          the prompt to compute prefix-cache matches.
+        </div>
+      </div>
+
+      <div class="seq-step">
+        <div class="seq-num">8</div>
+        <div class="seq-hop">Envoy → vLLM pod<br><span class="proto https">HTTP :8000</span></div>
+        <div class="seq-desc">
+          The rewritten request (<span class="code-inline">POST /v1/chat/completions</span>) lands on the chosen vLLM pod.
+          vLLM runs the model on its <strong>MIG 3g.40gb slice</strong> (40GB VRAM), reusing cached KV tensors when the prefix matched.
+          Weights were loaded at startup from the OCI modelcar image <span class="code-inline">modelcar-llama-3-1-8b-instruct:1.5</span> — no
+          external download, no PVC.
+        </div>
+      </div>
+
+      <div class="seq-step">
+        <div class="seq-num">9</div>
+        <div class="seq-hop">Response → payload-processing<br><span class="proto grpc">gRPC ext_proc :9004</span></div>
+        <div class="seq-desc">
+          As the response streams back through Envoy, the <strong>payload-processing</strong> service inspects the response body and
+          extracts <span class="code-inline">usage.total_tokens</span> from the OpenAI-format JSON. This count is reported to
+          <strong>Limitador</strong>, which decrements the user's remaining token budget — this is how <em>token-based</em> (not request-based)
+          rate limiting works.
+        </div>
+      </div>
+
+      <div class="seq-step">
+        <div class="seq-num">10</div>
+        <div class="seq-hop">Envoy → Client<br><span class="proto https">HTTPS 200</span></div>
+        <div class="seq-desc">
+          The completed response returns to the client. In parallel, the <span class="code-inline">TelemetryPolicy</span> enriches Envoy's
+          Prometheus metrics with <span class="code-inline">model</span>, <span class="code-inline">user</span>,
+          <span class="code-inline">subscription</span>, <span class="code-inline">organization_id</span>, and
+          <span class="code-inline">cost_center</span> labels — feeding the MaaS observability dashboard for usage attribution and showback.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- 03 API KEY LIFECYCLE -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<section class="diagram-section">
+  <div class="section-number">03 — Before the First Request</div>
+  <h2 class="section-title">Where API Keys Come From</h2>
+  <p class="section-subtitle">Inference needs a key. Keys are minted by maas-api, scoped to a subscription, and stored in PostgreSQL. The subscription — not the key — decides which models you can reach and how many tokens you get.</p>
+
+  <div class="diagram-container">
+    <div class="keyflow">
+      <div class="flow-stage">
+        <div class="flow-node user">
+          <div class="icon">◉</div>
+          <div class="name">User</div>
+          <div class="detail">Must be in cluster-admins<br>or rhods-admins group</div>
+        </div>
+      </div>
+      <div class="flow-stage">
+        <div class="flow-node dashboard">
+          <div class="icon">▤</div>
+          <div class="name">RHOAI Dashboard</div>
+          <div class="detail">maas-ui plugin, or direct<br>POST /maas-api/v1/api-keys<br>with OpenShift token</div>
+        </div>
+        <div class="flow-ns-label" style="background: var(--accent-light); color: var(--ns-control)">redhat-ods-applications</div>
+      </div>
+      <div class="flow-stage">
+        <div class="flow-node maasapi">
+          <div class="icon">⚙</div>
+          <div class="name">maas-api</div>
+          <div class="detail">Validates group against<br>MaaSSubscription owner ·<br>generates sk-oai-… key</div>
+        </div>
+        <div class="flow-ns-label" style="background: var(--accent-light); color: var(--ns-control)">redhat-ods-applications</div>
+      </div>
+      <div class="flow-stage">
+        <div class="flow-node postgres">
+          <div class="icon">◫</div>
+          <div class="name">PostgreSQL</div>
+          <div class="detail">CNPG postgres-ha<br>3-instance HA ·<br>key hash stored</div>
+        </div>
+        <div class="flow-ns-label" style="background: var(--teal-light); color: var(--teal)">maas-postgres</div>
+      </div>
+      <div class="flow-stage">
+        <div class="flow-node key">
+          <div class="icon">⚿</div>
+          <div class="name">API Key</div>
+          <div class="detail">Returned once, at creation.<br>Scoped to subscription<br>admin-sub · 1000 tok/min</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- 04 CONTROL PLANE -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<section class="diagram-section">
+  <div class="section-number">04 — Topology</div>
+  <h2 class="section-title">Control Plane by Namespace</h2>
+  <p class="section-subtitle">Resources grouped by namespace — how operators, controllers, and CRDs compose the platform.</p>
+
+  <div class="legend">
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-control)"></span> redhat-ods-applications</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-model)"></span> swongpai-maas</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-maas)"></span> models-as-a-service</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-kuadrant)"></span> kuadrant-system</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-gateway)"></span> openshift-ingress</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-observability)"></span> redhat-ods-monitoring</div>
+  </div>
+
+  <div class="diagram-container">
+    <div class="control-plane">
+
+      <div class="ns-box ns-rhoai">
+        <div class="ns-header">redhat-ods-applications</div>
+        <ul class="resource-list">
+          <li><span class="res-kind">Deployment</span><span class="res-name">maas-controller</span>
+            <div class="res-detail">Reconciles MaaS CRs → Kuadrant policies · creates Tenant</div></li>
+          <li><span class="res-kind">Deployment</span><span class="res-name">maas-api</span>
+            <div class="res-detail">REST :8443 · API key CRUD · key validation for Authorino</div></li>
+          <li><span class="res-kind">Deployment</span><span class="res-name">llmisvc-controller-manager</span>
+            <div class="res-detail">KServe llm-d controller · reconciles LLMInferenceService</div></li>
+          <li><span class="res-kind">Secret</span><span class="res-name">maas-db-config</span>
+            <div class="res-detail">PostgreSQL URL → postgres-ha-rw.maas-postgres</div></li>
+          <li><span class="res-kind">HTTPRoute</span><span class="res-name">maas-api-route</span>
+            <div class="res-detail">/maas-api + /v1/models exposed on the MaaS gateway</div></li>
+          <li><span class="res-kind">OdhDashboardConfig</span><span class="res-name">odh-dashboard-config</span>
+            <div class="res-detail">vLLMDeploymentOnMaaS · observabilityDashboard</div></li>
+        </ul>
+      </div>
+
+      <div class="ns-box ns-model-ns">
+        <div class="ns-header">swongpai-maas</div>
+        <ul class="resource-list">
+          <li><span class="res-kind">LLMInferenceService</span><span class="res-name">redhataillama-31-8b-instruct</span>
+            <div class="res-detail">2 replicas · oci modelcar 1.5 · router: gateway + scheduler</div></li>
+          <li><span class="res-kind">InferencePool</span><span class="res-name">…-inference-pool</span>
+            <div class="res-detail">endpointPickerRef → epp-service:9002 · targetPort 8000</div></li>
+          <li><span class="res-kind">Deployment ×2 pods</span><span class="res-name">…-kserve</span>
+            <div class="res-detail">vLLM main + modelcar sidecar · nvidia.com/gpu: 1 each</div></li>
+          <li><span class="res-kind">Deployment</span><span class="res-name">…-kserve-router-scheduler</span>
+            <div class="res-detail">EPP main + tokenizer + modelcar (3 containers)</div></li>
+          <li><span class="res-kind">MaaSModelRef</span><span class="res-name">redhataillama-31-8b-instruct</span>
+            <div class="res-detail">Registers model with MaaS · endpoint published</div></li>
+          <li><span class="res-kind">AuthPolicy</span><span class="res-name">maas-auth-…-instruct</span>
+            <div class="res-detail">sk-oai key validation + OPA group check · created by maas-controller</div></li>
+          <li><span class="res-kind">TokenRateLimitPolicy</span><span class="res-name">maas-trlp-…-instruct</span>
+            <div class="res-detail">1000 tokens/1m per userid · targets the HTTPRoute</div></li>
+          <li><span class="res-kind">HTTPRoute</span><span class="res-name">…-kserve-route</span>
+            <div class="res-detail">4 rules · URLRewrite → InferencePool + workload svc</div></li>
+        </ul>
+      </div>
+
+      <div class="ns-box ns-maas-ns">
+        <div class="ns-header">models-as-a-service</div>
+        <ul class="resource-list">
+          <li><span class="res-kind">Tenant</span><span class="res-name">default-tenant</span>
+            <div class="res-detail">gatewayRef → maas-default-gateway · telemetry on</div></li>
+          <li><span class="res-kind">MaaSAuthPolicy</span><span class="res-name">admin-sub-policy</span>
+            <div class="res-detail">Grants cluster-admins + rhods-admins → model access</div></li>
+          <li><span class="res-kind">MaaSSubscription</span><span class="res-name">admin-sub</span>
+            <div class="res-detail">1000 tokens/1m · priority 0 · owner: admin groups</div></li>
+        </ul>
+        <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 12px; line-height: 1.5;">
+          User-intent layer: humans write these; maas-controller translates them into the Kuadrant AuthPolicy + TokenRateLimitPolicy in the model namespace.
+        </p>
+      </div>
+
+      <div class="ns-box ns-kuadrant-ns">
+        <div class="ns-header">kuadrant-system</div>
+        <ul class="resource-list">
+          <li><span class="res-kind">Kuadrant</span><span class="res-name">kuadrant</span>
+            <div class="res-detail">observability.enable: true → PodMonitors</div></li>
+          <li><span class="res-kind">Deployment</span><span class="res-name">authorino</span>
+            <div class="res-detail">ext_authz gRPC :50051 · TLS via service-serving cert</div></li>
+          <li><span class="res-kind">Deployment</span><span class="res-name">limitador-limitador</span>
+            <div class="res-detail">ratelimit gRPC :8081, HTTP :8080 · token counters</div></li>
+        </ul>
+      </div>
+
+      <div class="ns-box ns-ingress-ns">
+        <div class="ns-header">openshift-ingress</div>
+        <ul class="resource-list">
+          <li><span class="res-kind">Gateway</span><span class="res-name">maas-default-gateway</span>
+            <div class="res-detail">HTTPS :443 · LoadBalancer (AWS NLB) · Programmed</div></li>
+          <li><span class="res-kind">Pod</span><span class="res-name">maas-default-gateway-openshift-default</span>
+            <div class="res-detail">istio-proxy (Envoy) — the actual data plane</div></li>
+          <li><span class="res-kind">Pod</span><span class="res-name">istiod-openshift-gateway</span>
+            <div class="res-detail">Istio control plane — programs the Envoy</div></li>
+          <li><span class="res-kind">Deployment</span><span class="res-name">payload-processing</span>
+            <div class="res-detail">ext_proc gRPC :9004 · extracts token usage from responses</div></li>
+          <li><span class="res-kind">Secret</span><span class="res-name">maas-gateway-tls</span>
+            <div class="res-detail">kubernetes.io/tls · ROSA wildcard cert copy</div></li>
+          <li><span class="res-kind">AuthPolicy ×2</span><span class="res-name">gateway-default-auth / …-authn</span>
+            <div class="res-detail">Deny unconfigured models · k8s TokenReview + SAR fallback</div></li>
+          <li><span class="res-kind">TokenRateLimitPolicy</span><span class="res-name">gateway-default-deny</span>
+            <div class="res-detail">limit 0 default — deny-by-default posture</div></li>
+          <li><span class="res-kind">TelemetryPolicy + Telemetry</span><span class="res-name">maas-telemetry / latency-per-subscription</span>
+            <div class="res-detail">model/user/subscription/cost_center metric labels</div></li>
+        </ul>
+      </div>
+
+      <div class="ns-box ns-observability-ns">
+        <div class="ns-header">redhat-ods-monitoring</div>
+        <ul class="resource-list">
+          <li><span class="res-kind">MonitoringStack</span><span class="res-name">data-science-monitoringstack</span>
+            <div class="res-detail">Prometheus + Alertmanager (2 each) · 5Gi · 90d</div></li>
+          <li><span class="res-kind">StatefulSet</span><span class="res-name">tempo-…-tempomonolithic</span>
+            <div class="res-detail">Distributed tracing · PV backend · 2160h retention</div></li>
+          <li><span class="res-kind">StatefulSet</span><span class="res-name">data-science-perses</span>
+            <div class="res-detail">Dashboard renderer for RHOAI console (Tech Preview)</div></li>
+          <li><span class="res-kind">OpenTelemetryCollector</span><span class="res-name">data-science-collector</span>
+            <div class="res-detail">2 replicas + target allocator · scrape + trace pipeline</div></li>
+          <li><span class="res-kind">Deployment</span><span class="res-name">thanos-querier</span>
+            <div class="res-detail">Unified metric queries across Prometheus shards</div></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- 05 COMPONENT CATALOG -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<section class="diagram-section">
+  <div class="section-number">05 — Reference</div>
+  <h2 class="section-title">Component Catalog</h2>
+  <p class="section-subtitle">Every component in the request path and control plane, by layer — with live images, ports, and role. All pulled from the running cluster.</p>
+
+  <div class="diagram-container">
+
+    <div class="catalog-layer">Layer 1 — Edge &amp; Gateway</div>
+    <table class="components-table">
+      <thead><tr><th style="width:220px">Component</th><th style="width:120px">Ports</th><th>Role</th><th style="width:300px">Image</th></tr></thead>
+      <tbody>
+        <tr><td>AWS NLB + Route53</td><td><span class="port-tag">443</span></td>
+          <td>Cloud entry point. DNS <span class="code-inline">maas.apps.…</span> → NLB → gateway pod. Auto-created by OpenShift when the Gateway was applied.</td>
+          <td class="img-tag">—</td></tr>
+        <tr><td>maas-default-gateway<br>(istio-proxy)</td><td><span class="port-tag">443 TLS</span><span class="port-tag">15021 health</span></td>
+          <td>The Envoy data plane. Terminates TLS, runs Kuadrant WASM filters (auth, rate-limit callouts), matches HTTPRoutes, consults EPP. Everything flows through this pod.</td>
+          <td class="img-tag">openshift-service-mesh/istio-proxyv2-rhel9</td></tr>
+        <tr><td>istiod-openshift-gateway</td><td><span class="port-tag">15010</span><span class="port-tag">15012</span><span class="port-tag">15014</span></td>
+          <td>Istio control plane. Translates Gateway API resources into Envoy configuration and pushes it to the gateway pod via xDS.</td>
+          <td class="img-tag">openshift-service-mesh/istio-pilot-rhel9</td></tr>
+      </tbody>
+    </table>
+
+    <div class="catalog-layer">Layer 2 — Policy Enforcement (Kuadrant / RHCL)</div>
+    <table class="components-table">
+      <thead><tr><th style="width:220px">Component</th><th style="width:120px">Ports</th><th>Role</th><th style="width:300px">Image</th></tr></thead>
+      <tbody>
+        <tr><td>authorino</td><td><span class="port-tag">50051 grpc</span><span class="port-tag">5001 http</span></td>
+          <td>External authorization. Validates <span class="code-inline">sk-oai-*</span> API keys (via maas-api), runs OPA/Rego group-membership checks, caches verdicts 60s, injects identity metadata for downstream policies.</td>
+          <td class="img-tag">rhcl-1/authorino-rhel9</td></tr>
+        <tr><td>limitador-limitador</td><td><span class="port-tag">8081 grpc</span><span class="port-tag">8080 http</span></td>
+          <td>Rate limit service. Keeps token counters per <span class="code-inline">userid</span> per subscription window. Answers Envoy's should-rate-limit checks; decremented post-response by actual token usage.</td>
+          <td class="img-tag">rhcl-1/limitador-rhel9</td></tr>
+        <tr><td>payload-processing</td><td><span class="port-tag">9004 grpc</span><span class="port-tag">9005 metrics</span></td>
+          <td>Envoy ext_proc service. Parses OpenAI-format response bodies to extract <span class="code-inline">usage.total_tokens</span> and model name — the bridge that makes <em>token-based</em> rate limiting and per-model telemetry possible.</td>
+          <td class="img-tag">rhoai/odh-ai-gateway-payload-processing-rhel9</td></tr>
+      </tbody>
+    </table>
+
+    <div class="catalog-layer">Layer 3 — MaaS Control Plane</div>
+    <table class="components-table">
+      <thead><tr><th style="width:220px">Component</th><th style="width:120px">Ports</th><th>Role</th><th style="width:300px">Image</th></tr></thead>
+      <tbody>
+        <tr><td>maas-controller</td><td>—</td>
+          <td>Operator. Watches MaaSSubscription / MaaSAuthPolicy / MaaSModelRef / Tenant CRs and generates the enforcing Kuadrant AuthPolicy + TokenRateLimitPolicy per model. The translator between user intent and gateway enforcement.</td>
+          <td class="img-tag">rhoai/odh-maas-controller-rhel9</td></tr>
+        <tr><td>maas-api</td><td><span class="port-tag">8443 https</span></td>
+          <td>REST API for key lifecycle: create/list/revoke API keys, list models. Checks subscription owner groups before minting. Also serves as Authorino's key-validation backend. State in PostgreSQL.</td>
+          <td class="img-tag">rhoai/odh-maas-api-rhel9</td></tr>
+        <tr><td>postgres-ha (CNPG)</td><td><span class="port-tag">5432</span></td>
+          <td>3-instance HA PostgreSQL 18 cluster (namespace <span class="code-inline">maas-postgres</span>). Stores API key hashes and subscription state. Reached via <span class="code-inline">postgres-ha-rw</span> service, sslmode=require.</td>
+          <td class="img-tag">CloudNativePG 1.30.0</td></tr>
+        <tr><td>maas-ui (dashboard plugin)</td><td>—</td>
+          <td>MaaS panel inside the RHOAI dashboard — self-service key creation and model catalog. One of the modular UI containers in the rhods-dashboard pod.</td>
+          <td class="img-tag">rhoai/odh-mod-arch-maas-rhel9</td></tr>
+      </tbody>
+    </table>
+
+    <div class="catalog-layer">Layer 4 — Model Serving (llm-d / KServe)</div>
+    <table class="components-table">
+      <thead><tr><th style="width:220px">Component</th><th style="width:120px">Ports</th><th>Role</th><th style="width:300px">Image</th></tr></thead>
+      <tbody>
+        <tr><td>llmisvc-controller-manager</td><td>—</td>
+          <td>KServe's LLMInferenceService controller. From one CR it materializes: vLLM Deployment, EPP Deployment, InferencePool, HTTPRoute, Services, and the MaaSModelRef.</td>
+          <td class="img-tag">rhoai/odh-kserve-llmisvc-controller-rhel9</td></tr>
+        <tr><td>EPP router-scheduler<br>(main + tokenizer)</td><td><span class="port-tag">9002 grpc</span><span class="port-tag">9003 health</span><span class="port-tag">9090 metrics</span><span class="port-tag">5557 zmq</span></td>
+          <td>Endpoint Picker. Scores every vLLM replica per request: <span class="code-inline">queue-scorer</span> (w2) + <span class="code-inline">prefix-cache-scorer</span> (w3) → <span class="code-inline">max-score-picker</span>. Tokenizer sidecar computes prompt prefixes; ZMQ channel receives KV-cache events from vLLM pods.</td>
+          <td class="img-tag">rhoai/odh-llm-d-inference-scheduler-rhel9 + odh-llm-d-kv-cache-rhel9</td></tr>
+        <tr><td>vLLM pods ×2<br>(main + modelcar)</td><td><span class="port-tag">8000 http</span></td>
+          <td>The inference engines. OpenAI-compatible API, Llama 3.1 8B in bf16, one MIG 3g.40gb slice each (requests/limits <span class="code-inline">nvidia.com/gpu: 1</span>, cpu 2, mem 4Gi). Modelcar sidecar provides weights via image filesystem.</td>
+          <td class="img-tag">rhaii/vllm-cuda-rhel9 + rhelai1/modelcar-llama-3-1-8b-instruct:1.5</td></tr>
+        <tr><td>InferencePool</td><td><span class="port-tag">→ 8000</span></td>
+          <td>Gateway API extension resource. Selects vLLM pods by label (<span class="code-inline">kserve.io/component: workload</span>) and delegates per-request endpoint choice to the EPP via <span class="code-inline">endpointPickerRef</span>.</td>
+          <td class="img-tag">— (CRD)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="catalog-layer">Layer 5 — Observability</div>
+    <table class="components-table">
+      <thead><tr><th style="width:220px">Component</th><th style="width:120px">Ports</th><th>Role</th><th style="width:300px">Image</th></tr></thead>
+      <tbody>
+        <tr><td>Prometheus (MonitoringStack)</td><td><span class="port-tag">9090</span></td>
+          <td>Scrapes gateway/Limitador/vLLM metrics — including the TelemetryPolicy's enriched labels. 5Gi PV, 90-day retention, Thanos sidecar for federation.</td>
+          <td class="img-tag">cluster-observability-operator/prometheus-rhel9</td></tr>
+        <tr><td>OpenTelemetry Collector</td><td>—</td>
+          <td>2 replicas + target allocator. Collects metrics and traces from RHOAI components and forwards to Prometheus / Tempo.</td>
+          <td class="img-tag">rhosdt/opentelemetry-collector-rhel9</td></tr>
+        <tr><td>Tempo (monolithic)</td><td>—</td>
+          <td>Distributed tracing backend. PV storage, 2160h (90-day) retention, 0.1 sample ratio configured in DSCI.</td>
+          <td class="img-tag">rhosdt/tempo-rhel9</td></tr>
+        <tr><td>Perses</td><td>—</td>
+          <td>Dashboard engine rendering the MaaS observability dashboard (tokens by subscription, requests, error rates) inside the RHOAI console. Tech Preview.</td>
+          <td class="img-tag">cluster-observability-operator/perses-rhel9</td></tr>
+        <tr><td>Alertmanager + Thanos Querier</td><td>—</td>
+          <td>Alert routing (2 replicas) and unified cross-shard metric queries for the dashboard proxies.</td>
+          <td class="img-tag">cluster-observability-operator/alertmanager-rhel9, thanos-rhel9</td></tr>
+      </tbody>
+    </table>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- 06 HOW IT WORKS + YAML -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<section class="explanation">
+  <div class="section-number">06 — Deep Dive</div>
+  <h2 class="section-title">How It Works</h2>
+  <p class="section-subtitle">The mechanics behind the diagrams — with the actual configuration from the live cluster, collapsible below each explanation.</p>
+
+  <div class="explanation-grid">
+
+    <div class="explanation-card">
+      <h3>Two Chains of Command</h3>
+      <p><strong>The intent chain (humans → policy):</strong> An admin writes three small CRs — <span class="code-inline">MaaSSubscription</span> (who gets how many tokens), <span class="code-inline">MaaSAuthPolicy</span> (who may access which models), <span class="code-inline">MaaSModelRef</span> (which model). The <strong>maas-controller</strong> watches these and generates the low-level enforcement objects: a Kuadrant <span class="code-inline">AuthPolicy</span> with OPA rules and a <span class="code-inline">TokenRateLimitPolicy</span> with counters, both attached to the model's HTTPRoute.</p>
+      <p><strong>The serving chain (model → pods):</strong> A user creates one <span class="code-inline">LLMInferenceService</span>. The <strong>llmisvc-controller</strong> expands it into the entire serving stack: vLLM Deployment (2 replicas), EPP scheduler Deployment, InferencePool, HTTPRoute with URL rewrites, and a MaaSModelRef that self-registers the model with MaaS.</p>
+      <p>Neither chain touches the other's objects — they meet only at the HTTPRoute, where the policy attaches to the route the serving chain created.</p>
+    </div>
+
+    <div class="explanation-card">
+      <h3>Deny by Default</h3>
+      <p>The gateway ships with a <strong>zero-trust posture</strong> enforced by two gateway-wide policies:</p>
+      <ol class="step-list">
+        <li><span class="code-inline">gateway-default-auth</span> — an AuthPolicy that denies requests to any model that has no explicit MaaSAuthPolicy. A model-specific policy <em>overrides</em> this default for its route.</li>
+        <li><span class="code-inline">gateway-default-deny</span> — a TokenRateLimitPolicy with <strong>limit: 0</strong> for any path that isn't <span class="code-inline">/maas-api</span> or <span class="code-inline">/v1/models</span>. No subscription = no tokens = 429 on the first request.</li>
+        <li><span class="code-inline">maas-default-gateway-authn</span> — accepts OpenShift service-account tokens via TokenReview + SubjectAccessReview against <span class="code-inline">serving.kserve.io</span> resources, extracting the target namespace and model from the URL path. This is how the RHOAI dashboard itself can browse models without an API key.</li>
+      </ol>
+      <p style="margin-top:12px">Adding a model therefore <em>opens</em> exactly one path through the gate — everything else stays shut.</p>
+    </div>
+
+  </div>
+
+  <!-- llm-d deep dive -->
+  <div class="explanation-full">
+    <h3>llm-d — Why an Endpoint Picker Exists</h3>
+    <p>
+      Classic load balancing (round-robin, least-connections) is wrong for LLMs. Two reasons: <strong>(1) requests are wildly unequal</strong> —
+      a 10-token prompt and a 10,000-token prompt cost vastly different GPU time, so "connections" is a bad proxy for load; and
+      <strong>(2) KV cache is the scarcest resource</strong> — if pod 1 already computed the KV tensors for your 2,000-token system prompt,
+      sending your next request to pod 2 wastes that work entirely.
+    </p>
+    <p>
+      llm-d solves both with the <strong>InferencePool + EPP</strong> pattern. The gateway doesn't pick a backend pod itself — it asks the EPP,
+      which scores every replica using live signals. The scoring config running in this cluster:
+    </p>
+    <ol class="step-list">
+      <li><strong>queue-scorer (weight 2)</strong> — reads each vLLM pod's request-queue depth; shorter queue = higher score. Avoids pile-ups behind long generations.</li>
+      <li><strong>prefix-cache-scorer (weight 3)</strong> — the tokenizer sidecar tokenizes the incoming prompt; the scorer checks which pod's KV cache (tracked via ZMQ events on :5557) holds the longest matching prefix. Cache hit = massive time-to-first-token win.</li>
+      <li><strong>max-score-picker</strong> — combines weighted scores, routes to the winner. Note prefix cache outweighs queue depth (3 vs 2): reusing cache is usually worth a slightly longer queue.</li>
+    </ol>
+    <details class="yaml-block">
+      <summary>EndpointPickerConfig — as deployed<span class="src-badge">live cluster</span></summary>
+      <pre>apiVersion: inference.networking.x-k8s.io/v1alpha1
+kind: EndpointPickerConfig
+plugins:
+- type: single-profile-handler
+- type: queue-scorer
+- type: prefix-cache-scorer
+- type: max-score-picker
+schedulingProfiles:
+- name: default
+  plugins:
+  - pluginRef: queue-scorer
+    weight: 2
+  - pluginRef: prefix-cache-scorer
+    weight: 3
+  - pluginRef: max-score-picker</pre>
+    </details>
+    <details class="yaml-block">
+      <summary>InferencePool — endpointPickerRef wiring<span class="src-badge">live cluster</span></summary>
+      <pre>apiVersion: inference.networking.k8s.io/v1
+kind: InferencePool
+metadata:
+  name: redhataillama-31-8b-instruct-inference-pool
+  namespace: swongpai-maas
+spec:
+  endpointPickerRef:
+    failureMode: FailOpen        # if EPP dies, fall back to normal routing
+    kind: Service
+    name: redhataillama-31-8b-instruct-epp-service
+    port:
+      number: 9002
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redhataillama-31-8b-instruct
+      kserve.io/component: workload
+  targetPorts:
+  - number: 8000</pre>
+    </details>
+  </div>
+
+  <!-- Routing detail -->
+  <div class="explanation-full">
+    <h3>Routing — One Route, Four Rules</h3>
+    <p>
+      The HTTPRoute created by the llmisvc-controller exposes the model under a namespaced path prefix and rewrites it to the
+      OpenAI paths vLLM expects. Three explicit API rules go to the <strong>InferencePool</strong> (so the EPP picks the pod);
+      a catch-all rule (health checks, tokenizer info, metrics) bypasses the EPP and goes straight to the workload Service.
+    </p>
+    <details class="yaml-block">
+      <summary>HTTPRoute rules (abridged)<span class="src-badge">live cluster</span></summary>
+      <pre>parentRefs:
+- kind: Gateway
+  name: maas-default-gateway
+  namespace: openshift-ingress
+rules:
+# /swongpai-maas/redhataillama-31-8b-instruct/v1/chat/completions
+#   → InferencePool :8000, rewritten to /v1/chat/completions
+- matches:
+  - path: {type: PathPrefix, value: /swongpai-maas/redhataillama-31-8b-instruct/v1/chat/completions}
+  filters:
+  - type: URLRewrite
+    urlRewrite: {path: {type: ReplacePrefixMatch, replacePrefixMatch: /v1/chat/completions}}
+  backendRefs:
+  - {group: inference.networking.x-k8s.io, kind: InferencePool,
+     name: redhataillama-31-8b-instruct-inference-pool, port: 8000}
+  timeouts: {request: 0s, backendRequest: 0s}   # streaming: no timeout
+
+# identical rules exist for /v1/completions and /v1/responses …
+
+# catch-all → workload Service directly (bypasses EPP)
+- matches:
+  - path: {type: PathPrefix, value: /swongpai-maas/redhataillama-31-8b-instruct}
+  filters:
+  - type: URLRewrite
+    urlRewrite: {path: {type: ReplacePrefixMatch, replacePrefixMatch: /}}
+  backendRefs:
+  - {kind: Service, name: redhataillama-31-8b-instruct-kserve-workload-svc, port: 8000}</pre>
+    </details>
+    <p>
+      Status on this route confirms both policy attachments:
+      <span class="code-inline">kuadrant.io/AuthPolicyAffected</span> and <span class="code-inline">kuadrant.io/TokenRateLimitPolicyAffected</span> — the
+      hard evidence that auth and rate limiting are active on this exact route.
+    </p>
+  </div>
+
+  <!-- Auth detail -->
+  <div class="explanation-full">
+    <h3>Authentication &amp; Authorization — the Full Ruleset</h3>
+    <p>
+      The model's AuthPolicy accepts <strong>three credential types</strong>, evaluated in priority order:
+      API keys matching <span class="code-inline">^Bearer sk-oai-.*</span> (priority 0), then OpenShift/OIDC tokens (priority 1, only for
+      <span class="code-inline">/v1/models</span> listing). Authorization is two OPA/Rego checks — credential validity, then group membership —
+      each cached for 60 seconds to keep per-request latency negligible.
+    </p>
+    <details class="yaml-block">
+      <summary>AuthPolicy — authentication + authorization (abridged)<span class="src-badge">live cluster</span></summary>
+      <pre>rules:
+  authentication:
+    api-keys:
+      plain: {selector: request.headers.authorization}
+      priority: 0
+      when:
+      - {selector: request.headers.authorization, operator: matches, value: ^Bearer sk-oai-.*}
+    kubernetes-tokens:
+      kubernetesTokenReview:
+        audiences: [https://oidc.op1.openshiftapps.com/…]
+      priority: 1
+      when:
+      - {selector: request.url_path, operator: matches, value: .*/v1/models$}
+  authorization:
+    auth-valid:
+      cache: {ttl: 60}
+      opa:
+        rego: |
+          allow { input.auth.metadata.apiKeyValidation.valid == true }
+          allow { input.auth.identity.user.username != "" }
+          allow { input.auth.identity.sub != "" }
+    require-group-membership:
+      cache: {ttl: 60}
+      opa:
+        rego: |
+          allowed_groups := ["cluster-admins","rhods-admins"]
+          # … username extraction from key / OIDC / k8s token …
+          # allow when user's groups intersect allowed_groups</pre>
+    </details>
+    <details class="yaml-block">
+      <summary>TokenRateLimitPolicy — the live limit<span class="src-badge">live cluster</span></summary>
+      <pre>spec:
+  targetRef:
+    kind: HTTPRoute
+    name: redhataillama-31-8b-instruct-kserve-route
+  limits:
+    models-as-a-service-admin-sub-…-tokens:
+      counters:
+      - expression: auth.identity.userid          # one counter per user
+      rates:
+      - {limit: 1000, window: 1m}                 # 1000 tokens per minute
+      when:
+      - predicate: auth.identity.selected_subscription_key ==
+          "models-as-a-service/admin-sub@swongpai-maas/redhataillama-31-8b-instruct"
+          &amp;&amp; !request.path.endsWith("/v1/models")  # listing is free</pre>
+    </details>
+    <details class="yaml-block">
+      <summary>Gateway — listener &amp; TLS<span class="src-badge">live cluster</span></summary>
+      <pre>apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: maas-default-gateway
+  namespace: openshift-ingress
+spec:
+  gatewayClassName: openshift-default
+  listeners:
+  - name: https
+    port: 443
+    protocol: HTTPS
+    hostname: maas.apps.rosa.rosa-h100-jp.g4b0.p3.openshiftapps.com
+    tls:
+      mode: Terminate
+      certificateRefs: [{kind: Secret, name: maas-gateway-tls}]
+    allowedRoutes:
+      namespaces: {from: All}
+# status: Programmed=True
+# address: a8303341340bc47d69c1cedc14940d56-…elb.amazonaws.com (AWS NLB)</pre>
+    </details>
+  </div>
+
+  <!-- GPU -->
+  <div class="explanation-full">
+    <h3>GPU Layout — NVIDIA H100 MIG</h3>
+    <p>
+      The H100 80GB is partitioned with Multi-Instance GPU (MIG) into two isolated <strong>3g.40gb</strong> slices — separate compute,
+      memory, and L2 cache, zero noisy-neighbor interference. With <span class="code-inline">mig.strategy=single</span> both slices surface as
+      the plain <span class="code-inline">nvidia.com/gpu</span> resource, so each vLLM pod requests <span class="code-inline">nvidia.com/gpu: 1</span>
+      and lands on its own slice. Both replicas of the model run on the same physical GPU — yet fully isolated.
+    </p>
+    <div style="display:flex; justify-content:center; margin:24px 0;">
+      <div class="gpu-outer">
+        <div class="gpu-outer-label">NVIDIA H100 80GB HBM3 — mig.config=all-3g.40gb — node ip-10-0-28-205</div>
+        <div class="gpu-diagram">
+          <div class="gpu-card">
+            <div class="gpu-label">Slice 0 — 3g.40gb</div>
+            <div class="gpu-detail">vLLM Pod 1 · Llama 3.1 8B</div>
+            <div class="gpu-detail">~16GB weights + ~24GB KV cache</div>
+          </div>
+          <div class="gpu-card">
+            <div class="gpu-label">Slice 1 — 3g.40gb</div>
+            <div class="gpu-detail">vLLM Pod 2 · Llama 3.1 8B</div>
+            <div class="gpu-detail">~16GB weights + ~24GB KV cache</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p>
+      Why 2 replicas beat 1 big one here: the EPP spreads sessions across both slices, prefix-cache routing keeps repeat users sticky
+      to "their" cache, and one slice can drain/restart while the other keeps serving.
+    </p>
+  </div>
+
+  <!-- Failure modes -->
+  <div class="explanation-full">
+    <h3>What Breaks If a Component Dies</h3>
+    <table class="components-table">
+      <thead><tr><th style="width:240px">Component down</th><th>Effect on traffic</th></tr></thead>
+      <tbody>
+        <tr><td>Envoy gateway pod</td><td>Total outage for MaaS hostname until the Deployment reschedules. NLB health check (:15021) stops routing immediately.</td></tr>
+        <tr><td>Authorino</td><td>All requests fail auth → 5xx from ext_authz. Nothing reaches models. (60s verdict cache does not help new connections.)</td></tr>
+        <tr><td>Limitador</td><td>Rate-limit checks fail; depending on failure mode requests may pass unlimited or be denied. Token accounting stops.</td></tr>
+        <tr><td>payload-processing</td><td>Traffic fails — the ext_proc filter is configured <span class="code-inline">failure_mode_allow: false</span> (fail closed), so requests through the gateway error out until the pod recovers. Deliberate: token accounting is not allowed to silently disappear.</td></tr>
+        <tr><td>EPP scheduler</td><td><span class="code-inline">failureMode: FailOpen</span> — Envoy falls back to normal (cache-blind) load balancing across pool pods. Latency worsens; traffic survives.</td></tr>
+        <tr><td>One vLLM pod</td><td>EPP scores it out (or endpoints drop); the surviving replica takes all traffic at reduced capacity.</td></tr>
+        <tr><td>maas-api</td><td>No new keys, no key validation → API-key auth starts failing as caches expire. Existing k8s-token access to /v1/models unaffected.</td></tr>
+        <tr><td>PostgreSQL (all 3)</td><td>maas-api loses state — key ops fail. CNPG's 3-instance HA makes this the least likely failure in the stack.</td></tr>
+        <tr><td>maas-controller / llmisvc-controller</td><td>Data plane unaffected. Changes to CRs stop reconciling — existing policies and pods keep running as-is.</td></tr>
+        <tr><td>Prometheus / Tempo / Perses</td><td>Zero traffic impact. Dashboards and usage attribution go blind until restored.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</section>
+
+<footer>
+  <span>Generated from live cluster state · rosa-h100-jp · 2026-07-06 (updated pass 2)</span>
+  <span>RHOAI 3.4.2 · RHCL 1.3.5 · CNPG 1.30.0 · GPU Operator · OpenShift Service Mesh</span>
+</footer>
+
+</div>
+</body>
+</html>
