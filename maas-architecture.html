@@ -1261,6 +1261,24 @@ spec:
     scheduler: {}</pre>
     </details>
     <p><strong>Best for:</strong> Models ≤ 70B, moderate QPS (&lt;50 req/s), short-to-medium context (&lt;8k tokens), single GPU node, getting started fast.</p>
+
+    <p style="margin-top:16px">
+      <strong>Variant — no scheduler at all:</strong> omit <span class="code-inline">router.scheduler</span> from the spec and no EPP pod is deployed;
+      requests load-balance through a plain Kubernetes Service (kube-proxy). Lowest overhead, but loses prefix-cache routing, queue awareness,
+      and any P/D capability. Fine for dev/testing; production should keep the scheduler.
+    </p>
+    <table class="mode-fit">
+      <thead>
+        <tr><th style="width:240px">Feature</th><th>No Scheduler</th><th>Default Scheduler (this cluster)</th><th>Prefill/Decode</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Routing logic</td><td class="no">k8s Service</td><td class="yes">EPP load balancing</td><td class="yes">EPP + P/D separation</td></tr>
+        <tr><td>Prefix-cache routing</td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+        <tr><td>KV cache transfer</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓ (NIXL/RDMA)</td></tr>
+        <tr><td>Resource overhead</td><td class="yes">Lowest</td><td class="maybe">Low</td><td class="maybe">Medium</td></tr>
+        <tr><td>Use case</td><td>Dev / simple</td><td>Production (basic)</td><td>Production (advanced)</td></tr>
+      </tbody>
+    </table>
   </div>
 
   <!-- ── MODE 2: P/D Disaggregation ── -->
@@ -1388,6 +1406,24 @@ spec:
         <tr><td><span class="pro">Lower inter-token latency (ITL) at high QPS</span></td><td><span class="con">Debug surface grows: sidecar, NIXL channel, two pools of pods</span></td></tr>
       </tbody>
     </table>
+
+    <p style="margin-top:16px">
+      <strong>Not all-or-nothing — the <span class="code-inline">threshold</span> parameter:</strong> the scheduler config decides <em>per request</em>
+      whether to use the prefill pool. <span class="code-inline">threshold: 0</span> = every request goes through P/D separation;
+      <span class="code-inline">threshold: N</span> = only prompts with estimated tokens &gt; N take the prefill-pool detour — short prompts are
+      prefilled and decoded entirely on the decode pod, skipping the KV transfer cost. Routing rule: new request without cached KV → prefill pool;
+      continuation with KV already on a decode pod → straight to that decode pod. Pool sizes are independent — the upstream sample runs
+      <strong>2 prefill + 1 decode</strong> replicas (prefill was the bottleneck).
+    </p>
+
+    <p style="margin-top:12px">
+      <strong>RDMA prerequisites (for real KV-transfer performance):</strong> a RoCE <span class="code-inline">NetworkAttachmentDefinition</span>,
+      an <span class="code-inline">rdma/roce_gdr</span> resource on each pod, <span class="code-inline">KSERVE_INFER_ROCE=true</span>
+      (the decode template on this cluster already ships the RoCE auto-discovery script that sets <span class="code-inline">NCCL_IB_HCA</span> /
+      <span class="code-inline">UCX_NET_DEVICES</span>), and <span class="code-inline">VLLM_NIXL_SIDE_CHANNEL_HOST</span> pointing at the pod IP.
+      Note: if prefill and decode pods land on the <em>same node</em>, KV transfer rides NVLink/local paths instead of RDMA — pod anti-affinity
+      forces cross-node RDMA when that's what you're benchmarking.
+    </p>
     <details class="yaml-block">
       <summary>spec — disaggregated mode (example for this cluster)<span class="src-badge">example</span></summary>
       <pre>apiVersion: serving.kserve.io/v1alpha2
@@ -1627,9 +1663,14 @@ spec:
       Subscriptions and rate limits are per-model — fully independent quota management.
     </p>
     <p>
-      <strong>What you cannot do:</strong> hybrid within a single model — e.g., "some replicas do both prefill+decode, some specialize."
-      The CRD is binary: <span class="code-inline">spec.prefill</span> present → all replicas disaggregate. Absent → all unified.
-      There is no partial-disaggregation mode.
+      <strong>What you cannot do:</strong> hybrid <em>replica roles</em> within a single model — e.g., "some replicas do both prefill+decode, some specialize."
+      The CRD is binary at the pod level: <span class="code-inline">spec.prefill</span> present → separate prefill and decode pools. Absent → all unified.
+    </p>
+    <p>
+      <strong>But per-request hybrid exists:</strong> in a disaggregated deployment, the scheduler's <span class="code-inline">threshold</span>
+      parameter routes only long prompts (estimated tokens &gt; N) through the prefill pool — short prompts are handled entirely by the decode pod,
+      skipping the KV-transfer round trip. So a P/D deployment with <span class="code-inline">threshold &gt; 0</span> behaves like unified mode for
+      small requests and disaggregated mode for large ones — the closest thing to "mixed" within one model.
     </p>
 
     <h4 style="margin-top: 28px; font-size: 18px;">What Fits on Your H100? (2 × 3g.40gb MIG slices)</h4>
