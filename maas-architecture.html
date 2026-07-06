@@ -267,6 +267,43 @@ details.yaml-block pre {
 .gpu-outer { border: 2px solid var(--text); border-radius: 10px; padding: 16px; display: inline-block; }
 .gpu-outer-label { font-family: var(--mono); font-size: 10px; font-weight: 600; text-align: center; margin-bottom: 10px; }
 
+/* ── EPP internals ── */
+.epp-decision { display: grid; grid-template-columns: 180px 1fr 200px; gap: 28px; align-items: stretch; min-width: 900px; }
+.epp-side { display: flex; flex-direction: column; justify-content: center; gap: 12px; }
+.epp-core { border: 2px solid var(--ns-model); border-radius: 12px; padding: 20px; background: var(--green-light); }
+.epp-core-title { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--ns-model); margin-bottom: 14px; text-align: center; }
+.epp-stage-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.epp-stage { background: white; border: 1px solid var(--border-strong); border-radius: 8px; padding: 12px 10px; text-align: center; position: relative; }
+.epp-stage:not(:last-child)::after { content: '→'; position: absolute; right: -11px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); font-size: 13px; z-index: 1; }
+.epp-stage .st-name { font-family: var(--mono); font-size: 10.5px; font-weight: 600; margin-bottom: 4px; }
+.epp-stage .st-det { font-size: 9.5px; color: var(--text-secondary); line-height: 1.45; }
+.epp-feed { margin-top: 14px; padding: 10px 12px; border: 1.5px dashed var(--border-strong); border-radius: 8px; background: white; font-size: 10.5px; color: var(--text-secondary); text-align: center; }
+.epp-feed .feed-label { font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--purple); display: block; margin-bottom: 3px; }
+
+/* ── Scoring table ── */
+.score-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+.score-table th {
+  font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--text-tertiary); text-align: left; padding: 10px 14px; border-bottom: 2px solid var(--border); background: var(--bg);
+}
+.score-table td { padding: 11px 14px; border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: 12.5px; }
+.score-table td:first-child { font-family: var(--sans); font-size: 13px; }
+.score-table tr.winner td { background: var(--green-light); font-weight: 600; }
+.score-table tr.winner td:first-child::after { content: ' ← picked'; font-family: var(--mono); font-size: 10px; color: var(--green); font-weight: 600; }
+
+/* ── llm-d ladder ── */
+.ladder { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 20px; }
+.ladder-step { border: 1px solid var(--border); border-radius: 10px; padding: 20px; background: var(--bg); position: relative; }
+.ladder-step.active { border: 2px solid var(--ns-model); background: var(--green-light); }
+.ladder-step .lad-badge {
+  font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 3px; display: inline-block; margin-bottom: 10px;
+  background: var(--surface); border: 1px solid var(--border); color: var(--text-tertiary);
+}
+.ladder-step.active .lad-badge { background: var(--ns-model); color: white; border-color: var(--ns-model); }
+.ladder-step h4 { font-family: var(--serif); font-size: 17px; margin-bottom: 8px; }
+.ladder-step p { font-size: 12px; line-height: 1.6; color: var(--text-secondary); margin: 0; }
+
 /* ── Legend / Footer ── */
 .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 30px; }
 .legend-item { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; font-weight: 500; color: var(--text-secondary); }
@@ -792,54 +829,121 @@ footer {
 </section>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
-<!-- 06 HOW IT WORKS + YAML -->
+<!-- 06 LLM-D & ENDPOINT PICKER -->
 <!-- ══════════════════════════════════════════════════════════════ -->
 
-<section class="explanation">
-  <div class="section-number">06 — Deep Dive</div>
-  <h2 class="section-title">How It Works</h2>
-  <p class="section-subtitle">The mechanics behind the diagrams — with the actual configuration from the live cluster, collapsible below each explanation.</p>
+<section class="diagram-section">
+  <div class="section-number">06 — The Brain of the Data Plane</div>
+  <h2 class="section-title">llm-d &amp; the Endpoint Picker</h2>
+  <p class="section-subtitle">llm-d is a Kubernetes-native distributed inference framework (Red Hat, Google, CoreWeave, IBM, NVIDIA — built on vLLM and the Gateway API Inference Extension). RHOAI 3.4 ships it as the engine behind every <span class="code-inline">LLMInferenceService</span>. Its core idea: <strong>the load balancer should understand LLMs.</strong></p>
 
-  <div class="explanation-grid">
-
-    <div class="explanation-card">
-      <h3>Two Chains of Command</h3>
-      <p><strong>The intent chain (humans → policy):</strong> An admin writes three small CRs — <span class="code-inline">MaaSSubscription</span> (who gets how many tokens), <span class="code-inline">MaaSAuthPolicy</span> (who may access which models), <span class="code-inline">MaaSModelRef</span> (which model). The <strong>maas-controller</strong> watches these and generates the low-level enforcement objects: a Kuadrant <span class="code-inline">AuthPolicy</span> with OPA rules and a <span class="code-inline">TokenRateLimitPolicy</span> with counters, both attached to the model's HTTPRoute.</p>
-      <p><strong>The serving chain (model → pods):</strong> A user creates one <span class="code-inline">LLMInferenceService</span>. The <strong>llmisvc-controller</strong> expands it into the entire serving stack: vLLM Deployment (2 replicas), EPP scheduler Deployment, InferencePool, HTTPRoute with URL rewrites, and a MaaSModelRef that self-registers the model with MaaS.</p>
-      <p>Neither chain touches the other's objects — they meet only at the HTTPRoute, where the policy attaches to the route the serving chain created.</p>
-    </div>
-
-    <div class="explanation-card">
-      <h3>Deny by Default</h3>
-      <p>The gateway ships with a <strong>zero-trust posture</strong> enforced by two gateway-wide policies:</p>
-      <ol class="step-list">
-        <li><span class="code-inline">gateway-default-auth</span> — an AuthPolicy that denies requests to any model that has no explicit MaaSAuthPolicy. A model-specific policy <em>overrides</em> this default for its route.</li>
-        <li><span class="code-inline">gateway-default-deny</span> — a TokenRateLimitPolicy with <strong>limit: 0</strong> for any path that isn't <span class="code-inline">/maas-api</span> or <span class="code-inline">/v1/models</span>. No subscription = no tokens = 429 on the first request.</li>
-        <li><span class="code-inline">maas-default-gateway-authn</span> — accepts OpenShift service-account tokens via TokenReview + SubjectAccessReview against <span class="code-inline">serving.kserve.io</span> resources, extracting the target namespace and model from the URL path. This is how the RHOAI dashboard itself can browse models without an API key.</li>
-      </ol>
-      <p style="margin-top:12px">Adding a model therefore <em>opens</em> exactly one path through the gate — everything else stays shut.</p>
-    </div>
-
-  </div>
-
-  <!-- llm-d deep dive -->
   <div class="explanation-full">
-    <h3>llm-d — Why an Endpoint Picker Exists</h3>
+    <h3>Why Classic Load Balancing Fails for LLMs</h3>
     <p>
-      Classic load balancing (round-robin, least-connections) is wrong for LLMs. Two reasons: <strong>(1) requests are wildly unequal</strong> —
-      a 10-token prompt and a 10,000-token prompt cost vastly different GPU time, so "connections" is a bad proxy for load; and
-      <strong>(2) KV cache is the scarcest resource</strong> — if pod 1 already computed the KV tensors for your 2,000-token system prompt,
-      sending your next request to pod 2 wastes that work entirely.
-    </p>
-    <p>
-      llm-d solves both with the <strong>InferencePool + EPP</strong> pattern. The gateway doesn't pick a backend pod itself — it asks the EPP,
-      which scores every replica using live signals. The scoring config running in this cluster:
+      Round-robin and least-connections assume all requests cost roughly the same and any backend can serve them equally well. Both assumptions break for LLMs:
     </p>
     <ol class="step-list">
-      <li><strong>queue-scorer (weight 2)</strong> — reads each vLLM pod's request-queue depth; shorter queue = higher score. Avoids pile-ups behind long generations.</li>
-      <li><strong>prefix-cache-scorer (weight 3)</strong> — the tokenizer sidecar tokenizes the incoming prompt; the scorer checks which pod's KV cache (tracked via ZMQ events on :5557) holds the longest matching prefix. Cache hit = massive time-to-first-token win.</li>
-      <li><strong>max-score-picker</strong> — combines weighted scores, routes to the winner. Note prefix cache outweighs queue depth (3 vs 2): reusing cache is usually worth a slightly longer queue.</li>
+      <li><strong>Requests are wildly unequal.</strong> A 10-token prompt and a 10,000-token prompt differ by ~1000× in prefill compute. "Number of connections" tells you nothing about actual GPU load — one pod may hold 3 trivial requests, another 1 giant one.</li>
+      <li><strong>Backends are not interchangeable — KV cache makes them stateful.</strong> When a vLLM pod processes a prompt, it stores the computed attention keys/values (KV cache) in GPU memory. A follow-up request sharing that prefix (same system prompt, same chat history) can skip recomputation <em>only if it lands on the same pod</em>. Blind balancing throws that away and repays full prefill cost on every hop.</li>
+      <li><strong>Generation length is unknown at admission.</strong> A request that generates 4,000 tokens occupies KV memory for its whole lifetime. Queue depth right now is a weak signal for load 30 seconds from now — you want scheduling that reads engine-level signals, not TCP-level ones.</li>
     </ol>
+    <p style="margin-top:12px">
+      llm-d's answer: pull the routing decision out of the proxy and give it to a model-aware sidecar service — the <strong>Endpoint Picker (EPP)</strong>. Envoy still moves the bytes; the EPP decides <em>where</em>.
+    </p>
+  </div>
+
+  <div class="explanation-full">
+    <h3>Inside a Scheduling Decision</h3>
+    <p>
+      The EPP runs as the <span class="code-inline">…-kserve-router-scheduler</span> pod (3 containers: scheduler, tokenizer, modelcar). Envoy holds each request and consults it over gRPC :9002. Here is the decision pipeline, as configured live:
+    </p>
+
+    <div class="diagram-container" style="padding: 32px; margin: 20px 0;">
+      <div class="epp-decision">
+
+        <div class="epp-side">
+          <div class="flow-node gateway" style="width:100%">
+            <div class="icon">⊞</div>
+            <div class="name">Envoy Gateway</div>
+            <div class="detail">holds request,<br>asks EPP via<br>gRPC ext_proc :9002</div>
+          </div>
+        </div>
+
+        <div class="epp-core">
+          <div class="epp-core-title">EPP — Endpoint Picker (…-router-scheduler pod)</div>
+          <div class="epp-stage-row">
+            <div class="epp-stage">
+              <div class="st-name">tokenizer</div>
+              <div class="st-det">sidecar tokenizes prompt using the model's own tokenizer files (via modelcar symlink)</div>
+            </div>
+            <div class="epp-stage">
+              <div class="st-name">queue-scorer</div>
+              <div class="st-det">weight 2 — reads per-pod queue depth from vLLM metrics; shorter = higher score</div>
+            </div>
+            <div class="epp-stage">
+              <div class="st-name">prefix-cache-scorer</div>
+              <div class="st-det">weight 3 — looks up which pod's KV cache holds the longest matching token prefix</div>
+            </div>
+            <div class="epp-stage">
+              <div class="st-name">max-score-picker</div>
+              <div class="st-det">weighted sum per pod → route to highest total</div>
+            </div>
+          </div>
+          <div class="epp-feed">
+            <span class="feed-label">continuous feed — ZMQ :5557</span>
+            vLLM pods publish KV-cache events (blocks created / evicted) → EPP maintains a live prefix-cache index without polling
+          </div>
+        </div>
+
+        <div class="epp-side">
+          <div class="flow-node vllm" style="width:100%">
+            <div class="icon">▣</div>
+            <div class="name">vLLM Pod 1</div>
+            <div class="detail">queue: 4 deep<br>cache: prefix HIT</div>
+          </div>
+          <div class="flow-node vllm" style="width:100%">
+            <div class="icon">▣</div>
+            <div class="name">vLLM Pod 2</div>
+            <div class="detail">queue: 1 deep<br>cache: cold</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <p>
+      <strong>Worked example</strong> — a user sends the 3rd turn of a chat session; the 2,400-token conversation prefix is cached on Pod 1, which is currently busier (illustrative scores, 0–1 normalized):
+    </p>
+    <table class="score-table">
+      <thead>
+        <tr><th>Pod</th><th>queue-scorer (×2)</th><th>prefix-cache-scorer (×3)</th><th>Total</th></tr>
+      </thead>
+      <tbody>
+        <tr class="winner"><td>Pod 1 — busy, cache warm</td><td>0.20 × 2 = 0.40</td><td>0.95 × 3 = 2.85</td><td>3.25</td></tr>
+        <tr><td>Pod 2 — idle, cache cold</td><td>0.90 × 2 = 1.80</td><td>0.00 × 3 = 0.00</td><td>1.80</td></tr>
+      </tbody>
+    </table>
+    <p>
+      The EPP sends the request to the <em>busier</em> pod — deliberately. Reusing 2,400 cached tokens skips the entire prefill for that prefix,
+      cutting time-to-first-token far more than a shorter queue would. That trade-off is exactly what the 3-vs-2 weighting encodes.
+      If no pod has a cache hit, prefix scores are all zero and queue depth decides — graceful fallback to load-based balancing.
+    </p>
+
+    <p style="margin-top:16px"><strong>Full request lifecycle through the EPP:</strong></p>
+    <ol class="step-list">
+      <li>Envoy matches the HTTPRoute to the <span class="code-inline">InferencePool</span> and opens an ext_proc conversation with the EPP, streaming request headers + body.</li>
+      <li>The tokenizer sidecar converts the prompt to token IDs — the same tokenization the model itself will use (its modelcar container symlinks the model files at <span class="code-inline">/mnt/models</span>).</li>
+      <li>The prefix-cache index is consulted: longest-prefix match of those token IDs against each pod's known KV blocks (index kept current by ZMQ KV events, not polling).</li>
+      <li>queue-scorer reads current queue depth per pod; both scorers emit 0–1 scores.</li>
+      <li><span class="code-inline">max-score-picker</span> computes <span class="code-inline">Σ(score × weight)</span> and picks the winner.</li>
+      <li>EPP returns the chosen pod's address in a routing header; Envoy forwards the request to <em>that exact pod</em> — not the Service VIP.</li>
+      <li>The pod runs inference; new KV blocks it creates are announced over ZMQ, updating the index — so the <em>next</em> turn of this conversation scores a hit and sticks to the same pod.</li>
+    </ol>
+    <p style="margin-top:12px">
+      If the EPP itself dies: the InferencePool is configured <span class="code-inline">failureMode: FailOpen</span> — Envoy falls back to
+      cache-blind balancing across the pool. Latency degrades; traffic survives.
+    </p>
+
     <details class="yaml-block">
       <summary>EndpointPickerConfig — as deployed<span class="src-badge">live cluster</span></summary>
       <pre>apiVersion: inference.networking.x-k8s.io/v1alpha1
@@ -879,6 +983,65 @@ spec:
   targetPorts:
   - number: 8000</pre>
     </details>
+  </div>
+
+  <div class="explanation-full">
+    <h3>Beyond This Cluster — the llm-d Ladder</h3>
+    <p>
+      llm-d defines three "well-lit paths" — proven deployment profiles in increasing order of scale. This cluster runs the first.
+      Evidence the higher rungs are already wired in: the LLMInferenceService status carries preset annotations for
+      <span class="code-inline">config-llm-prefill-template</span> and <span class="code-inline">config-llm-decode-worker-data-parallel</span> —
+      unused at <span class="code-inline">replicas: 2</span>, but one spec change away.
+    </p>
+    <div class="ladder">
+      <div class="ladder-step active">
+        <span class="lad-badge">this cluster</span>
+        <h4>1 · Intelligent Inference Scheduling</h4>
+        <p>Identical replicas + EPP with queue &amp; prefix-cache scorers. Lower TTFT and higher goodput than any cache-blind balancer, with no change to the model pods themselves. Fits single-node and modest multi-GPU setups.</p>
+      </div>
+      <div class="ladder-step">
+        <span class="lad-badge">next rung</span>
+        <h4>2 · Prefill / Decode Disaggregation</h4>
+        <p>Split the two phases onto different pods: prefill is compute-bound (long prompts), decode is memory-bandwidth-bound (token streaming). Specialized pods each run at their bottleneck; computed KV tensors are transferred prefill→decode over a fast interconnect. Pays off for long-context, high-QPS serving.</p>
+      </div>
+      <div class="ladder-step">
+        <span class="lad-badge">large scale</span>
+        <h4>3 · Wide Expert Parallelism</h4>
+        <p>For giant Mixture-of-Experts models (DeepSeek-R1 class): experts sharded across many GPUs/nodes with data-parallel attention, deployed as multi-node leader/worker groups. The EPP's role grows to routing across heterogeneous multi-node serving groups.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- 07 HOW IT WORKS + YAML -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<section class="explanation">
+  <div class="section-number">07 — Deep Dive</div>
+  <h2 class="section-title">How It Works</h2>
+  <p class="section-subtitle">The mechanics behind the diagrams — with the actual configuration from the live cluster, collapsible below each explanation.</p>
+
+  <div class="explanation-grid">
+
+    <div class="explanation-card">
+      <h3>Two Chains of Command</h3>
+      <p><strong>The intent chain (humans → policy):</strong> An admin writes three small CRs — <span class="code-inline">MaaSSubscription</span> (who gets how many tokens), <span class="code-inline">MaaSAuthPolicy</span> (who may access which models), <span class="code-inline">MaaSModelRef</span> (which model). The <strong>maas-controller</strong> watches these and generates the low-level enforcement objects: a Kuadrant <span class="code-inline">AuthPolicy</span> with OPA rules and a <span class="code-inline">TokenRateLimitPolicy</span> with counters, both attached to the model's HTTPRoute.</p>
+      <p><strong>The serving chain (model → pods):</strong> A user creates one <span class="code-inline">LLMInferenceService</span>. The <strong>llmisvc-controller</strong> expands it into the entire serving stack: vLLM Deployment (2 replicas), EPP scheduler Deployment, InferencePool, HTTPRoute with URL rewrites, and a MaaSModelRef that self-registers the model with MaaS.</p>
+      <p>Neither chain touches the other's objects — they meet only at the HTTPRoute, where the policy attaches to the route the serving chain created.</p>
+    </div>
+
+    <div class="explanation-card">
+      <h3>Deny by Default</h3>
+      <p>The gateway ships with a <strong>zero-trust posture</strong> enforced by two gateway-wide policies:</p>
+      <ol class="step-list">
+        <li><span class="code-inline">gateway-default-auth</span> — an AuthPolicy that denies requests to any model that has no explicit MaaSAuthPolicy. A model-specific policy <em>overrides</em> this default for its route.</li>
+        <li><span class="code-inline">gateway-default-deny</span> — a TokenRateLimitPolicy with <strong>limit: 0</strong> for any path that isn't <span class="code-inline">/maas-api</span> or <span class="code-inline">/v1/models</span>. No subscription = no tokens = 429 on the first request.</li>
+        <li><span class="code-inline">maas-default-gateway-authn</span> — accepts OpenShift service-account tokens via TokenReview + SubjectAccessReview against <span class="code-inline">serving.kserve.io</span> resources, extracting the target namespace and model from the URL path. This is how the RHOAI dashboard itself can browse models without an API key.</li>
+      </ol>
+      <p style="margin-top:12px">Adding a model therefore <em>opens</em> exactly one path through the gate — everything else stays shut.</p>
+    </div>
+
   </div>
 
   <!-- Routing detail -->
@@ -1062,7 +1225,7 @@ spec:
 </section>
 
 <footer>
-  <span>Generated from live cluster state · rosa-h100-jp · 2026-07-06 (updated pass 2)</span>
+  <span>Generated from live cluster state · rosa-h100-jp · 2026-07-06 (updated pass 3 — llm-d deep dive)</span>
   <span>RHOAI 3.4.2 · RHCL 1.3.5 · CNPG 1.30.0 · GPU Operator · OpenShift Service Mesh</span>
 </footer>
 
