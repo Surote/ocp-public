@@ -6,12 +6,12 @@ A collection of OpenShift Container Platform presentations and workshops, hosted
 
 ## Contents
 
-- [OpenShift 101](openshift-101.html) — Introduction to OpenShift
-- [OCP 4.20 Design Workshop v2](ocp-4.20-design-workshop-v2.html) — Design workshop for OCP 4.20
-- [MaaS on OpenShift — Architecture](maas-architecture.html) — Model-as-a-Service architecture on OpenShift
-- [OpenShift Lightspeed](openshift-lightspeed.html) — AI-powered assistant for OpenShift
-- [F5 GTM Diagram](f5-gtm-diagram.html) — F5 GTM architecture diagram
-- [OpenShift Cluster Manage Network Explanation](openshift-cluster-manage-network-explaination.html) — OpenShift cluster management network explanation
+- [OpenShift 101](workshops/openshift-101.html) — Introduction to OpenShift
+- [OCP 4.20 Design Workshop v2](workshops/ocp-4.20-design-workshop-v2.html) — Design workshop for OCP 4.20
+- [MaaS on OpenShift — Architecture](architecture/maas-architecture.html) — Model-as-a-Service architecture on OpenShift
+- [OpenShift Lightspeed](workshops/openshift-lightspeed.html) — AI-powered assistant for OpenShift
+- [F5 GTM Diagram](architecture/f5-gtm-diagram.html) — F5 GTM architecture diagram
+- [OpenShift Cluster Manage Network Explanation](architecture/openshift-cluster-manage-network-explaination.html) — OpenShift cluster management network explanation
 
 See [CHANGELOG.md](CHANGELOG.md) for recent updates.
 
