@@ -195,7 +195,7 @@
     outline:none;border-color:var(--rh-accent);
     box-shadow:0 0 0 3px rgba(8,145,178,0.12);
   }
-  .ws-field .hint{font-size:11px;color:#94a3b8;margin-top:3px}
+  .ws-field .hint{font-size:12px;color:#64748b;margin-top:3px}
   .ws-toolbar{
     display:flex;gap:10px;flex-wrap:wrap;margin:16px 0;padding:14px;
     background:var(--rh-light-bg);border-radius:12px;
@@ -310,6 +310,49 @@
     from{opacity:0;transform:translateY(12px)}
     to{opacity:1;transform:translateY(0)}
   }
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none !important;transition:none !important}
+    html{scroll-behavior:auto !important}
+  }
+  .ws-section{scroll-margin-top:64px}
+  .ws-nav{
+    position:sticky;top:0;z-index:50;
+    display:flex;gap:6px;flex-wrap:wrap;align-items:center;
+    padding:8px 24px;margin:0 -24px 4px;
+    background:rgba(250,249,246,0.94);backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--rh-border);
+  }
+  .ws-nav-chip{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:5px 11px;border-radius:999px;font-size:12px;font-weight:600;
+    font-family:'Outfit',sans-serif;color:#64748b;text-decoration:none;
+    border:1px solid var(--rh-border);background:var(--rh-panel);
+    transition:var(--transition);white-space:nowrap;
+  }
+  .ws-nav-chip:hover{color:var(--rh-accent);border-color:var(--rh-accent)}
+  .ws-nav-chip.active{
+    color:#fff;background:linear-gradient(135deg,#0891b2,#0e7490);
+    border-color:transparent;
+  }
+  .ws-count{
+    font-size:10px;font-weight:600;padding:1px 7px;border-radius:999px;
+    background:var(--rh-light-bg);color:#64748b;border:1px solid var(--rh-border);
+    font-family:'JetBrains Mono',monospace;
+  }
+  .ws-nav-chip.active .ws-count{background:rgba(255,255,255,0.2);color:#fff;border-color:transparent}
+  .ws-count.half{color:var(--rh-accent);border-color:rgba(8,145,178,0.4)}
+  .ws-count.done{color:var(--rh-good);border-color:rgba(62,134,53,0.4)}
+  .ws-nav-btn{
+    margin-left:auto;background:transparent;border:none;cursor:pointer;
+    font-size:11px;font-weight:600;color:#94a3b8;padding:5px 8px;
+    font-family:'Outfit',sans-serif;transition:var(--transition);
+  }
+  .ws-nav-btn:hover{color:var(--rh-accent)}
+  .ws-nav-btn + .ws-nav-btn{margin-left:0}
+  .ws-section h3.ws-sub{
+    font-size:15px;border-left:none;padding-left:0;
+    cursor:default;justify-content:flex-start;
+  }
   ::-webkit-scrollbar{width:8px;height:8px}
   ::-webkit-scrollbar-track{background:var(--rh-light-bg);border-radius:4px}
   ::-webkit-scrollbar-thumb{background:#c4c0b8;border-radius:4px}
@@ -317,8 +360,9 @@
   ::selection{background:rgba(8,145,178,0.2);color:#0f172a}
   @media print{
     header{background:#0f172a !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .ws-btn,.ws-toolbar,.copy-btn,.ws-del,.ws-tab-add,.tab-dup{display:none !important}
+    .ws-btn,.ws-toolbar,.copy-btn,.ws-del,.ws-tab-add,.tab-dup,.ws-nav{display:none !important}
     .ws-section.collapsed .ws-section-body{display:block !important}
+    .ws-section{page-break-inside:avoid;box-shadow:none !important;animation:none !important}
     body{background:#fff}
   }
 </style>
@@ -357,6 +401,19 @@
     <h2>OpenShift 4.20+ Architecture Design Workshop</h2>
     <p>Capture every decision for a customer deployment in one place. Everything you type is saved to your browser's <span class="inline-code">localStorage</span> and can be exported as JSON for the runbook or installer inputs. Use the <strong>cluster tabs</strong> below to design multiple clusters (e.g. management + hosted, prod + DR).</p>
 
+    <nav class="ws-nav" id="ws-nav" aria-label="Section navigation">
+      <a class="ws-nav-chip" href="#sec-1" data-sec="sec-1">1 Network <span class="ws-count"></span></a>
+      <a class="ws-nav-chip" href="#sec-2" data-sec="sec-2">2 Platform <span class="ws-count"></span></a>
+      <a class="ws-nav-chip" href="#sec-3" data-sec="sec-3">3 Monitoring <span class="ws-count"></span></a>
+      <a class="ws-nav-chip" href="#sec-4" data-sec="sec-4">4 Storage <span class="ws-count"></span></a>
+      <a class="ws-nav-chip" href="#sec-5" data-sec="sec-5">5 Logging <span class="ws-count"></span></a>
+      <a class="ws-nav-chip" href="#sec-6" data-sec="sec-6">6 Auth <span class="ws-count"></span></a>
+      <a class="ws-nav-chip" href="#sec-7" data-sec="sec-7">7 Certs <span class="ws-count"></span></a>
+      <a class="ws-nav-chip" href="#hcp-section" data-sec="hcp-section" id="nav-hcp" style="display:none">8 HCP <span class="ws-count"></span></a>
+      <button class="ws-nav-btn" onclick="wsCollapseAll(false)">Expand all</button>
+      <button class="ws-nav-btn" onclick="wsCollapseAll(true)">Collapse all</button>
+    </nav>
+
     <div class="ws-cluster-bar" id="cluster-tabs"></div>
 
     <div class="ws-toolbar">
@@ -371,7 +428,7 @@
     <div id="diagram-overview" style="margin:16px 0"></div>
 
     <!-- 1. NETWORK -->
-    <div class="ws-section">
+    <div class="ws-section" id="sec-1">
       <h3>1. Cluster &amp; Network</h3>
       <div class="ws-row">
         <div class="ws-field"><label>Cluster Name</label><input data-field="cluster.name" placeholder="ocp-prod-01"/></div>
@@ -521,7 +578,7 @@
         <strong>Post-install change is disruptive:</strong> MTU migration after install triggers <em>two</em> rolling reboots of all nodes &mdash; plan MTU at install time.
       </div>
 
-      <h3 style="font-size:15px;border-left:none;padding-left:0">Reserved IP Ranges (from Machine Network)</h3>
+      <h3 class="ws-sub">Reserved IP Ranges (from Machine Network)</h3>
       <div class="note" style="font-size:12px;margin-bottom:8px">These ranges are carved out of the <strong>Machine Network</strong> and must not overlap with node IPs, VIPs, or each other. Document them here so the network team can reserve them.</div>
       <div class="ws-row">
         <div class="ws-field"><label>EgressIP Range</label><input data-field="net.egressIPRange" placeholder="10.0.0.200-10.0.0.220"/><div class="hint">IPs assigned to EgressIP CRs for SNAT — must be routable from Machine Network, not used by nodes or DHCP</div></div>
@@ -743,7 +800,7 @@
     </div>
 
     <!-- 2. PLATFORM & INSTALLER -->
-    <div class="ws-section">
+    <div class="ws-section" id="sec-2">
       <h3>2. Platform &amp; Installer</h3>
       <div id="bm-platform-section">
       <div class="ws-row">
@@ -830,10 +887,11 @@
       </div><!-- /bm-platform-section -->
 
       <div id="vsphere-platform-section" style="display:none">
-        <h3 style="font-size:15px;border-left:none;padding-left:0">vSphere Connection</h3>
+        <h3 class="ws-sub">vSphere Connection</h3>
+        <div class="note" style="font-size:13px;margin-bottom:12px"><strong>Version requirements (OCP 4.20):</strong> vSphere / vCenter 8.0 Update 1 or later (or VMware Cloud Foundation 5+). vSphere 7.x is no longer supported. VM hardware version 15 minimum. The vSphere CSI Driver Operator has the same 8.0 U1+ requirement.</div>
         <div class="ws-row">
           <div class="ws-field"><label>Install Method</label>
-            <select data-field="vsphere.method">
+            <select data-field="vsphere.method" onchange="wsToggleVsphereMethod()">
               <option value="ipi">IPI (automated via vCenter API)</option>
               <option value="upi">UPI (manual VM creation, boot from ISO)</option>
             </select>
@@ -851,7 +909,7 @@
         </div>
         <div class="ws-row">
           <div class="ws-field"><label>Resource Pool</label><input data-field="vsphere.resourcePool" placeholder="/DC1/host/Cluster-01/Resources/ocp"/><div class="hint">Optional — leave blank for cluster root</div></div>
-          <div class="ws-field"><label>RHCOS OVA Template</label><input data-field="vsphere.template" placeholder="rhcos-4.20"/><div class="hint">Imported OVA template name in vCenter</div></div>
+          <div class="ws-field"><label>RHCOS OVA Template</label><input data-field="vsphere.template" placeholder="rhcos-4.20"/><div class="hint">UPI only — IPI uploads its own OVA automatically</div></div>
           <div class="ws-field"><label>Disk Type</label>
             <select data-field="vsphere.diskType">
               <option value="thin">Thin provisioned</option>
@@ -859,10 +917,32 @@
               <option value="eagerZeroedThick">Eager zeroed thick</option>
             </select>
           </div>
-          <div class="ws-field"><label>VM Hardware Version</label><input data-field="vsphere.hwVersion" placeholder="vmx-15"/><div class="hint">Match ESXi version compatibility</div></div>
+          <div class="ws-field"><label>VM Hardware Version</label><input data-field="vsphere.hwVersion" placeholder="vmx-15"/><div class="hint">OCP requires version 15 minimum (RHCOS OVA default)</div></div>
+        </div>
+        <div class="ws-row">
+          <div class="ws-field"><label>Node IP Allocation</label>
+            <select data-field="vsphere.ipAlloc">
+              <option value="dhcp">DHCP (with reservations)</option>
+              <option value="static">Static IPs (IPI 4.16+ / UPI guestinfo)</option>
+            </select>
+            <div class="hint">IPI requires DHCP unless static IPs configured via <span class="inline-code">hosts:</span> in install-config</div>
+          </div>
+          <div class="ws-field"><label>Failure Domain Name</label><input data-field="vsphere.fdName" placeholder="fd-dc1-cluster01"/><div class="hint">Logical name in <span class="inline-code">failureDomains:</span></div></div>
+          <div class="ws-field"><label>Region (tag category)</label><input data-field="vsphere.region" placeholder="region-dc1"/><div class="hint">vCenter tag category <span class="inline-code">openshift-region</span> — single-FD: any label</div></div>
+          <div class="ws-field"><label>Zone (tag category)</label><input data-field="vsphere.zone" placeholder="zone-cluster01"/><div class="hint">vCenter tag category <span class="inline-code">openshift-zone</span> — single-FD: any label</div></div>
         </div>
 
-        <div class="warn" style="font-size:13px;margin-top:12px"><strong>Never store vCenter passwords in this workshop export.</strong> Use a secret manager. The installer prompts for the password or reads it from the <span class="inline-code">GOVC_PASSWORD</span> environment variable.</div>
+        <div class="warn" style="font-size:13px;margin-top:12px"><strong>Never store vCenter passwords in this workshop export.</strong> Use a secret manager. The password lives only in <span class="inline-code">install-config.yaml</span> (entered at the <span class="inline-code">openshift-install create install-config</span> wizard prompt) and post-install in the <span class="inline-code">vsphere-creds</span> secret in <span class="inline-code">kube-system</span>. (<span class="inline-code">GOVC_PASSWORD</span> is for the <span class="inline-code">govc</span> CLI only — the installer does not read it.)</div>
+
+        <div class="note" style="font-size:13px;margin-top:10px">
+          <strong>Design checklist:</strong>
+          <ul style="margin:6px 0 0 18px;padding:0">
+            <li><strong>Time sync:</strong> disable VMware Tools periodic time sync on OCP VMs — chrony (NTP servers above) must own the clock.</li>
+            <li><strong>etcd latency:</strong> control-plane datastore needs &lt;10&nbsp;ms fsync (p99). Watch shared vSAN/NFS under contention; use eager-zeroed thick or a dedicated datastore for etcd-heavy clusters.</li>
+            <li><strong>DRS anti-affinity:</strong> control-plane VMs must not share an ESXi host. IPI creates VM-VM anti-affinity rules automatically (4.13+); UPI — create the rule manually. Minimum 3 ESXi hosts for HA control plane.</li>
+            <li><strong><span class="inline-code">disk.EnableUUID = TRUE</span>:</strong> required on every node VM for the vSphere CSI driver. IPI sets it automatically; UPI must set it in each VM's advanced config.</li>
+          </ul>
+        </div>
 
         <details>
           <summary>Required vCenter permissions for OpenShift IPI</summary>
@@ -870,7 +950,7 @@
             <table style="font-size:13px">
               <thead><tr><th>Category</th><th>Permissions</th></tr></thead>
               <tbody>
-                <tr><td><strong>vSphere vCenter</strong></td><td>Cns.Searchable, InventoryService.Tagging (all), StorageProfile.View</td></tr>
+                <tr><td><strong>vSphere vCenter</strong></td><td>Cns.Searchable, InventoryService.Tagging (all), Sessions.ValidateSession, StorageProfile.View, StorageProfile.Update</td></tr>
                 <tr><td><strong>Compute Cluster</strong></td><td>Host.Config.Storage, Resource.AssignVMToPool, VApp (all)</td></tr>
                 <tr><td><strong>Datastore</strong></td><td>Allocate space, Browse datastore, Low level file operations</td></tr>
                 <tr><td><strong>Folder</strong></td><td>Create folder, Delete folder, Move folder, Rename folder</td></tr>
@@ -880,36 +960,67 @@
               </tbody>
             </table>
             <div class="note" style="font-size:12px;margin-top:8px"><strong>Scope:</strong> Apply permissions at the vCenter level and propagate to children. For UPI, fewer permissions are needed (no VM creation automation).</div>
+            <div class="warn" style="font-size:12px;margin-top:6px"><strong>Abbreviated list.</strong> Do not build the service-account role from this table alone — installer validation will fail on missing privileges. Copy the full per-object list from the OCP 4.20 docs: <em>Installing on vSphere → Required vCenter account privileges</em>.</div>
           </div>
         </details>
 
         <details>
-          <summary>install-config.yaml — vSphere platform section</summary>
+          <summary>install-config.yaml — vSphere platform section (4.20 schema)</summary>
           <div class="details-body">
 <pre><button class="copy-btn" onclick="copyPre(this)">Copy</button><code>platform:
   vsphere:
-    vcenter: vcenter.example.com
-    username: ocp-svc@vsphere.local
-    password: CHANGE_ME
-    datacenter: DC1
-    defaultDatastore: vsanDatastore
-    cluster: Cluster-01
-    network: "VM Network"
-    folder: /DC1/vm/ocp-prod
     apiVIPs:
-      - 10.0.0.5
+      - <span id="vsy-apivip">10.0.0.5</span>
     ingressVIPs:
-      - 10.0.0.6
-    diskType: thin</code></pre>
+      - <span id="vsy-ingressvip">10.0.0.6</span>
+    diskType: <span id="vsy-disktype">thin</span>
+    vcenters:
+      - server: <span id="vsy-vcenter">vcenter.example.com</span>
+        user: <span id="vsy-user">ocp-svc@vsphere.local</span>
+        password: CHANGE_ME
+        datacenters:
+          - <span id="vsy-dc">DC1</span>
+    failureDomains:
+      - name: <span id="vsy-fdname">fd-dc1-cluster01</span>
+        server: <span id="vsy-vcenter2">vcenter.example.com</span>
+        region: <span id="vsy-region">region-dc1</span>
+        zone: <span id="vsy-zone">zone-cluster01</span>
+        topology:
+          datacenter: <span id="vsy-dc2">DC1</span>
+          computeCluster: <span id="vsy-computecluster">/DC1/host/Cluster-01</span>
+          datastore: <span id="vsy-datastore">/DC1/datastore/vsanDatastore</span>
+          networks:
+            - "<span id="vsy-network">VM Network</span>"
+          folder: <span id="vsy-folder">/DC1/vm/ocp-prod</span><span id="vsy-rp"></span></code></pre>
+            <div class="note" style="font-size:12px;margin-top:8px">The flat <span class="inline-code">platform.vsphere.vcenter/username/datacenter/defaultDatastore/cluster</span> fields are <strong>deprecated since 4.13</strong> — the installer warns and converts them. Use <span class="inline-code">vcenters:</span> + <span class="inline-code">failureDomains:</span> as above. Multi-AZ: add one failure domain per vSphere cluster, with real region/zone tags attached in vCenter. Values auto-fill from the fields above.</div>
           </div>
         </details>
+
+        <div id="vsphere-upi-section" style="display:none">
+          <h3 class="ws-sub" style="margin-top:16px">UPI: VM Provisioning Requirements</h3>
+          <div class="note" style="font-size:13px">
+            <ul style="margin:6px 0 0 18px;padding:0">
+              <li>Clone each node VM from the RHCOS OVA template named above (do not boot the template itself).</li>
+              <li>Set <span class="inline-code">disk.EnableUUID = TRUE</span> in each VM's advanced configuration parameters — mandatory for vSphere CSI.</li>
+              <li>Inject ignition via vApp/guestinfo properties per VM:
+                <ul style="margin:4px 0 0 16px">
+                  <li><span class="inline-code">guestinfo.ignition.config.data</span> = base64-encoded ignition file (bootstrap: pointer to <span class="inline-code">bootstrap.ign</span> on HTTP server; masters: <span class="inline-code">master.ign</span>; workers: <span class="inline-code">worker.ign</span>)</li>
+                  <li><span class="inline-code">guestinfo.ignition.config.data.encoding</span> = <span class="inline-code">base64</span></li>
+                  <li>Static IPs: <span class="inline-code">guestinfo.afterburn.initrd.network-kargs</span> = <span class="inline-code">ip=&lt;ip&gt;::&lt;gw&gt;:&lt;mask&gt;:&lt;hostname&gt;:&lt;iface&gt;:none nameserver=&lt;dns&gt;</span></li>
+                </ul>
+              </li>
+              <li>Create a DRS VM-VM anti-affinity rule for the three control-plane VMs (IPI does this automatically; UPI does not).</li>
+              <li>Sizing minimums: control plane 4 vCPU / 16 GiB / 120 GiB disk; workers 2 vCPU / 8 GiB / 120 GiB.</li>
+            </ul>
+          </div>
+        </div>
 
         <div id="diagram-vsphere" style="margin-top:14px"></div>
       </div><!-- /vsphere-platform-section -->
     </div>
 
     <!-- 3. MONITORING -->
-    <div class="ws-section">
+    <div class="ws-section" id="sec-3">
       <h3>3. Monitoring — Prometheus</h3>
       <p style="font-size:13px;margin:4px 0 10px">Default retention: <strong>15 days</strong>. Runs <strong>2 replicas</strong> in <span class="inline-code">openshift-monitoring</span>. Formula: <span class="inline-code">disk ≈ retention_s × samples/s × bytes/sample</span>.</p>
 
@@ -1109,7 +1220,7 @@
           <table>
             <thead><tr><th>Parameter</th><th>Description</th></tr></thead>
             <tbody>
-              <tr><td><strong>Retention (days)</strong></td><td>How long Prometheus keeps TSDB data on disk. Default in OpenShift: <strong>15 days</strong> (<span class="inline-code">15d</span>). Longer retention = more disk. Set via <span class="inline-code">prometheusK8s.retention</span> in the <span class="inline-code">cluster-monitoring-config</span> ConfigMap. For long-term storage beyond the retention window, use Thanos sidecar with an object store (<span class="inline-code">prometheusK8s.remoteWrite</span> or the built-in Thanos integration).</td></tr>
+              <tr><td><strong>Retention (days)</strong></td><td>How long Prometheus keeps TSDB data on disk. Default in OpenShift: <strong>15 days</strong> (<span class="inline-code">15d</span>). Longer retention = more disk. Set via <span class="inline-code">prometheusK8s.retention</span> in the <span class="inline-code">cluster-monitoring-config</span> ConfigMap. For long-term storage beyond the retention window, use <span class="inline-code">prometheusK8s.remoteWrite</span> to an external system (Thanos Receive, Mimir, an observability platform) — the bundled Thanos sidecar only serves in-cluster queries and cannot be attached to object storage.</td></tr>
               <tr><td><strong>Total Nodes</strong></td><td>Number of nodes in the cluster. Each node runs a <span class="inline-code">node-exporter</span> DaemonSet pod that emits hardware/OS metrics. More nodes = more time series = more disk and memory. Include all roles (master, worker, infra).</td></tr>
               <tr><td><strong>Samples/sec per Node</strong></td><td>Average metric samples ingested per second per node. Baseline for cluster-monitoring stack is ~8,000–12,000 samples/sec/node. This includes kubelet, cAdvisor, node-exporter, kube-state-metrics, and etcd metrics. Enabling User Workload Monitoring (UWM) or adding ServiceMonitors increases this number — measure with <span class="inline-code">prometheus_tsdb_head_samples_appended_total</span>.</td></tr>
               <tr><td><strong>Bytes/Sample</strong></td><td>Average on-disk size per sample after TSDB compression. Typical range: <strong>1.5–2 bytes</strong>. This is the post-compaction size — TSDB blocks compress efficiently. The default 2 bytes is a conservative estimate; low-cardinality clusters may see closer to 1.5.</td></tr>
@@ -1204,7 +1315,7 @@ spec:
     </div>
 
     <!-- 4. STORAGE -->
-    <div class="ws-section">
+    <div class="ws-section" id="sec-4">
       <h3>4. Storage — CSI &amp; Protocol</h3>
       <p style="font-size:13px;margin:4px 0 10px">Storage provisioning and CSI drivers are typically <strong>outside Red Hat's support scope</strong> — the storage vendor provides and supports the CSI driver. Document the storage backend here for the implementation runbook.</p>
 
@@ -1227,6 +1338,16 @@ spec:
             <option value="other">Other</option>
           </select>
         </div>
+      </div>
+
+      <div class="note" style="font-size:13px">
+        <strong>Design checklist:</strong>
+        <ul style="margin:6px 0 0 18px;padding:0">
+          <li><strong>Multipath:</strong> iSCSI / FC / NVMe-oF need <span class="inline-code">multipathd</span> enabled on nodes via a day-1 <span class="inline-code">MachineConfig</span> (and iSCSI initiator config). Plan two independent fabric/network paths.</li>
+          <li><strong>Default StorageClass:</strong> exactly one SC should carry <span class="inline-code">storageclass.kubernetes.io/is-default-class: "true"</span> — multiple defaults break PVC binding for claims without an explicit class.</li>
+          <li><strong>Capabilities:</strong> confirm the CSI driver supports volume expansion (<span class="inline-code">allowVolumeExpansion</span>), snapshots (create a <span class="inline-code">VolumeSnapshotClass</span>), and cloning — needed by OpenShift Virtualization and backup tooling (OADP).</li>
+          <li><strong>Access modes:</strong> NFS / CephFS = RWX filesystem; iSCSI / FC / RBD block = RWO (RWX only as raw block). Workloads needing shared writable volumes (e.g. some CI, AI training) need an RWX-capable class.</li>
+        </ul>
       </div>
 
       <div style="margin:16px 0">
@@ -1313,7 +1434,7 @@ spec:
     </div>
 
     <!-- 5. LOGGING -->
-    <div class="ws-section">
+    <div class="ws-section" id="sec-5">
       <h3>5. Logging — Loki (LokiStack)</h3>
       <p style="font-size:13px;margin:4px 0 10px">OCP 4.20 uses <strong>Loki</strong> via the Cluster Logging Operator (ClusterLogForwarder / LokiStack). Storage is <strong>object storage</strong> (S3, ODF, Swift, Azure, GCS). Sizing follows the <strong>t-shirt size</strong> model from Red Hat docs.</p>
 
@@ -1534,7 +1655,7 @@ spec:
     </div>
 
     <!-- 6. AUTHENTICATION -->
-    <div class="ws-section">
+    <div class="ws-section" id="sec-6">
       <h3>6. Authentication — OAuth Identity Providers</h3>
       <p style="font-size:13px;margin:4px 0 10px">OpenShift uses the built-in OAuth server. Identity providers are configured via the <span class="inline-code">OAuth</span> cluster resource (<span class="inline-code">oc edit oauth cluster</span>). Multiple providers can coexist.</p>
 
@@ -1560,7 +1681,7 @@ spec:
             <text x="305" y="56" text-anchor="middle" font-size="10" font-weight="700" fill="#0066cc">OpenShift Cluster</text>
             <rect x="225" y="64" width="160" height="38" rx="4" fill="#0066cc"/>
             <text x="305" y="80" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">OAuth Server</text>
-            <text x="305" y="94" text-anchor="middle" fill="rgba(255,255,255,.7)" font-size="9">oauth-openshift ns</text>
+            <text x="305" y="94" text-anchor="middle" fill="rgba(255,255,255,.7)" font-size="9">openshift-authentication ns</text>
 
             <!-- 3. Identity Provider -->
             <rect x="470" y="50" width="150" height="50" rx="4" fill="#6f52a8"/>
@@ -1661,7 +1782,7 @@ oc adm policy add-cluster-role-to-user cluster-admin admin</code></pre>
         </div>
       </div>
 
-      <h3 style="font-size:15px;border-left:none;padding-left:0">LDAP Attribute Mapping</h3>
+      <h3 class="ws-sub">LDAP Attribute Mapping</h3>
       <div class="ws-row">
         <div class="ws-field"><label>ID Attribute</label><input data-field="auth.ldap.attrID" placeholder="dn"/><div class="hint">Unique, stable identifier (default: <span class="inline-code">dn</span>)</div></div>
         <div class="ws-field"><label>Preferred Username</label><input data-field="auth.ldap.attrUser" placeholder="sAMAccountName"/><div class="hint">AD: sAMAccountName · LDAP: uid</div></div>
@@ -1669,7 +1790,7 @@ oc adm policy add-cluster-role-to-user cluster-admin admin</code></pre>
         <div class="ws-field"><label>Email</label><input data-field="auth.ldap.attrEmail" placeholder="mail"/></div>
       </div>
 
-      <h3 style="font-size:15px;border-left:none;padding-left:0">LDAP Group Sync (for RBAC)</h3>
+      <h3 class="ws-sub">LDAP Group Sync (for RBAC)</h3>
       <div class="ws-row">
         <div class="ws-field"><label>Group Search Base DN</label><input data-field="auth.ldap.groupBase" placeholder="ou=Groups,dc=example,dc=com"/></div>
         <div class="ws-field"><label>Group Filter</label><input data-field="auth.ldap.groupFilter" placeholder="(&(objectClass=group)(cn=ocp-*))"/><div class="hint">Only sync groups matching this filter</div></div>
@@ -1705,10 +1826,54 @@ oc adm policy add-cluster-role-to-group cluster-admin ocp-admins</code></pre>
         </div>
       </details>
       <div class="warn" style="font-size:13px"><strong>Never store LDAP bind passwords in this workshop export.</strong> Use <span class="inline-code">oc create secret generic ldap-bind-password --from-literal=bindPassword='...' -n openshift-config</span> and reference the secret name above.</div>
+
+      <h3>OpenID Connect (OIDC)</h3>
+      <p style="font-size:13px;margin:4px 0 8px">Connects the OAuth server to an OIDC issuer (Microsoft Entra ID, Keycloak / RH-SSO, Okta, PingFederate). Uses the Authorization Code flow — the issuer must allow the cluster's redirect URI <span class="inline-code">https://oauth-openshift.apps.&lt;cluster&gt;.&lt;base&gt;/oauth2callback/&lt;provider-name&gt;</span>.</p>
+      <div class="ws-row">
+        <div class="ws-field"><label>Provider Name</label><input data-field="auth.oidc.name" placeholder="entra-id"/><div class="hint">Shows on the login page — also part of the redirect URI</div></div>
+        <div class="ws-field"><label>Issuer URL</label><input data-field="auth.oidc.issuer" placeholder="https://login.microsoftonline.com/&lt;tenant-id&gt;/v2.0"/><div class="hint">Must serve /.well-known/openid-configuration over https</div></div>
+        <div class="ws-field"><label>Client ID</label><input data-field="auth.oidc.clientId" placeholder="ocp-cluster-prod"/></div>
+        <div class="ws-field"><label>Client Secret — Secret Name</label><input data-field="auth.oidc.clientSecret" placeholder="oidc-client-secret"/><div class="hint">Secret in openshift-config (never the secret value itself)</div></div>
+      </div>
+      <div class="ws-row">
+        <div class="ws-field"><label>Preferred Username Claim</label><input data-field="auth.oidc.claimUser" placeholder="preferred_username"/><div class="hint">Entra ID: upn or email · Keycloak: preferred_username</div></div>
+        <div class="ws-field"><label>Name Claim</label><input data-field="auth.oidc.claimName" placeholder="name"/></div>
+        <div class="ws-field"><label>Email Claim</label><input data-field="auth.oidc.claimEmail" placeholder="email"/></div>
+        <div class="ws-field"><label>Groups Claim</label><input data-field="auth.oidc.claimGroups" placeholder="groups"/><div class="hint">Maps IdP groups to OCP groups on each login (no sync job needed)</div></div>
+        <div class="ws-field"><label>CA ConfigMap</label><input data-field="auth.oidc.ca" placeholder="oidc-ca"/><div class="hint">openshift-config — only if the issuer uses a private CA</div></div>
+      </div>
+      <details>
+        <summary>OIDC identity provider configuration</summary>
+        <div class="details-body">
+<pre><button class="copy-btn" onclick="copyPre(this)">Copy</button><code># Create the client secret in openshift-config
+oc create secret generic oidc-client-secret \
+  --from-literal=clientSecret='CHANGE_ME' \
+  -n openshift-config
+
+# Patch the OAuth resource
+oc edit oauth cluster
+# Add under spec.identityProviders:
+#   - name: entra-id
+#     mappingMethod: claim
+#     type: OpenID
+#     openID:
+#       clientID: ocp-cluster-prod
+#       clientSecret:
+#         name: oidc-client-secret
+#       issuer: https://login.microsoftonline.com/&lt;tenant-id&gt;/v2.0
+#       claims:
+#         preferredUsername: [ preferred_username ]
+#         name: [ name ]
+#         email: [ email ]
+#         groups: [ groups ]
+#       extraScopes: [ email, profile ]</code></pre>
+        </div>
+      </details>
+      <div class="note" style="font-size:13px"><strong>New in 4.20 (GA):</strong> Instead of the built-in OAuth server, you can enable <strong>direct external OIDC authentication</strong> — the kube-apiserver validates the IdP's tokens natively (upstream structured authentication config, <span class="inline-code">oc</span> gets an <span class="inline-code">oc-oidc</span> plugin with Auth Code + PKCE). Replaces OAuth entirely and can be switched back. Consider it when the customer requires IdP-controlled sessions or one IdP across many clusters. See <em>Authentication → Enabling direct authentication with an external OIDC identity provider</em>.</div>
     </div>
 
     <!-- 7. CERTIFICATES -->
-    <div class="ws-section">
+    <div class="ws-section" id="sec-7">
       <h3>7. Certificates — Ingress, API &amp; Custom CAs</h3>
       <p style="font-size:13px;margin:4px 0 10px">By default, OpenShift generates <strong>self-signed certificates</strong> for the API server and the default Ingress Controller (*.apps). Browsers and CLI tools will show TLS warnings until you replace them with certificates signed by a trusted CA. You can replace them independently.</p>
 
@@ -1791,7 +1956,7 @@ oc adm policy add-cluster-role-to-group cluster-admin ocp-admins</code></pre>
         </div>
       </details>
 
-      <h3 style="font-size:15px;border-left:none;padding-left:0">Default Ingress Certificate (*.apps)</h3>
+      <h3 class="ws-sub">Default Ingress Certificate (*.apps)</h3>
       <p style="font-size:13px;margin:4px 0 8px">Replaces the self-signed wildcard certificate used by the default <span class="inline-code">IngressController</span> for all Routes. Modern TLS clients validate <strong>SAN (Subject Alternative Name)</strong>, not CN — the wildcard <em>must</em> appear in SAN.</p>
       <div class="ws-row">
         <div class="ws-field"><label>Certificate Type</label>
@@ -1834,7 +1999,7 @@ curl -v https://console-openshift-console.apps.ocp.example.com 2>&amp;1 | grep i
         </div>
       </details>
 
-      <h3 style="font-size:15px;border-left:none;padding-left:0">API Server Certificate</h3>
+      <h3 class="ws-sub">API Server Certificate</h3>
       <p style="font-size:13px;margin:4px 0 8px">Replaces the self-signed certificate used by the Kubernetes API server (<span class="inline-code">api.&lt;cluster&gt;.&lt;base&gt;:6443</span>). After replacement, <span class="inline-code">oc login</span> and kubeconfig clients will trust the API without <span class="inline-code">--insecure-skip-tls-verify</span>.</p>
       <div class="ws-row">
         <div class="ws-field"><label>Certificate Type</label>
@@ -1871,10 +2036,11 @@ oc get co kube-apiserver -w
 oc login https://api.ocp.example.com:6443 -u kubeadmin
 # Should connect without TLS warnings if CA is trusted</code></pre>
           <div class="danger" style="font-size:12px;margin-top:8px"><strong>Warning:</strong> API server certificate replacement triggers a rolling restart of kube-apiserver pods across all control plane nodes. This is non-disruptive for workloads but the API may be briefly unavailable during rollout (~5–10 minutes). Plan this during a maintenance window.</div>
+          <div class="note" style="font-size:12px;margin-top:6px">The installer-generated kubeconfig keeps working after replacement — it pins the internal CA, and the internal endpoints keep serving the internal cert. Use a <strong>separate</strong> certificate from the Ingress wildcard: <span class="inline-code">api.</span> must not be covered by <span class="inline-code">*.apps.</span>, and reusing one cert for both couples two unrelated rotation lifecycles.</div>
         </div>
       </details>
 
-      <h3 style="font-size:15px;border-left:none;padding-left:0">Additional Trusted CA Bundle</h3>
+      <h3 class="ws-sub">Additional Trusted CA Bundle</h3>
       <p style="font-size:13px;margin:4px 0 8px">If your organization uses a private/internal CA (for proxy, registry, LDAP, etc.), add it to the cluster-wide trusted CA bundle so all components trust it. This is <strong>separate</strong> from the API/Ingress certs above.</p>
       <div class="ws-row">
         <div class="ws-field"><label>Custom CA Required?</label>
@@ -2973,7 +3139,40 @@ hcp create cluster kubevirt \
     if (bmSec) bmSec.style.display = platform === 'baremetal' ? '' : 'none';
     if (vsSec) vsSec.style.display = platform === 'vsphere' ? '' : 'none';
     document.querySelectorAll('.raid-col').forEach(el => el.style.display = platform === 'vsphere' ? 'none' : '');
+    wsToggleVsphereMethod();
     wsDrawVsphereDiagram();
+    wsUpdateVsphereYaml();
+  }
+
+  function wsToggleVsphereMethod(){
+    const method = (document.querySelector('[data-field="vsphere.method"]')||{}).value || 'ipi';
+    const upiSec = document.getElementById('vsphere-upi-section');
+    if (upiSec) upiSec.style.display = method === 'upi' ? '' : 'none';
+  }
+
+  function wsUpdateVsphereYaml(){
+    if (!document.getElementById('vsy-vcenter')) return;
+    const g = f => ((document.querySelector(`[data-field="${f}"]`)||{}).value || '').trim();
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    const dc = g('vsphere.datacenter') || 'DC1';
+    const cluster = g('vsphere.cluster') || 'Cluster-01';
+    const ds = g('vsphere.datastore') || 'vsanDatastore';
+    const vc = g('vsphere.vcenter') || 'vcenter.example.com';
+    set('vsy-apivip', g('vip.api') || '10.0.0.5');
+    set('vsy-ingressvip', g('vip.ingress') || '10.0.0.6');
+    set('vsy-disktype', g('vsphere.diskType') || 'thin');
+    set('vsy-vcenter', vc); set('vsy-vcenter2', vc);
+    set('vsy-user', g('vsphere.user') || 'ocp-svc@vsphere.local');
+    set('vsy-dc', dc); set('vsy-dc2', dc);
+    set('vsy-fdname', g('vsphere.fdName') || 'fd-dc1-cluster01');
+    set('vsy-region', g('vsphere.region') || 'region-dc1');
+    set('vsy-zone', g('vsphere.zone') || 'zone-cluster01');
+    set('vsy-computecluster', cluster.startsWith('/') ? cluster : `/${dc}/host/${cluster}`);
+    set('vsy-datastore', ds.startsWith('/') ? ds : `/${dc}/datastore/${ds}`);
+    set('vsy-network', g('vsphere.network') || 'VM Network');
+    set('vsy-folder', g('vsphere.folder') || '/DC1/vm/ocp-prod');
+    const rp = g('vsphere.resourcePool');
+    set('vsy-rp', rp ? `\n          resourcePool: ${rp}` : '');
   }
 
   // ================ HCP Visibility ================
@@ -2981,6 +3180,8 @@ hcp create cluster kubevirt \
     const topo = (document.querySelector('[data-field="cluster.topology"]').value||'');
     const hcpSection = document.getElementById('hcp-section');
     if (hcpSection) hcpSection.style.display = topo === 'hcp' ? '' : 'none';
+    const navHcp = document.getElementById('nav-hcp');
+    if (navHcp) navHcp.style.display = topo === 'hcp' ? '' : 'none';
     if (topo === 'hcp') wsToggleHcpPlatform();
   }
   function wsToggleHcpPlatform(){
@@ -3021,10 +3222,7 @@ hcp create cluster kubevirt \
     const wkNodes = ocpNodes.filter(n => /worker/i.test(n.role) && !/master/i.test(n.role));
     const e = s => escHtml(s);
 
-    const maxVMs = 6;
-    const cpCount = Math.min(cpNodes.length || 3, maxVMs);
-    const wkCount = Math.min(wkNodes.length || 2, maxVMs);
-    const vmW = 80, vmH = 36, vmGap = 8;
+    const vmW = 140, vmH = 32;
 
     const w = 820, h = 420;
     let svg = `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:${w}px;background:#fff;border:1px solid var(--rh-border);border-radius:8px;font-family:'Red Hat Text',Arial,sans-serif">`;
@@ -3044,37 +3242,40 @@ hcp create cluster kubevirt \
     svg += `<rect x="50" y="92" width="${w-100}" height="170" rx="6" fill="rgba(62,134,53,0.04)" stroke="#3e8635" stroke-width="1.2"/>`;
     svg += `<text x="64" y="110" font-size="11" font-weight="700" fill="#3e8635">Compute Cluster: ${e(cluster)}</text>`;
 
-    // ESXi hosts with VMs
-    const esxiW = (w - 130) / 2, esxiH = 128;
-    for (let hi = 0; hi < 2; hi++) {
+    // ESXi hosts — control-plane VMs spread one per host (DRS anti-affinity)
+    const hostCount = 3;
+    const esxiW = (w - 124 - (hostCount - 1) * 10) / hostCount, esxiH = 128;
+    const cpList = cpNodes.length ? cpNodes : [{},{},{}];
+    const wkList = wkNodes.length ? wkNodes : [{},{}];
+    const vmLabelOf = (vm, fallback) => vm.fqdn ? vm.fqdn.split('.')[0] : fallback;
+    for (let hi = 0; hi < hostCount; hi++) {
       const ex = 62 + hi * (esxiW + 10);
       svg += `<rect x="${ex}" y="118" width="${esxiW}" height="${esxiH}" rx="5" fill="#fff" stroke="#555" stroke-width="1"/>`;
-      svg += `<text x="${ex + esxiW/2}" y="134" text-anchor="middle" font-size="10" font-weight="600" fill="#555">ESXi Host ${hi+1}</text>`;
+      svg += `<text x="${ex + esxiW/2}" y="132" text-anchor="middle" font-size="10" font-weight="600" fill="#555">ESXi Host ${hi+1}</text>`;
+      const vx = ex + (esxiW - vmW) / 2;
 
-      // CP VMs on first host, Worker VMs on second (simplified)
-      const vms = hi === 0 ? cpNodes.slice(0, 3) : wkNodes.slice(0, 3);
-      const vmColor = hi === 0 ? '#6f52a8' : '#3e8635';
-      const vmLabel = hi === 0 ? 'CP' : 'WK';
-      const showCount = Math.min(vms.length || (hi === 0 ? 3 : 2), 3);
-      const vmStartX = ex + (esxiW - showCount * (vmW + vmGap) + vmGap) / 2;
-
-      for (let vi = 0; vi < showCount; vi++) {
-        const vx = vmStartX + vi * (vmW + vmGap);
-        const vm = vms[vi] || {};
-        svg += `<rect x="${vx}" y="146" width="${vmW}" height="${vmH}" rx="4" fill="${vmColor}" opacity="0.85"/>`;
-        const label = vm.fqdn ? vm.fqdn.split('.')[0] : `${vmLabel}${vi+1}`;
-        svg += `<text x="${vx + vmW/2}" y="162" text-anchor="middle" fill="#fff" font-size="9" font-weight="600">${e(label)}</text>`;
-        if (vm.ip) svg += `<text x="${vx + vmW/2}" y="176" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="7">${e(vm.ip)}</text>`;
-        else svg += `<text x="${vx + vmW/2}" y="176" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="7">${vmLabel} VM</text>`;
+      // one control-plane VM per host
+      const cp = cpList[hi];
+      if (cp) {
+        svg += `<rect x="${vx}" y="138" width="${vmW}" height="${vmH}" rx="4" fill="#6f52a8" opacity="0.85"/>`;
+        svg += `<text x="${vx + vmW/2}" y="151" text-anchor="middle" fill="#fff" font-size="9" font-weight="600">${e(vmLabelOf(cp, `CP${hi+1}`))}</text>`;
+        svg += `<text x="${vx + vmW/2}" y="163" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="7">${e(cp.ip || 'Control Plane VM')}</text>`;
       }
 
-      // VM resource labels
-      svg += `<text x="${ex + esxiW/2}" y="204" text-anchor="middle" font-size="8" fill="#777">${hi === 0 ? 'Control Plane VMs' : 'Worker VMs'}</text>`;
+      // worker VMs balanced across hosts
+      const wk = wkList[hi];
+      if (wk) {
+        svg += `<rect x="${vx}" y="178" width="${vmW}" height="${vmH}" rx="4" fill="#3e8635" opacity="0.85"/>`;
+        svg += `<text x="${vx + vmW/2}" y="191" text-anchor="middle" fill="#fff" font-size="9" font-weight="600">${e(vmLabelOf(wk, `WK${hi+1}`))}</text>`;
+        svg += `<text x="${vx + vmW/2}" y="203" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="7">${e(wk.ip || 'Worker VM')}</text>`;
+      }
 
-      // VMDK icons
-      svg += `<rect x="${ex + 10}" y="216" width="${esxiW - 20}" height="18" rx="3" fill="#f0f4f8" stroke="#999" stroke-width="0.8"/>`;
-      svg += `<text x="${ex + esxiW/2}" y="229" text-anchor="middle" font-size="8" fill="#777">VMDK (${hi === 0 ? 'etcd + OS' : 'OS + app data'})</text>`;
+      svg += `<text x="${ex + esxiW/2}" y="228" text-anchor="middle" font-size="8" fill="#777">VMDKs &#8594; datastore</text>`;
     }
+    if (wkList.length > hostCount) {
+      svg += `<text x="${w - 66}" y="240" text-anchor="end" font-size="8" fill="#3e8635">+${wkList.length - hostCount} more worker VM${wkList.length - hostCount > 1 ? 's' : ''} (DRS balanced)</text>`;
+    }
+    svg += `<text x="${w/2}" y="256" text-anchor="middle" font-size="9" font-weight="600" fill="#6f52a8">DRS anti-affinity: control-plane VMs on separate ESXi hosts (IPI creates rules automatically)</text>`;
 
     // Datastore bar
     svg += `<rect x="50" y="272" width="${w-100}" height="30" rx="5" fill="#fff3e0" stroke="#e65100" stroke-width="1.2"/>`;
@@ -4708,9 +4909,11 @@ hcp create cluster kubevirt \
   if (topoSelect) topoSelect.addEventListener('change', ()=>{ wsToggleHcp(); wsRefreshAll(); });
   const platformSelect = document.querySelector('[data-field="cluster.platform"]');
   if (platformSelect) platformSelect.addEventListener('change', ()=>{ wsTogglePlatform(); wsRefreshAll(); });
-  ['vsphere.vcenter','vsphere.datacenter','vsphere.cluster','vsphere.datastore','vsphere.network'].forEach(f => {
+  ['vsphere.vcenter','vsphere.user','vsphere.datacenter','vsphere.cluster','vsphere.datastore','vsphere.network',
+   'vsphere.folder','vsphere.resourcePool','vsphere.fdName','vsphere.region','vsphere.zone',
+   'vsphere.method','vsphere.diskType','vsphere.ipAlloc'].forEach(f => {
     const el = document.querySelector(`[data-field="${f}"]`);
-    if (el) el.addEventListener('input', ()=>wsDrawVsphereDiagram());
+    if (el) el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', ()=>{ wsToggleVsphereMethod(); wsDrawVsphereDiagram(); wsUpdateVsphereYaml(); });
   });
   const hcpNsField = document.querySelector('[data-field="hcp.namespace"]');
   function wsRefreshHcp(){ wsDrawHcpDiagram(); wsUpdateHcpDns(); wsUpdateHcpFirewall(); wsDrawHcpPortMap(); wsDrawOverview(wsCollectRows('ws-nodes-body', NODE_COLS)); }
@@ -4743,12 +4946,72 @@ hcp create cluster kubevirt \
   document.querySelectorAll('.ws-section').forEach(sec => {
     const h3 = sec.querySelector('h3');
     if (!h3) return;
-    h3.innerHTML += '<span class="ws-toggle">\u25BC</span>';
+    h3.innerHTML += '<span style="display:inline-flex;gap:8px;align-items:center;margin-left:auto"><span class="ws-count"></span><span class="ws-toggle">\u25BC</span></span>';
     const body = document.createElement('div');
     body.className = 'ws-section-body';
     while (h3.nextSibling) body.appendChild(h3.nextSibling);
     sec.appendChild(body);
     h3.addEventListener('click', () => sec.classList.toggle('collapsed'));
+  });
+
+  // ================ Section nav, counters, autosave ================
+  function wsCollapseAll(collapsed){
+    document.querySelectorAll('.ws-section').forEach(sec => sec.classList.toggle('collapsed', collapsed));
+  }
+  function wsHiddenBetween(el, sec){
+    let n = el.parentElement;
+    while (n && n !== sec) {
+      if (n.style && n.style.display === 'none') return true;
+      n = n.parentElement;
+    }
+    return false;
+  }
+  function wsUpdateCounts(){
+    document.querySelectorAll('.ws-section[id]').forEach(sec => {
+      const fields = [...sec.querySelectorAll('input[data-field], select[data-field], textarea[data-field]')]
+        .filter(el => !el.readOnly && !wsHiddenBetween(el, sec));
+      const filled = fields.filter(el => (el.value || '').trim() !== '').length;
+      const total = fields.length;
+      const pct = total ? filled / total : 0;
+      const cls = 'ws-count' + (pct >= 1 ? ' done' : pct >= 0.5 ? ' half' : '');
+      const secBadge = sec.querySelector('h3 .ws-count');
+      const navBadge = document.querySelector(`.ws-nav-chip[data-sec="${sec.id}"] .ws-count`);
+      [secBadge, navBadge].forEach(b => { if (b) { b.textContent = `${filled}/${total}`; b.className = cls; } });
+    });
+  }
+  let _persistTimer = null;
+  document.addEventListener('input', () => {
+    clearTimeout(_persistTimer);
+    _persistTimer = setTimeout(() => { wsUpdateCounts(); wsStoreActive(); }, 1200);
+  });
+  const _navChips = document.querySelectorAll('.ws-nav-chip');
+  function wsSetActiveChip(id){
+    _navChips.forEach(c => c.classList.toggle('active', c.dataset.sec === id));
+  }
+  window.addEventListener('hashchange', () => {
+    const id = location.hash.slice(1);
+    if (document.querySelector(`.ws-nav-chip[data-sec="${id}"]`)) wsSetActiveChip(id);
+  });
+  const _secObserver = new IntersectionObserver(entries => {
+    entries.forEach(en => { if (en.isIntersecting) wsSetActiveChip(en.target.id); });
+  }, { rootMargin: '-15% 0px -70% 0px' });
+  document.querySelectorAll('.ws-section[id]').forEach(s => _secObserver.observe(s));
+
+  // ================ Print: expand everything, restore after ================
+  let _printState = null;
+  window.addEventListener('beforeprint', () => {
+    _printState = {
+      details: [...document.querySelectorAll('details')].filter(d => !d.open),
+      collapsed: [...document.querySelectorAll('.ws-section.collapsed')]
+    };
+    _printState.details.forEach(d => d.open = true);
+    _printState.collapsed.forEach(s => s.classList.remove('collapsed'));
+  });
+  window.addEventListener('afterprint', () => {
+    if (!_printState) return;
+    _printState.details.forEach(d => d.open = false);
+    _printState.collapsed.forEach(s => s.classList.add('collapsed'));
+    _printState = null;
   });
 
   // ================ Init ================
@@ -4757,6 +5020,7 @@ hcp create cluster kubevirt \
   wsDrawPortMap();
   wsTogglePlatform();
   wsToggleHcp();
+  wsUpdateCounts();
   window.addEventListener('beforeunload', () => { wsStoreActive(); wsSave(); });
 
 </script>
