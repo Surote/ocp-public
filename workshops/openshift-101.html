@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenShift 101 — Interactive Learning Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
 <style>
 :root {
   --bg-deep: #f5f6f8;
@@ -640,11 +640,15 @@ html.dark code { color:#5b9cf5; }
 <h1>What is OpenShift?</h1>
 <p class="page-subtitle">Enterprise Kubernetes with built-in security, automation, and a complete developer experience.</p>
 
+<div class="callout warn">
+  <strong>Documentation baseline:</strong> This guide is verified against <strong>OpenShift Container Platform 4.22</strong> (Kubernetes 1.35) as of <strong>11 July 2026</strong>. Product add-ons follow their own compatibility and support lifecycles. Confirm release-specific procedures in the <a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.22" target="_blank" rel="noopener">official OCP 4.22 documentation</a> before applying them to a cluster.
+</div>
+
 <h2>OpenShift at a Glance</h2>
 <p><strong>Red Hat OpenShift Container Platform (OCP)</strong> is an enterprise Kubernetes distribution. It extends upstream Kubernetes with automated operations, consistent security, and developer tooling. Deploy and manage containerized applications at scale &mdash; on-premises, cloud, or edge.</p>
 
 <div class="callout">
-  <strong>OpenShift = Kubernetes + Enterprise Platform:</strong> OCP bundles RHCOS (immutable OS), Operator Framework, built-in CI/CD (Tekton), integrated monitoring/logging, multi-tenancy, and extends with Red Hat ecosystem products (ACM, ACS, ODF).
+  <strong>OpenShift = Kubernetes + Enterprise Platform:</strong> Core OCP includes the Kubernetes control plane, RHCOS for control-plane nodes, CRI-O, OVN-Kubernetes, cluster Operators, OAuth, the web console, ingress, the internal registry Operator, and platform monitoring. Pipelines, GitOps, logging, Virtualization, ACM, ACS, ODF, Quay, and cert-manager are layered products or Operators: entitlement varies by edition and they are not all installed by default.
 </div>
 
 <h2>Architecture Overview</h2>
@@ -752,7 +756,7 @@ html.dark code { color:#5b9cf5; }
     <!-- ===== RED HAT ECOSYSTEM ===== -->
     <g class="d-node" data-tip="arch-eco">
       <rect x="10" y="372" width="800" height="76" rx="12" fill="rgba(225,29,72,.03)" stroke="var(--rose)" stroke-width="1.5" stroke-opacity=".3" stroke-dasharray="4 2"/>
-      <text x="410" y="394" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="12">RED HAT ECOSYSTEM (OCP adds) &mdash; Extends OpenShift</text>
+      <text x="410" y="394" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="12">OPTIONAL LAYERED PRODUCTS &mdash; Entitlement and Installation Vary</text>
       <g class="d-node" data-tip="arch-acm">
         <rect x="18" y="406" width="186" height="30" rx="6" fill="rgba(225,29,72,.04)" stroke="var(--rose)" stroke-opacity=".2" stroke-dasharray="4 2"/>
         <text x="111" y="426" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">ACM &mdash; Multi-Cluster</text>
@@ -780,16 +784,16 @@ html.dark code { color:#5b9cf5; }
     <g class="d-node" data-tip="arch-olm">
       <rect x="416" y="466" width="394" height="60" rx="10" fill="rgba(225,29,72,.04)" stroke="var(--rose)" stroke-opacity=".4" stroke-dasharray="4 2"/>
       <text x="613" y="490" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="11.5">Operator Lifecycle Manager</text>
-      <text x="613" y="508" text-anchor="middle" fill="var(--text-dim)" font-size="8.5">OCP adds: OperatorHub | 200+ operators | auto-upgrade</text>
+      <text x="613" y="508" text-anchor="middle" fill="var(--text-dim)" font-size="8.5">OCP adds: catalogs | installation | dependency resolution</text>
     </g>
   </svg>
 </div>
 
 <h2>Version Alignment &mdash; OCP, RHCOS, CRI-O &amp; Kubernetes</h2>
-<p>OpenShift versions are tightly coupled with RHCOS, CRI-O, and Kubernetes. They are <strong>tested, qualified, and shipped together</strong> as a matched set. You never mix versions &mdash; upgrading OCP upgrades everything in lock-step.</p>
+<p>Core OpenShift versions are tightly coupled with RHCOS, CRI-O, and Kubernetes. They are <strong>tested, qualified, and shipped together</strong> as a matched set. The Cluster Version Operator coordinates core platform updates, while layered Operators such as GitOps, Pipelines, ACM, ACS, ODF, and Quay have separate releases and compatibility matrices. RHEL compute nodes also retain a separate operating-system maintenance lifecycle.</p>
 
 <div class="diagram-box">
-  <div class="diagram-title">OCP Version Lock-Step &mdash; All Components Move Together</div>
+  <div class="diagram-title">OCP Core Version Alignment &mdash; Platform Components Move Together</div>
   <svg width="820" height="330" viewBox="0 0 820 330" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
     <defs>
       <marker id="aVer" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0L7,2.5L0,5" fill="var(--blue)"/></marker>
@@ -805,42 +809,42 @@ html.dark code { color:#5b9cf5; }
     <text x="210" y="56" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="9.5">RHCOS</text>
     <text x="390" y="56" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="9.5">CRI-O</text>
     <text x="570" y="56" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="9.5">Kubernetes</text>
-    <text x="740" y="56" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="9.5">RHEL Kernel</text>
+    <text x="740" y="56" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="9.5">RHCOS Base</text>
     <line x1="20" y1="62" x2="800" y2="62" stroke="var(--border)" stroke-width="1"/>
 
-    <!-- Row 1: OCP 4.21 -->
-    <g class="d-node" data-tip="ver-ocp421">
+    <!-- Row 1: OCP 4.22 -->
+    <g class="d-node" data-tip="ver-ocp422">
       <rect x="15" y="68" width="90" height="24" rx="5" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".3"/>
-      <text x="60" y="84" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">4.21</text>
+      <text x="60" y="84" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">4.22</text>
     </g>
-    <text x="210" y="84" text-anchor="middle" fill="var(--text)" font-size="8.5">421.96.x</text>
-    <text x="390" y="84" text-anchor="middle" fill="var(--text)" font-size="8.5">1.34.x</text>
-    <text x="570" y="84" text-anchor="middle" fill="var(--text)" font-size="8.5">1.34</text>
-    <text x="740" y="84" text-anchor="middle" fill="var(--text)" font-size="8.5">RHEL 9.6</text>
+    <text x="210" y="84" text-anchor="middle" fill="var(--text)" font-size="8.5">422.98.x</text>
+    <text x="390" y="84" text-anchor="middle" fill="var(--text)" font-size="8.5">1.35.x</text>
+    <text x="570" y="84" text-anchor="middle" fill="var(--text)" font-size="8.5">1.35</text>
+    <text x="740" y="84" text-anchor="middle" fill="var(--text)" font-size="8.5">RHEL 9.8</text>
 
-    <!-- Row 2: OCP 4.18 -->
-    <g class="d-node" data-tip="ver-ocp418">
+    <!-- Row 2: OCP 4.20 -->
+    <g class="d-node" data-tip="ver-ocp420">
       <rect x="15" y="96" width="90" height="24" rx="5" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".2"/>
-      <text x="60" y="112" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">4.18</text>
+      <text x="60" y="112" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">4.20 EUS</text>
     </g>
-    <text x="210" y="112" text-anchor="middle" fill="var(--text)" font-size="8.5">418.94.x</text>
-    <text x="390" y="112" text-anchor="middle" fill="var(--text)" font-size="8.5">1.31.x</text>
-    <text x="570" y="112" text-anchor="middle" fill="var(--text)" font-size="8.5">1.31</text>
-    <text x="740" y="112" text-anchor="middle" fill="var(--text)" font-size="8.5">RHEL 9.4</text>
+    <text x="210" y="112" text-anchor="middle" fill="var(--text)" font-size="8.5">420.96.x</text>
+    <text x="390" y="112" text-anchor="middle" fill="var(--text)" font-size="8.5">1.33.x</text>
+    <text x="570" y="112" text-anchor="middle" fill="var(--text)" font-size="8.5">1.33</text>
+    <text x="740" y="112" text-anchor="middle" fill="var(--text)" font-size="8.5">RHEL 9.6</text>
 
-    <!-- Row 3: OCP 4.16 -->
-    <g class="d-node" data-tip="ver-ocp416">
+    <!-- Row 3: OCP 4.18 -->
+    <g class="d-node" data-tip="ver-ocp418">
       <rect x="15" y="124" width="90" height="24" rx="5" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".15"/>
-      <text x="60" y="140" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">4.16</text>
+      <text x="60" y="140" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">4.18 EUS</text>
     </g>
-    <text x="210" y="140" text-anchor="middle" fill="var(--text)" font-size="8.5">416.94.x</text>
-    <text x="390" y="140" text-anchor="middle" fill="var(--text)" font-size="8.5">1.29.x</text>
-    <text x="570" y="140" text-anchor="middle" fill="var(--text)" font-size="8.5">1.29</text>
+    <text x="210" y="140" text-anchor="middle" fill="var(--text)" font-size="8.5">418.94.x</text>
+    <text x="390" y="140" text-anchor="middle" fill="var(--text)" font-size="8.5">1.31.x</text>
+    <text x="570" y="140" text-anchor="middle" fill="var(--text)" font-size="8.5">1.31</text>
     <text x="740" y="140" text-anchor="middle" fill="var(--text)" font-size="8.5">RHEL 9.4</text>
 
     <!-- ===== MIDDLE: Lock-step visual ===== -->
     <rect x="10" y="174" width="800" height="92" rx="12" fill="rgba(26,115,232,.015)" stroke="var(--blue)" stroke-opacity=".2" stroke-dasharray="6"/>
-    <text x="410" y="194" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="10">How It Works &mdash; Single Upgrade Moves Everything</text>
+    <text x="410" y="194" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="10">How It Works &mdash; One Core Platform Update, Coordinated by CVO</text>
 
     <!-- OCP box -->
     <g class="d-node" data-tip="ver-ocp-role">
@@ -877,31 +881,31 @@ html.dark code { color:#5b9cf5; }
     <!-- Kernel box -->
     <g class="d-node" data-tip="ver-kernel-role">
       <rect x="656" y="206" width="140" height="46" rx="8" fill="var(--purple-dim)" stroke="var(--purple)" stroke-opacity=".5"/>
-      <text x="726" y="226" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="10">RHEL Kernel</text>
-      <text x="726" y="242" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Base OS kernel</text>
+      <text x="726" y="226" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="10">RHCOS Base</text>
+      <text x="726" y="242" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">RHEL packages + kernel</text>
     </g>
 
     <!-- ===== BOTTOM: Key rules ===== -->
     <rect x="10" y="278" width="800" height="42" rx="10" fill="var(--bg-surface)" stroke="var(--border)"/>
     <text x="22" y="296" fill="var(--text-bright)" font-weight="700" font-size="9">Key Rules:</text>
-    <text x="22" y="312" fill="var(--text-muted)" font-size="8">&#8226; CRI-O major.minor always matches Kubernetes major.minor (e.g. CRI-O 1.34 = K8s 1.34)</text>
-    <text x="410" y="296" fill="var(--text-muted)" font-size="8">&#8226; RHCOS version embeds OCP + RHEL version (e.g. 421.96 = OCP 4.21 on RHEL 9.6)</text>
-    <text x="410" y="312" fill="var(--text-muted)" font-size="8">&#8226; No mixing: CVO enforces version integrity across all components</text>
+    <text x="22" y="312" fill="var(--text-muted)" font-size="8">&#8226; CRI-O major.minor matches Kubernetes major.minor (for example, 1.35 in OCP 4.22)</text>
+    <text x="410" y="296" fill="var(--text-muted)" font-size="8">&#8226; RHCOS build numbers vary by OCP z-stream; verify the installed release image</text>
+    <text x="410" y="312" fill="var(--text-muted)" font-size="8">&#8226; Layered Operators and RHEL workers have separate update lifecycles</text>
   </svg>
 </div>
 
 <h2>RHCOS &mdash; Red Hat Enterprise Linux CoreOS</h2>
-<p>RHCOS is the immutable, container-optimized operating system that underpins every OpenShift node. It is <strong>versioned together with OpenShift</strong> &mdash; tested and shipped as a matched pair.</p>
+<p>RHCOS is OpenShift's controlled-immutable, container-optimized operating system. It is required for bootstrap and control-plane machines and is the default for compute machines. Supported user-provisioned installations can instead use supported RHEL compute nodes, whose operating-system lifecycle is managed separately.</p>
 
 <div class="callout">
-  <strong>RHCOS admins are responsible for: Nothing.</strong> The Machine Config Operator (MCO) manages all OS-level configuration including CRI-O config, kubelet config, authorized registries, and SSH keys. RHCOS is a managed component &mdash; not a standalone OS.
+  <strong>Manage RHCOS declaratively:</strong> The Machine Config Operator (MCO) applies supported host configuration such as CRI-O and kubelet settings, registries, files, systemd units, kernel arguments, and SSH keys. Administrators still own capacity, health, change review, upgrade readiness, troubleshooting, and recovery; routine package-by-package administration and direct SSH changes are discouraged.
 </div>
 
 <ul>
   <li><strong>Versioned with OCP</strong> &mdash; RHCOS releases are tied to OpenShift versions; they are tested and qualified together</li>
   <li><strong>Cluster-managed</strong> &mdash; MCO handles CRI-O configuration, kubelet configuration, authorized container registries, and SSH access configuration</li>
   <li><strong>CRI-O tracks Kubernetes</strong> &mdash; The CRI-O container runtime version is matched to the Kubernetes version in each OCP release</li>
-  <li><strong>Immutable by design</strong> &mdash; Root filesystem is read-only via ostree. Changes are applied atomically and can be rolled back</li>
+  <li><strong>Controlled immutability</strong> &mdash; Host changes are delivered as a tested OS image or declarative machine configuration rather than ad hoc package updates; deployments are transactional and rollback-capable</li>
 </ul>
 
 <h2>High-Level Deployment Architecture</h2>
@@ -1068,23 +1072,23 @@ html.dark code { color:#5b9cf5; }
 <table>
   <thead><tr><th>Capability</th><th>Kubernetes (Upstream)</th><th>OpenShift (OCP)</th></tr></thead>
   <tbody>
-    <tr><td>Operating System</td><td>Any Linux</td><td>RHCOS (immutable, auto-managed by MCO)</td></tr>
-    <tr><td>Installation</td><td>kubeadm, kops, manual</td><td>IPI / UPI / Assisted Installer / Agent-based</td></tr>
-    <tr><td>Upgrades</td><td>Manual, risky</td><td>OTA via ClusterVersion Operator (graph-based)</td></tr>
-    <tr><td>Networking</td><td>Choose your own CNI</td><td>OVN-Kubernetes built-in (Geneve tunnels)</td></tr>
-    <tr><td>Ingress</td><td>Ingress resource + external controller</td><td>Route + HAProxy built-in</td></tr>
-    <tr><td>Registry</td><td>External (DockerHub, etc.)</td><td>Built-in internal registry</td></tr>
-    <tr><td>Security</td><td>RBAC, PodSecurity</td><td>SCC, OAuth, sealed-by-default, FIPS</td></tr>
-    <tr><td>Monitoring</td><td>Bring your own</td><td>Prometheus + Alertmanager built-in</td></tr>
-    <tr><td>CI/CD</td><td>External tools</td><td>Pipelines (Tekton) + GitOps (ArgoCD)</td></tr>
-    <tr><td>Operators</td><td>OLM optional</td><td>OperatorHub + OLM built-in (200+)</td></tr>
-    <tr><td>Console</td><td>Basic dashboard</td><td>Full admin + developer console</td></tr>
-    <tr><td>Support</td><td>Community only</td><td>Red Hat Standard (8&times;5) or Premium (24&times;7) with SLA</td></tr>
+    <tr><td>Operating System</td><td>Selected and managed by the cluster operator</td><td>RHCOS required for control plane; RHCOS or supported RHEL for eligible compute nodes</td></tr>
+    <tr><td>Installation</td><td>Community and vendor-specific tools such as kubeadm</td><td>Installer-provisioned, user-provisioned, Assisted, and Agent-based workflows</td></tr>
+    <tr><td>Upgrades</td><td>Mechanism and support depend on the chosen distribution</td><td>Recommended update graph coordinated by the Cluster Version Operator</td></tr>
+    <tr><td>Networking</td><td>CNI implementation selected separately</td><td>OVN-Kubernetes is the supported default</td></tr>
+    <tr><td>Ingress</td><td>Ingress API; controller selected separately</td><td>Ingress Operator, HAProxy router, Kubernetes Ingress, and OpenShift Route</td></tr>
+    <tr><td>Registry</td><td>Registry selected separately</td><td>Integrated image registry Operator; production storage still requires configuration</td></tr>
+    <tr><td>Security</td><td>RBAC and Pod Security Admission primitives</td><td>RBAC, SCC, OAuth, and optional install-time FIPS mode</td></tr>
+    <tr><td>Monitoring</td><td>Monitoring stack selected separately</td><td>Core platform Prometheus and Alertmanager deployed by default</td></tr>
+    <tr><td>CI/CD &amp; GitOps</td><td>Tools selected separately</td><td>Supported Pipelines (Tekton) and GitOps (Argo CD) Operators; installed separately</td></tr>
+    <tr><td>Operators</td><td>Operator frameworks and catalogs are optional</td><td>OLM and OperatorHub integration; individual Operators are installed separately</td></tr>
+    <tr><td>Console</td><td>Dashboard or vendor UI selected separately</td><td>Integrated, RBAC-aware web console with unified perspectives in OCP 4.19+</td></tr>
+    <tr><td>Support</td><td>Varies by Kubernetes distribution and provider</td><td>Red Hat subscription support with terms determined by the selected offering</td></tr>
   </tbody>
 </table>
 
 <h2>OpenShift Product Editions</h2>
-<p>Red Hat offers <strong>four self-managed editions</strong> that build upon each other. Operator and feature availability depends on which edition you subscribe to:</p>
+<p>Red Hat offers <strong>four self-managed editions</strong> that build upon each other. The diagram describes subscription entitlement, not what is automatically deployed: layered capabilities still require their Operators and custom resources to be installed and configured.</p>
 
 <div class="diagram-box">
   <div class="diagram-title">Red Hat OpenShift Editions &mdash; Feature Entitlements</div>
@@ -1274,12 +1278,12 @@ html.dark code { color:#5b9cf5; }
 <p class="page-subtitle">Understanding the physical and logical building blocks of an OpenShift cluster.</p>
 
 <h2>What is a Node?</h2>
-<p>A <strong>node</strong> is a worker machine &mdash; physical or virtual &mdash; running containerized workloads. Every node runs:</p>
+<p>A <strong>node</strong> is a physical or virtual machine that participates in the cluster. Every Linux node runs kubelet, CRI-O, and cluster networking components. RHCOS nodes also run the Machine Config Daemon; supported RHEL compute nodes use a separate operating-system management workflow.</p>
 <ul>
   <li><strong>kubelet</strong> &mdash; agent ensuring containers run in pods</li>
   <li><strong>CRI-O</strong> &mdash; lightweight OCI-compliant container runtime</li>
   <li><strong>OVN-Kubernetes</strong> &mdash; SDN for pod networking</li>
-  <li><strong>Machine Config Daemon</strong> &mdash; applies OS-level configuration</li>
+  <li><strong>Machine Config Daemon</strong> &mdash; applies OS-level configuration on RHCOS nodes</li>
 </ul>
 
 <h2>Node Architecture</h2>
@@ -1319,13 +1323,13 @@ html.dark code { color:#5b9cf5; }
       <text x="225" y="204" fill="var(--text)" font-size="9.5">Application pods (user workloads)</text>
       <text x="225" y="219" fill="var(--text)" font-size="9.5">DaemonSets (node-exporter, fluentd)</text>
       <text x="225" y="234" fill="var(--text)" font-size="9.5">Managed by MachineSet / Autoscaler</text>
-      <text x="225" y="253" fill="var(--text-muted)" font-size="8">OS: RHCOS | Schedulable</text>
+      <text x="225" y="253" fill="var(--text-muted)" font-size="8">OS: RHCOS or supported RHEL | Schedulable</text>
     </g>
     <!-- Every node runs -->
     <g class="d-node" data-tip="node-shared">
       <rect x="10" y="282" width="800" height="44" rx="8" fill="rgba(251,113,133,.04)" stroke="var(--rose)" stroke-opacity=".3"/>
-      <text x="410" y="300" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="11">EVERY NODE RUNS</text>
-      <text x="410" y="318" text-anchor="middle" fill="var(--text)" font-size="9.5">kubelet | CRI-O | OVN-Kubernetes | Machine Config Daemon | Node Tuning Operator | CSI node plugin</text>
+      <text x="410" y="300" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="11">CORE NODE SERVICES</text>
+      <text x="410" y="318" text-anchor="middle" fill="var(--text)" font-size="9.5">kubelet | CRI-O | OVN-Kubernetes | CSI node plugin | MCD on RHCOS nodes | workload DaemonSets</text>
     </g>
     <!-- Machine API -->
     <g class="d-node" data-tip="node-machineapi">
@@ -1345,7 +1349,7 @@ html.dark code { color:#5b9cf5; }
   <thead><tr><th>Property</th><th>Control Plane</th><th>Infrastructure</th><th>Worker</th></tr></thead>
   <tbody>
     <tr><td><strong>Purpose</strong></td><td>Cluster brain &mdash; runs API Server, etcd, Controller Manager, Scheduler. Manages all cluster state and decisions.</td><td>Platform services &mdash; runs Ingress Controller (HAProxy), Registry, Prometheus, Alertmanager, Logging. Keeps platform workloads off worker nodes.</td><td>Application workloads &mdash; runs user pods, deployments, jobs. Where your actual business applications run.</td></tr>
-    <tr><td>OS</td><td>RHCOS only</td><td>RHCOS</td><td>RHCOS</td></tr>
+    <tr><td>OS</td><td>RHCOS only</td><td>Usually RHCOS; supported RHEL is possible for eligible compute nodes</td><td>RHCOS or supported RHEL on eligible user-provisioned compute nodes</td></tr>
     <tr><td>Schedulable</td><td>No (default)</td><td>Yes (restricted by taints)</td><td>Yes</td></tr>
     <tr><td>Min Count</td><td>3 (HA) / 1 (SNO)</td><td>2-3 recommended</td><td>2+ (prod)</td></tr>
     <tr><td>Subscription</td><td>Included</td><td>Free if only platform workloads</td><td>Charged</td></tr>
@@ -1353,7 +1357,7 @@ html.dark code { color:#5b9cf5; }
 </table>
 
 <h2>Inside Every Node &mdash; Component Deep Dive</h2>
-<p>Every OpenShift node (control plane and worker) runs a set of core components. Understanding what each does is essential for troubleshooting and architecture decisions.</p>
+<p>OpenShift nodes run a common set of Kubernetes and platform services, with some host-management components specific to RHCOS. Understanding what each does is essential for troubleshooting and architecture decisions.</p>
 
 <div class="diagram-box">
   <div class="diagram-title">Node Internals &mdash; Components Running on Every Worker Node</div>
@@ -1574,12 +1578,12 @@ html.dark code { color:#5b9cf5; }
 </ul>
 
 <h3>Machine Config Daemon (MCD)</h3>
-<p>The <strong>MCD</strong> is a DaemonSet that runs on every node. It is the node-level agent of the Machine Config Operator (MCO) and handles OS-level configuration delivery.</p>
+<p>The <strong>MCD</strong> is the node-level agent of the Machine Config Operator (MCO). It runs on RHCOS nodes and handles supported OS-level configuration delivery. RHEL compute nodes are maintained outside this RHCOS/MCO lifecycle.</p>
 <ul>
   <li><strong>Watches rendered MachineConfig</strong> &mdash; Each MachineConfigPool (master, worker, infra) has a rendered config. MCD compares current node config with the target</li>
   <li><strong>Delivers configuration</strong> &mdash; Writes files (e.g., chrony.conf, registries.conf), enables/disables systemd units, sets kernel arguments, manages SSH authorized keys</li>
   <li><strong>Triggers reboot</strong> &mdash; Most config changes require a node reboot. MCD coordinates: cordon &rarr; drain &rarr; apply &rarr; reboot &rarr; uncordon. One node at a time per pool</li>
-  <li><strong>No SSH needed</strong> &mdash; All OS configuration is declarative via MachineConfig CRDs. RHCOS admins are responsible for nothing &mdash; the MCO handles it</li>
+  <li><strong>Avoid ad hoc SSH changes</strong> &mdash; Use MachineConfig and supported Operators for persistent RHCOS configuration. Administrators still review changes, monitor rollouts, troubleshoot degraded pools, and maintain recovery access</li>
 </ul>
 
 <h3>Node Tuning Operator</h3>
@@ -2311,10 +2315,10 @@ html.dark code { color:#5b9cf5; }
 <p class="page-subtitle">Logical isolation boundaries &mdash; how OpenShift organizes and secures multi-tenant workloads.</p>
 
 <h2>Namespace vs Project</h2>
-<p>A <strong>Namespace</strong> is the Kubernetes-native isolation boundary. An OpenShift <strong>Project</strong> is a Namespace with extra capabilities: automatic RBAC roles for the creator (admin, edit, view), annotation templates, and default node selectors. Every Project is a Namespace, but not every Namespace is a Project.</p>
+<p>A <strong>Namespace</strong> is the Kubernetes-native scope for namespaced resources. An OpenShift <strong>Project</strong> is an alternative, user-facing representation of a Namespace that can carry OpenShift display annotations and is exposed through the Project API. The important distinction is the creation workflow, not two independent isolation objects.</p>
 
 <div class="callout">
-  <strong>Key difference:</strong> <code>oc new-project</code> creates a Project with default RoleBindings (creator gets admin). <code>kubectl create namespace</code> creates a bare Namespace without OpenShift defaults &mdash; no RBAC, no self-provisioner template applied.
+  <strong>Creation workflow:</strong> <code>oc new-project</code> submits a <code>ProjectRequest</code>. The cluster's project request template can add annotations, quotas, policies, and a RoleBinding that grants the requester <code>admin</code>. <code>kubectl create namespace</code> creates the underlying Namespace directly and does not run that request template or automatically grant the caller project administration.
 </div>
 
 <h2>Project Anatomy</h2>
@@ -3349,7 +3353,7 @@ html.dark code { color:#5b9cf5; }
     <g class="d-node" data-tip="inst-disconnected">
       <rect x="415" y="270" width="395" height="55" rx="8" fill="rgba(245,166,35,.05)" stroke="var(--amber)" stroke-opacity=".4"/>
       <text x="612" y="292" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="11">Disconnected (Air-Gapped)</text>
-      <text x="612" y="312" text-anchor="middle" fill="var(--text-muted)" font-size="8.5">Mirror registry | oc-mirror tool | ImageContentSourcePolicy</text>
+      <text x="612" y="312" text-anchor="middle" fill="var(--text-muted)" font-size="8.5">Mirror registry | oc-mirror v2 | IDMS / ITMS</text>
     </g>
 
     <!-- DNS Prerequisites -->
@@ -3460,7 +3464,7 @@ html.dark code { color:#5b9cf5; }
     <g class="d-node" data-tip="dc-mirror-cmd">
       <rect x="15" y="35" width="155" height="48" rx="8" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".4"/>
       <text x="92" y="56" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9.5">oc-mirror</text>
-      <text x="92" y="72" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Mirror OCP release images</text>
+      <text x="92" y="72" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Mirror releases + catalogs</text>
     </g>
     <line x1="170" y1="59" x2="185" y2="59" stroke="var(--rose)" stroke-width="1.5" marker-end="url(#aDC)"/>
     <g class="d-node" data-tip="dc-registry">
@@ -3471,7 +3475,7 @@ html.dark code { color:#5b9cf5; }
     <g class="d-node" data-tip="dc-iso-gen">
       <rect x="15" y="95" width="320" height="42" rx="8" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".4"/>
       <text x="175" y="114" text-anchor="middle" fill="var(--blue)" font-weight="600" font-size="9.5">openshift-install agent create image</text>
-      <text x="175" y="130" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">install-config.yaml: imageContentSources + additionalTrustBundle (mirror CA)</text>
+      <text x="175" y="130" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">install-config mirror mappings + additionalTrustBundle (mirror CA)</text>
     </g>
     <g class="d-node" data-tip="dc-media">
       <rect x="15" y="148" width="320" height="38" rx="8" fill="var(--purple-dim)" stroke="var(--purple)" stroke-opacity=".4"/>
@@ -3509,9 +3513,10 @@ html.dark code { color:#5b9cf5; }
 <div class="callout">
   <strong>What is a Mirror Registry?</strong><br>
   A mirror registry is an OCI-compliant container image registry that holds copies of images from external sources (Red Hat registries, Docker Hub, etc.). In disconnected environments, it replaces internet-based registries entirely &mdash; all nodes pull images from it instead of going online.<br><br>
-  <strong>How it works:</strong> On the connected side, <code>oc-mirror</code> downloads OCP release images, operator catalogs, and any additional images into the mirror registry. The registry data is then exported and transferred to the disconnected environment via portable media (USB, external disk). On the disconnected side, the same registry software is deployed and loaded with the transferred data. Both sides use the same concept &mdash; a <strong>mirror registry</strong> &mdash; just in different network zones.<br><br>
-  <strong>Registry options:</strong> Red Hat provides a lightweight <code>mirror-registry</code> tool (single binary, based on Quay, no subscription required) for quick setup. Alternatively, use Red Hat Quay, Harbor, Nexus, or any OCI-compliant registry. The key requirement is supporting <code>ImageContentSourcePolicy</code> (ICSP) or <code>ImageDigestMirrorSet</code> (IDMS, OCP 4.13+) to redirect image pulls from original sources to the mirror.<br><br>
-  <strong>Day-2:</strong> Ongoing updates also go through the mirror registry &mdash; run <code>oc-mirror</code> periodically to sync new release images and operator versions, then transfer to the disconnected side.
+  <strong>How it works:</strong> Use the supported <code>oc-mirror --v2</code> workflow to select and mirror OCP release payloads, Operator catalogs, and additional images. It supports registry-to-registry and file-based workflows for fully disconnected sites. Apply the generated cluster resources, including <code>ImageDigestMirrorSet</code> (IDMS), <code>ImageTagMirrorSet</code> (ITMS), catalog resources, and update-service configuration as required.<br><br>
+  <strong>Registry options:</strong> The mirror registry for Red Hat OpenShift is a small-scale registry included with an OpenShift subscription. Production deployments can use Red Hat Quay or a compatible third-party registry, but the registry must be reachable by every cluster machine and should match the cluster's availability requirements. The OpenShift integrated image registry cannot be the mirroring target.<br><br>
+  <strong>Legacy note:</strong> <code>ImageContentSourcePolicy</code> (ICSP) and oc-mirror v1 are deprecated. Agent-based installation still consumes mirror mappings in <code>install-config.yaml</code>; use the output and procedure documented for the exact installer and OCP release.<br><br>
+  <strong>Day-2:</strong> Preserve the oc-mirror v2 workspace/cache and repeat the workflow for release and Operator updates. Review generated resources and available update edges before starting a disconnected cluster update.
 </div>
 
 <h2>Bare Metal &mdash; Assisted Installer</h2>
@@ -4264,7 +4269,7 @@ EOF
 
     <rect x="440" y="158" width="300" height="50" rx="10" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".3"/>
     <text x="590" y="180" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="10">Physical Network (VLAN 100)</text>
-    <text x="590" y="196" text-anchor="middle" fill="var(--text-dim)" font-size="9">Direct L2 access &bull; No overlay &bull; No NetworkPolicy</text>
+    <text x="590" y="196" text-anchor="middle" fill="var(--text-dim)" font-size="9">Direct L2 access &bull; No overlay &bull; Separate MultiNetworkPolicy</text>
 
     <rect x="440" y="224" width="300" height="50" rx="10" fill="var(--purple-dim)" stroke="var(--purple)" stroke-opacity=".3"/>
     <text x="590" y="246" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="10">High-Perf Network (SR-IOV PF)</text>
@@ -4297,7 +4302,7 @@ EOF
 </div>
 
 <div class="callout warn">
-  <strong>No NetworkPolicy on secondary interfaces:</strong> NetworkPolicy only applies to the primary interface (eth0 / OVN-K). Traffic on Multus-attached interfaces (macvlan, SR-IOV, bridge) bypasses NetworkPolicy entirely. Plan security for secondary networks at the infrastructure level (VLAN ACLs, firewall rules).
+  <strong>Secondary-network policy is separate:</strong> Kubernetes <code>NetworkPolicy</code> governs the default or primary pod network. For supported Multus secondary networks, a cluster administrator can enable the <code>MultiNetworkPolicy</code> API and target a <code>NetworkAttachmentDefinition</code>. When that feature or plugin support is unavailable, enforce secondary-network security with VLAN ACLs, firewalls, and other infrastructure controls.
 </div>
 
 <div class="callout">
@@ -5270,7 +5275,7 @@ EOF
 <!-- ================ SECTION 14: LOGGING & MONITORING ================ -->
 <div class="page" id="page-logging">
 <h1>Logging &amp; Monitoring</h1>
-<p class="page-subtitle">Observability stack for log collection, metric storage, alerting, and dashboarding in OpenShift.</p>
+<p class="page-subtitle">Core platform monitoring plus optional Operators for log collection, storage, and console integration.</p>
 
 <!-- ═══ MONITORING SECTION ═══ -->
 <h2>Monitoring Architecture</h2>
@@ -5306,9 +5311,9 @@ EOF
       <rect x="145" y="60" width="195" height="95" rx="10" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".5" stroke-width="1.5"/>
       <text x="242" y="82" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="12">Prometheus (x2 HA)</text>
       <text x="242" y="100" text-anchor="middle" fill="var(--text)" font-size="8.5">openshift-monitoring</text>
-      <text x="242" y="116" text-anchor="middle" fill="var(--text-muted)" font-size="8">TSDB + PVC storage</text>
+      <text x="242" y="116" text-anchor="middle" fill="var(--text-muted)" font-size="8">TSDB (ephemeral by default)</text>
       <text x="242" y="132" text-anchor="middle" fill="var(--text-muted)" font-size="8">15-day default retention</text>
-      <text x="242" y="148" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">100+ built-in alerting rules</text>
+      <text x="242" y="148" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Configure PVCs for durable history</text>
     </g>
 
     <!-- Thanos Sidecar -->
@@ -5413,11 +5418,15 @@ EOF
   </svg>
 </div>
 
+<div class="callout warn">
+  <strong>Retention is not persistence:</strong> Core platform metrics have a 15-day default retention setting, but a new multi-node cluster does not have durable Prometheus or Alertmanager storage until an administrator configures PVCs in <code>cluster-monitoring-config</code>. Without persistent storage, pod recreation can lose metrics, silences, and notification state.
+</div>
+
 <h2>Monitoring Components</h2>
 <table>
   <thead><tr><th>Component</th><th>What It Does</th><th>Details</th></tr></thead>
   <tbody>
-    <tr><td><strong>Prometheus (x2 HA)</strong></td><td>Time-series database. Scrapes metrics from all targets every 30s via pull model.</td><td>Runs in openshift-monitoring. 15-day default retention. Each instance stores data independently on PVC. 100+ built-in alerting rules.</td></tr>
+    <tr><td><strong>Prometheus (x2 HA)</strong></td><td>Time-series database. Scrapes metrics from platform targets via the pull model.</td><td>Runs in <code>openshift-monitoring</code>. Core metrics have 15-day default retention, but storage is ephemeral until an administrator configures a PVC for each replica.</td></tr>
     <tr><td><strong>Thanos Sidecar</strong></td><td>Runs alongside each Prometheus. Exposes StoreAPI for remote reads.</td><td>Enables Thanos Querier to aggregate data from multiple Prometheus instances without data duplication.</td></tr>
     <tr><td><strong>Thanos Querier</strong></td><td>Unified PromQL query endpoint. Aggregates data from all Thanos Sidecars.</td><td>Single entry point for OCP Console dashboards and external Grafana. Deduplicates HA pairs.</td></tr>
     <tr><td><strong>Alertmanager (x2 HA)</strong></td><td>Receives firing alerts from Prometheus. Routes, deduplicates, groups, and sends notifications.</td><td>Supports Slack, PagerDuty, email, webhook, OpsGenie. Silencing and inhibition rules. Cluster-scoped HA gossip.</td></tr>
@@ -5430,7 +5439,7 @@ EOF
 
 <!-- ═══ LOGGING SECTION ═══ -->
 <h2>Logging Architecture</h2>
-<p>OpenShift logging uses <strong>Loki</strong> for storage, <strong>Vector</strong> for collection, and the <strong>ClusterLogForwarder</strong> CR for routing. Three operators work together: <strong>Logging Operator</strong> (deploys Vector), <strong>Loki Operator</strong> (manages LokiStack), and <strong>Cluster Observability Operator</strong> (console integration).</p>
+<p>Logging is <strong>not installed by default with core OCP</strong>. A supported Loki-based deployment uses <strong>Loki</strong> for storage, <strong>Vector</strong> for collection, and the <strong>ClusterLogForwarder</strong> CR for routing. Layered Operators work together: <strong>Logging Operator</strong> (deploys Vector), <strong>Loki Operator</strong> (manages LokiStack), and <strong>Cluster Observability Operator</strong> (console integration).</p>
 
 <div class="diagram-box">
   <div class="diagram-title">OpenShift Logging Architecture (Loki + Vector)</div>
@@ -5722,7 +5731,7 @@ EOF
 <!-- ================ SECTION 9: ACM ================ -->
 <div class="page" id="page-acm">
 <h1>ACM &mdash; Advanced Cluster Management</h1>
-<p class="page-subtitle">Manage multiple OpenShift and Kubernetes clusters from a single hub.</p>
+<p class="page-subtitle">Optional layered product for managing multiple OpenShift and Kubernetes clusters from a single hub.</p>
 
 <h2>What is ACM?</h2>
 <p><strong>Red Hat ACM</strong> provides multi-cluster lifecycle management: provision clusters, enforce governance policies, deliver applications, aggregate observability, and search resources across the fleet.</p>
@@ -6572,7 +6581,7 @@ EOF
 <tbody>
 <tr><td><strong>2.14</strong></td><td>Observability backup/restore for hub migrations. <code>namespaceMapping</code> on restore (OADP) &mdash; restore resources into a different namespace.</td></tr>
 <tr><td><strong>2.15</strong></td><td><strong>Fleet virtualization perspective</strong> &mdash; manage OpenShift Virtualization VMs across all clusters from the hub. Right-sizing recommendations for cluster resources. <strong>Argo CD agent</strong> (Tech Preview) &mdash; pull-based GitOps that scales to large/edge fleets.</td></tr>
-<tr><td><strong>2.16</strong></td><td>Latest release &mdash; see the <a href="https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_management_for_kubernetes/2.16/html/release_notes/acm-release-notes" target="_blank" rel="noopener">ACM 2.16 release notes</a> for details.</td></tr>
+<tr><td><strong>2.16</strong></td><td>Baseline used by this guide &mdash; see the <a href="https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_management_for_kubernetes/2.16/html/release_notes/acm-release-notes" target="_blank" rel="noopener">ACM 2.16 release notes</a> for details.</td></tr>
 </tbody>
 </table>
 
@@ -6582,7 +6591,7 @@ EOF
 <!-- ================ SECTION 10: ACS ================ -->
 <div class="page" id="page-acs">
 <h1>ACS &mdash; Advanced Cluster Security</h1>
-<p class="page-subtitle">Full-lifecycle container security from build to runtime.</p>
+<p class="page-subtitle">Optional layered product for full-lifecycle container security from build to runtime.</p>
 
 <h2>What is ACS?</h2>
 <p><strong>Red Hat ACS</strong> (formerly StackRox) provides vulnerability management, compliance scanning, network segmentation, and runtime threat detection across your entire container environment. It secures workloads at every stage &mdash; build, deploy, and runtime &mdash; from a single centralized console.</p>
@@ -7056,7 +7065,7 @@ EOF
 <!-- ================ SECTION 11: ODF ================ -->
 <div class="page" id="page-odf">
 <h1>ODF &mdash; OpenShift Data Foundation</h1>
-<p class="page-subtitle">Software-defined storage powered by Ceph, providing block, file, and object storage inside OpenShift.</p>
+<p class="page-subtitle">Optional layered storage product powered by Ceph, providing block, file, and object services.</p>
 
 <h2>What is ODF?</h2>
 <p><strong>OpenShift Data Foundation (ODF)</strong> is Red Hat's software-defined storage solution for OpenShift, built on <strong>Ceph</strong> and managed by the <strong>Rook operator</strong>. It provides block (<strong>RBD</strong>), file (<strong>CephFS</strong>), and S3-compatible object (<strong>NooBaa MCG</strong>) storage as native Kubernetes resources. ODF eliminates external storage array dependencies by running storage services directly on OpenShift nodes with local or attached disks.</p>
@@ -7458,7 +7467,7 @@ EOF
 <!-- ================ SECTION 18: QUAY ================ -->
 <div class="page" id="page-quay">
 <h1>Quay &mdash; Enterprise Container Registry</h1>
-<p class="page-subtitle">Secure, scan, and distribute container images at scale.</p>
+<p class="page-subtitle">Optional enterprise registry product for securing, scanning, and distributing container images at scale.</p>
 
 <h2>What is Red Hat Quay?</h2>
 <p><strong>Red Hat Quay</strong> is an enterprise container image registry that provides secure storage, vulnerability scanning, and global distribution of container images. It supports OCI and Docker image formats, integrates deeply with OpenShift, and offers governance features for multi-team environments.</p>
@@ -8094,19 +8103,19 @@ EOF
     <line x1="484" y1="127" x2="502" y2="127" stroke="var(--text-dim)" stroke-width="1" marker-end="url(#aUpg)"/>
     <g class="d-node" data-tip="mco-uncordon"><rect x="502" y="112" width="105" height="30" rx="6" fill="var(--bg-elevated)" stroke="var(--green)" stroke-opacity=".3"/><text x="554" y="132" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9">Uncordon &#10003;</text></g>
 
-    <!-- Monitoring stack -->
-    <text x="410" y="170" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".08em">BUILT-IN MONITORING STACK</text>
+    <!-- Monitoring and layered observability -->
+    <text x="410" y="170" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".08em">CORE MONITORING + OPTIONAL OBSERVABILITY</text>
     <g class="d-node" data-tip="mon-prom"><rect x="40" y="183" width="140" height="28" rx="6" fill="var(--bg-elevated)" stroke="var(--rose)" stroke-opacity=".3"/><text x="110" y="202" text-anchor="middle" fill="var(--rose)" font-weight="600" font-size="9">Prometheus</text></g>
     <g class="d-node" data-tip="mon-alert"><rect x="200" y="183" width="140" height="28" rx="6" fill="var(--bg-elevated)" stroke="var(--amber)" stroke-opacity=".3"/><text x="270" y="202" text-anchor="middle" fill="var(--amber)" font-weight="600" font-size="9">Alertmanager</text></g>
-    <g class="d-node" data-tip="mon-grafana"><rect x="360" y="183" width="140" height="28" rx="6" fill="var(--bg-elevated)" stroke="var(--green)" stroke-opacity=".3"/><text x="430" y="202" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9">Grafana / Console</text></g>
-    <g class="d-node" data-tip="mon-loki"><rect x="520" y="183" width="140" height="28" rx="6" fill="var(--bg-elevated)" stroke="var(--purple)" stroke-opacity=".3"/><text x="590" y="202" text-anchor="middle" fill="var(--purple)" font-weight="600" font-size="9">Loki (Logging)</text></g>
-    <g class="d-node" data-tip="mon-user"><rect x="680" y="183" width="110" height="28" rx="6" fill="var(--bg-elevated)" stroke="var(--teal)" stroke-opacity=".3"/><text x="735" y="202" text-anchor="middle" fill="var(--teal)" font-weight="600" font-size="9">User Workload</text></g>
+    <g class="d-node" data-tip="mon-grafana"><rect x="360" y="183" width="140" height="28" rx="6" fill="var(--bg-elevated)" stroke="var(--green)" stroke-opacity=".3"/><text x="430" y="202" text-anchor="middle" fill="var(--green)" font-weight="600" font-size="9">Console Dashboards</text></g>
+    <g class="d-node" data-tip="mon-loki"><rect x="520" y="183" width="140" height="28" rx="6" fill="var(--bg-elevated)" stroke="var(--purple)" stroke-opacity=".3"/><text x="590" y="202" text-anchor="middle" fill="var(--purple)" font-weight="600" font-size="9">Loki (optional)</text></g>
+    <g class="d-node" data-tip="mon-user"><rect x="680" y="183" width="110" height="28" rx="6" fill="var(--bg-elevated)" stroke="var(--teal)" stroke-opacity=".3"/><text x="735" y="202" text-anchor="middle" fill="var(--teal)" font-weight="600" font-size="9">UWM (optional)</text></g>
   </svg>
 </div>
 
-<h2>EUS-to-EUS Upgrades</h2>
-<p><strong>Extended Update Support (EUS)</strong> releases are even-numbered minor versions (4.14, 4.16, 4.18, etc.) that receive an extended maintenance window. An <strong>EUS-to-EUS upgrade</strong> lets you skip the intermediate odd-numbered minor version (e.g. 4.14 &rarr; 4.16, bypassing 4.15) while <strong>pausing worker MachineConfigPools</strong> so worker nodes reboot only <strong>once</strong> instead of twice.</p>
-<p>The control plane still updates through the intermediate version internally, but because the worker MCP is paused, worker nodes remain on their current config. Once the control plane reaches the target EUS version, you unpause the worker pool and nodes roll forward in a single reboot.</p>
+<h2>Control Plane Only Updates (formerly EUS-to-EUS)</h2>
+<p><strong>Extended Update Support (EUS)</strong> releases are selected even-numbered minor versions with an extended support phase. A <strong>Control Plane Only update</strong> minimizes compute-node reboots between consecutive EUS releases by pausing all non-control-plane MachineConfigPools while the cluster completes <strong>two explicit minor-version updates</strong>: <code>4.y &rarr; 4.y+1 &rarr; 4.y+2</code>.</p>
+<p>The odd-numbered release is not bypassed: the cluster must reach it successfully before starting the target EUS update. Paused compute nodes remain on their earlier machine configuration until the target control plane is healthy and compatible layered Operators have been reviewed. Unpausing pools then applies the accumulated configuration, often with one compute-node reboot.</p>
 
 <h3>Update Channels</h3>
 <table>
@@ -8115,27 +8124,38 @@ EOF
     <tr><td><code>stable-4.x</code></td><td>Thoroughly tested releases; delayed availability</td><td>Production clusters requiring maximum stability</td></tr>
     <tr><td><code>fast-4.x</code></td><td>All GA releases as soon as they pass CI</td><td>Non-production or early adopter environments</td></tr>
     <tr><td><code>candidate-4.x</code></td><td>Release candidates; may contain bugs</td><td>Pre-release testing only</td></tr>
-    <tr><td><code>eus-4.x</code></td><td>EUS releases only (even-numbered minors)</td><td>EUS-to-EUS upgrade paths; long-lifecycle clusters</td></tr>
+    <tr><td><code>eus-4.x</code></td><td>Recommended updates and paths for an EUS target</td><td>Conventional EUS updates and eligible Control Plane Only paths</td></tr>
   </tbody>
 </table>
 
-<h3>EUS-to-EUS Upgrade Procedure</h3>
-<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># 1. Pause the worker MachineConfigPool</span>
+<h3>Control Plane Only Update Outline: 4.20 &rarr; 4.22</h3>
+<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmt"># 0. Confirm 4.20 is healthy, fully updated, and offers the expected graph edges</span>
+<span class="kw">oc</span> get clusterversion,clusteroperators
+<span class="kw">oc</span> get mcp
+<span class="kw">oc</span> adm upgrade
+
+<span class="cmt"># 1. Select the target EUS channel</span>
+<span class="kw">oc</span> adm upgrade channel eus-<span class="val">4.22</span>
+
+<span class="cmt"># 2. Pause EVERY non-control-plane MCP (worker and any custom pools)</span>
 <span class="kw">oc</span> patch mcp/worker --type merge -p <span class="str">'{"spec":{"paused":true}}'</span>
+<span class="cmt"># Repeat for custom pools, for example: oc patch mcp/infra ...</span>
 
-<span class="cmt"># 2. Set the target EUS channel and start upgrade</span>
-<span class="kw">oc</span> adm upgrade channel eus-<span class="val">4.16</span>
-<span class="kw">oc</span> adm upgrade --to-latest
+<span class="cmt"># 3. Update explicitly to a RECOMMENDED 4.21.z shown by "oc adm upgrade"</span>
+<span class="kw">oc</span> adm upgrade --to=&lt;recommended-4.21.z&gt;
+<span class="cmt"># Wait until ClusterVersion and ClusterOperators are healthy at 4.21.z.</span>
+<span class="cmt"># Review/update installed OLM Operators before the next minor update.</span>
 
-<span class="cmt"># 3. Wait for control plane to reach the target version</span>
-<span class="kw">oc</span> adm upgrade   <span class="cmt"># repeat until "Cluster version is &lt;target&gt;"</span>
-<span class="kw">oc</span> get mcp       <span class="cmt"># workers show UPDATED=False, UPDATING=False (paused)</span>
+<span class="cmt"># 4. Update explicitly to a RECOMMENDED 4.22.z shown by "oc adm upgrade"</span>
+<span class="kw">oc</span> adm upgrade --to=&lt;recommended-4.22.z&gt;
+<span class="kw">oc</span> get clusterversion,clusteroperators
 
-<span class="cmt"># 4. Unpause the worker pool &mdash; workers roll once</span>
-<span class="kw">oc</span> patch mcp/worker --type merge -p <span class="str">'{"spec":{"paused":false}}'</span></pre>
+<span class="cmt"># 5. When the 4.22 control plane is healthy, unpause pools one at a time</span>
+<span class="kw">oc</span> patch mcp/worker --type merge -p <span class="str">'{"spec":{"paused":false}}'</span>
+<span class="kw">oc</span> get mcp --watch</pre>
 
 <div class="callout warn">
-  <strong>Do not leave pools paused longer than the upgrade window.</strong> While paused, the MachineConfigPool also blocks certificate rotation, security patches, and configuration rollout. Unpause as soon as the control plane reaches the target version.
+  <strong>This is an outline, not a substitute for the release-specific runbook.</strong> Use only update targets displayed by <code>oc adm upgrade</code>, read all conditional-update risks, back up etcd, verify Operator compatibility at both minor versions, and follow the <a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.20/html-single/updating_clusters/index" target="_blank" rel="noopener">official Control Plane Only update procedure</a>. Do not leave pools paused: queued certificates, security fixes, and host configuration do not reach those nodes until the pools resume.
 </div>
 
 <h2>MachineConfig &amp; MachineConfigPool</h2>
@@ -8257,7 +8277,7 @@ EOF
     <!-- Pause warning -->
     <g class="d-node" data-tip="mc-pause">
       <rect x="10" y="304" width="800" height="28" rx="6" fill="rgba(245,166,35,.04)" stroke="var(--amber)" stroke-opacity=".3"/>
-      <text x="410" y="323" text-anchor="middle" fill="var(--amber)" font-size="9">Paused MCP: nodes will NOT update. Used during EUS-to-EUS upgrades. Unpause to resume rolling updates.</text>
+      <text x="410" y="323" text-anchor="middle" fill="var(--amber)" font-size="9">Paused MCP: nodes do NOT update. Control Plane Only updates pause every non-control-plane pool temporarily.</text>
     </g>
     </g>
   </svg>
@@ -8635,7 +8655,7 @@ EOF
 <!-- ================ SECTION 20: OPENSHIFT VIRTUALIZATION ================ -->
 <div class="page" id="page-virt">
 <h1>OpenShift Virtualization</h1>
-<p class="page-subtitle">Run traditional virtual machines alongside containers on the same cluster &mdash; built on KubeVirt, sharing the same storage, networking, and RBAC.</p>
+<p class="page-subtitle">Layered Operator and entitled capability for running virtual machines alongside containers on the same cluster.</p>
 
 <h2>KubeVirt Architecture</h2>
 <p><strong>OpenShift Virtualization</strong> is Red Hat's productized distribution of the upstream <strong>KubeVirt</strong> project. It extends the Kubernetes API with VM-shaped CRDs and wraps QEMU/KVM inside ordinary pods, so a VM is scheduled, monitored, and governed exactly like any other workload.</p>
@@ -8950,7 +8970,7 @@ EOF
 <!-- ================ SECTION 21: GITOPS & PIPELINES ================ -->
 <div class="page" id="page-gitops">
 <h1>GitOps &amp; Pipelines</h1>
-<p class="page-subtitle">Declarative continuous delivery with OpenShift GitOps (ArgoCD) and CI automation with OpenShift Pipelines (Tekton).</p>
+<p class="page-subtitle">Layered Operators for declarative delivery with OpenShift GitOps (Argo CD) and CI automation with OpenShift Pipelines (Tekton).</p>
 
 <h2>OpenShift GitOps (ArgoCD)</h2>
 <p><strong>OpenShift GitOps</strong> deploys <strong>ArgoCD</strong> as an operator-managed instance (namespace <code>openshift-gitops</code>). Git becomes the single source of truth: ArgoCD continuously compares the manifests in a repo against the live state of the cluster and reconciles any difference.</p>
@@ -9076,7 +9096,7 @@ EOF
 </div>
 
 <div class="callout">
-  <strong>Each Task = 1 TaskRun = 1 pod.</strong> Steps within a Task share a pod (and its filesystem); Tasks share data across pods via a mounted <strong>Workspace</strong> (PVC). Use <code>oc get pipelinerun</code> / <code>oc get taskrun</code> to watch execution, or the Developer Console's Pipelines view for the visual DAG.
+  <strong>Each Task = 1 TaskRun = 1 pod.</strong> Steps within a Task share a pod (and its filesystem); Tasks share data across pods via a mounted <strong>Workspace</strong> (PVC). Use <code>oc get pipelinerun</code> / <code>oc get taskrun</code> to watch execution, or the web console's Pipelines pages for the visual DAG.
 </div>
 
 <div class="acc-item">
@@ -9164,8 +9184,8 @@ const T = {
 
   // OpenShift Editions
   'ed-ove':{t:'OVE — OpenShift Virtualization Engine',b:'VM-only edition of OpenShift. Licensed exclusively for running virtual machines via KubeVirt/QEMU/KVM — containers are not entitled. Includes Migration Toolkit for Virtualization (MTV) to migrate from VMware. Bare-metal node subscription only (no core-pair). Upgrade path: switch to OKE/OCP/OPP to add container workloads later.'},
-  'ed-oke':{t:'OKE — OpenShift Kubernetes Engine',b:'Basic enterprise Kubernetes edition. Provides RHCOS, CRI-O, OVN-Kubernetes, Admin Console, Prometheus monitoring, and container runtime — but no Developer Console, Pipelines (Tekton), Serverless, Service Mesh, or GitOps. Choose OKE if you already have your own CI/CD and developer tooling.'},
-  'ed-ocp':{t:'OCP — OpenShift Container Platform',b:'Full-featured edition. Everything in OKE plus Developer Console, OpenShift Pipelines (Tekton), OpenShift GitOps (ArgoCD), OpenShift Serverless (Knative), Service Mesh (Istio), and all OperatorHub operators. The standard choice for most enterprise deployments.'},
+  'ed-oke':{t:'OKE — OpenShift Kubernetes Engine',b:'Foundational enterprise Kubernetes edition with RHCOS, CRI-O, OVN-Kubernetes, the web console, and platform monitoring. It does not include entitlement to several application-platform Operators such as Pipelines, Serverless, Service Mesh, and GitOps. Verify the current subscription guide for exact entitlements.'},
+  'ed-ocp':{t:'OCP — OpenShift Container Platform',b:'Application-platform edition that adds entitlement to supported developer and delivery capabilities such as OpenShift Pipelines, GitOps, Serverless, and Service Mesh. These are layered Operators with separate installation and lifecycle steps; entitlement does not mean they are deployed by default.'},
   'ed-opp':{t:'OPP — OpenShift Platform Plus',b:'Top-tier edition. Everything in OCP plus: Advanced Cluster Management (ACM) for multi-cluster governance, Advanced Cluster Security (ACS/StackRox) for vulnerability scanning and compliance, Red Hat Quay private registry, and Zero Trust workload identity. For organizations needing centralized multi-cluster security and management.'},
 
   'arch-cp':{t:'Control Plane',b:'Three master nodes running RHCOS. Hosts API Server (REST gateway), etcd (distributed key-value store), Controller Manager (reconciliation loops), Scheduler (pod placement), OAuth Server (authentication), and ~30 Cluster Operators.'},
@@ -9173,15 +9193,15 @@ const T = {
   'arch-etcd':{t:'etcd (x3)',b:'Distributed key-value store using Raft consensus. Holds ALL cluster state. Quorum requires 2/3 members. Performance-sensitive — needs low-latency SSD storage.'},
   'arch-ctrl':{t:'Controller Manager',b:'Runs reconciliation loops: Deployment controller, ReplicaSet controller, Node controller, Namespace controller. Watches API server, ensures desired state matches actual state.'},
   'arch-sched':{t:'Scheduler',b:'Assigns pending pods to nodes based on resource requests, taints/tolerations, node affinity, pod affinity/anti-affinity, and topology spread constraints.'},
-  'arch-oauth':{t:'OAuth / Console',b:'OAuth Server handles user authentication via identity providers (LDAP, OIDC, HTPasswd). Web Console provides full admin + developer UI.'},
-  'arch-operators':{t:'Cluster Operators',b:'~30 built-in operators manage platform components. CVO coordinates upgrades across all operators. Each operator reconciles its domain independently.'},
-  'arch-worker':{t:'Worker Nodes',b:'Scalable compute nodes running application workloads. Managed by MachineSets. Each runs kubelet, CRI-O, OVN-Kubernetes, and CSI plugins.'},
+  'arch-oauth':{t:'OAuth / Console',b:'OAuth Server handles user authentication via identity providers such as LDAP, OpenID Connect, GitHub, and HTPasswd. The RBAC-aware web console uses unified perspectives by default in OCP 4.19 and later.'},
+  'arch-operators':{t:'Cluster Operators',b:'Built-in Cluster Operators manage core platform components. The CVO coordinates these Operators during a platform update. Layered OLM Operators are installed and upgraded through their own subscriptions and compatibility policies.'},
+  'arch-worker':{t:'Worker Nodes',b:'Compute nodes run application workloads and core node services such as kubelet, CRI-O, OVN-Kubernetes, and CSI plugins. Machine API management and automatic scaling depend on the installation platform; eligible user-provisioned workers can use supported RHEL instead of RHCOS.'},
   'arch-crio':{t:'CRI-O',b:'Lightweight OCI-compliant container runtime replacing Docker. Implements Kubernetes Container Runtime Interface (CRI). CRI-O version tracks the Kubernetes version in each OCP release.'},
   'arch-kubelet':{t:'kubelet',b:'Node agent ensuring containers run in pods. Watches API server for pod assignments, manages pod lifecycle, reports node status.'},
   'arch-ovn':{t:'OVN-Kubernetes',b:'Default CNI plugin since OCP 4.12. Provides pod networking (Geneve tunnels), service load balancing (replaces kube-proxy), NetworkPolicy enforcement via OVN ACLs.'},
   'arch-csip':{t:'CSI Plugins',b:'Container Storage Interface drivers for external storage integration. Node plugin (DaemonSet) handles mount/format on each node.'},
   'arch-apps':{t:'Application Pods',b:'User workloads: Deployments, StatefulSets, DaemonSets, Jobs, CronJobs. Each pod gets a unique IP from the pod CIDR.'},
-  'arch-platsvc':{t:'Platform Services',b:'Built-in services: HAProxy Router (ingress), Internal Registry, Prometheus + Alertmanager (monitoring), Console UI, CoreDNS.'},
+  'arch-platsvc':{t:'Platform Services',b:'Core services include the HAProxy router, image registry Operator, platform Prometheus and Alertmanager, web console, and CoreDNS. Registry storage and production monitoring persistence still require environment-specific configuration.'},
   'arch-eco':{t:'Red Hat Ecosystem',b:'Optional products extending OpenShift: ACM (multi-cluster), ACS (security), ODF (storage), OpenShift Virtualization, OpenShift AI, Service Mesh.'},
   'arch-acm':{t:'ACM',b:'Hub-spoke model for managing multiple clusters. Cluster provisioning, governance policies, app delivery, observability.'},
   'arch-acs':{t:'ACS',b:'Full-lifecycle container security (StackRox). Build-time scanning, deploy-time admission control, runtime eBPF monitoring.'},
@@ -9197,18 +9217,18 @@ const T = {
   'virt-templates':{t:'VM Templates',b:'Pre-configured templates for common guest OS types (RHEL, Windows, Fedora). Include boot source (PVC with pre-installed OS), resource defaults, and cloud-init/sysprep configuration. Create VMs from templates via console or CLI in seconds.'},
   'virt-import':{t:'Import from VMware',b:'Migration Toolkit for Virtualization (MTV) imports VMs from VMware vSphere to OpenShift Virtualization. Converts VMDK disks to PVCs, maps networks, preserves VM configuration. Supports warm migration (pre-copy most data while VM is running, brief cutover).'},
   'virt-shared':{t:'Shared Infrastructure',b:'VMs use the same infrastructure as containers: OVN-Kubernetes for networking (pods and VMs can communicate directly), PersistentVolumeClaims for VM disks (same StorageClasses and CSI drivers), RBAC for access control, Prometheus for monitoring. One platform, one operational model.'},
-  'arch-rhcos':{t:'RHCOS',b:'Red Hat Enterprise Linux CoreOS. Immutable, container-optimized OS. Versioned with OpenShift — tested and shipped together. MCO manages CRI-O config, kubelet config, authorized registries, SSH config. RHCOS admins are responsible for: Nothing.'},
-  'arch-olm':{t:'OLM',b:'Manages optional operator lifecycle: install, upgrade, RBAC, dependency resolution. OperatorHub provides 200+ curated operators.'},
+  'arch-rhcos':{t:'RHCOS',b:'Red Hat Enterprise Linux CoreOS is the controlled-immutable host OS required for bootstrap and control-plane machines and normally used for compute. The MCO applies supported declarative host configuration. Administrators still own capacity, health, change review, upgrade readiness, troubleshooting, and recovery.'},
+  'arch-olm':{t:'OLM',b:'Manages layered Operator installation, upgrade channels, RBAC, and dependency resolution. Catalog availability, product entitlement, compatibility, and automatic-upgrade policy vary by Operator.'},
 
   // Version alignment
-  'ver-ocp421':{t:'OCP 4.21',b:'Latest release. Ships with Kubernetes 1.34, CRI-O 1.34, RHCOS 421.96.x, RHEL 9.6 kernel. All components tested and qualified together by Red Hat.'},
+  'ver-ocp422':{t:'OCP 4.22 — Guide Baseline',b:'This guide is verified against OCP 4.22 as of 11 July 2026. OCP 4.22 uses Kubernetes 1.35 with CRI-O 1.35, and RHCOS is based on RHEL 9.8. Exact RHCOS builds change with z-stream updates.'},
+  'ver-ocp420':{t:'OCP 4.20 EUS',b:'OCP 4.20 uses Kubernetes 1.33 with CRI-O 1.33 and an RHCOS base derived from RHEL 9.6. It is an EUS release and the source release used by the 4.20-to-4.22 Control Plane Only example.'},
   'ver-ocp418':{t:'OCP 4.18',b:'Ships with Kubernetes 1.31, CRI-O 1.31, RHCOS 418.94.x, RHEL 9.4 kernel. EUS (Extended Update Support) release with longer support lifecycle.'},
-  'ver-ocp416':{t:'OCP 4.16',b:'Ships with Kubernetes 1.29, CRI-O 1.29, RHCOS 416.94.x, RHEL 9.4 kernel. EUS release with longer support lifecycle.'},
-  'ver-ocp-role':{t:'OpenShift Platform',b:'The CVO (Cluster Version Operator) orchestrates the entire upgrade. It fetches the release image containing exact versions of every component, then drives operators to update in the correct order. One oc adm upgrade command triggers everything.'},
-  'ver-rhcos-role':{t:'RHCOS in Upgrade',b:'MCO (Machine Config Operator) handles RHCOS updates. It renders new MachineConfig, drains nodes one at a time per MachineConfigPool, applies the OS update via rpm-ostree, and reboots. Atomic and rollback-capable.'},
+  'ver-ocp-role':{t:'OpenShift Core Platform',b:'The CVO orchestrates the core platform update from a release image and drives Cluster Operators toward the target payload. Layered OLM Operators have their own compatibility, subscription channels, and update decisions.'},
+  'ver-rhcos-role':{t:'RHCOS in an Update',b:'The MCO handles RHCOS updates by rendering MachineConfig and rolling it through each MachineConfigPool according to maxUnavailable. Supported RHEL compute nodes are maintained through their separate RHEL lifecycle.'},
   'ver-crio-role':{t:'CRI-O Version Lock',b:'CRI-O major.minor always matches Kubernetes major.minor (e.g. CRI-O 1.30 = K8s 1.30). CRI-O is bundled inside RHCOS — not installed or upgraded separately. It implements the Kubernetes CRI (Container Runtime Interface) spec for that exact K8s version.'},
-  'ver-k8s-role':{t:'Kubernetes Version',b:'Each OCP release embeds a specific Kubernetes version. OCP 4.x typically ships K8s 1.(x+13), e.g. OCP 4.21 = K8s 1.34. API server, kubelet, controller-manager, and scheduler all run this version. You cannot change the K8s version independently.'},
-  'ver-kernel-role':{t:'RHEL Kernel',b:'RHCOS uses the RHEL kernel — battle-tested, with backported security fixes and hardware enablement. The kernel version is tied to the RHEL minor release (e.g. RHEL 9.4). Includes SELinux enforcing, cgroups v2, and eBPF support.'},
+  'ver-k8s-role':{t:'Kubernetes Version',b:'Each OCP release embeds and supports a specific Kubernetes minor version. OCP 4.22 uses Kubernetes 1.35. API server, kubelet, controller-manager, and scheduler versions are updated through the OpenShift release payload rather than independently.'},
+  'ver-kernel-role':{t:'RHCOS RHEL Base',b:'RHCOS is composed primarily of RHEL packages and uses the RHEL kernel with backported security fixes and hardware enablement. OCP 4.22 RHCOS is based on RHEL 9.8; exact package and kernel builds change in z-stream updates.'},
 
   // Nodes
   'node-bootstrap':{t:'Bootstrap Node',b:'Temporary node used ONLY during installation. Bootstraps etcd and API server. Automatically removed after install completes.'},
@@ -9216,7 +9236,7 @@ const T = {
   'node-infra':{t:'Infrastructure Node',b:'Dedicated to platform services: Ingress Controller, Registry, Monitoring, Logging. Label with node-role.kubernetes.io/infra to avoid subscription charges.'},
   'node-worker':{t:'Worker Node',b:'Runs all user application workloads. Managed by MachineSets for declarative scaling. Supports RHCOS and RHEL.'},
 
-  'node-shared':{t:'Shared Components',b:'Every node runs: kubelet, CRI-O, OVN-Kubernetes, Machine Config Daemon, Node Tuning Operator agent, CSI node plugin.'},
+  'node-shared':{t:'Core Node Services',b:'Linux nodes run kubelet, CRI-O, OVN-Kubernetes, and applicable CSI and monitoring DaemonSets. The Machine Config Daemon manages RHCOS nodes; supported RHEL compute nodes use a separate host-maintenance workflow.'},
   'ni-pod-app':{t:'Application Pod',b:'User workload with a unique cluster IP from the pod CIDR (e.g., 10.128.2.15). Contains one or more containers sharing network namespace and volumes. Managed by controllers like Deployment, StatefulSet, DaemonSet.'},
   'ni-pod-ds':{t:'DaemonSet Pods',b:'Pods that run on every node (or a subset). Common DaemonSets: node-exporter (Prometheus metrics on port 9100), Vector/Fluentd (log collection from /var/log/containers/), OVN-Kubernetes (networking), CSI node plugin (storage).'},
   'ni-pod-csi':{t:'CSI Node Plugin',b:'DaemonSet component of each CSI driver. Handles NodeStageVolume (format device + mount to staging path) and NodePublishVolume (bind-mount into pod). Contains the CSI driver container + driver-registrar sidecar that registers with kubelet.'},
@@ -9227,7 +9247,7 @@ const T = {
   'ni-mcd':{t:'Machine Config Daemon (MCD)',b:'DaemonSet agent of the Machine Config Operator (MCO). Compares current node config with rendered MachineConfig target. Delivers: files, systemd units, kernel args, SSH keys, registry config. Most changes trigger reboot: cordon → drain → apply → reboot → uncordon. One node at a time per pool. All OS config is declarative via CRDs — no SSH needed.'},
   'ni-ovn-detail':{t:'OVN-Kubernetes (CNI)',b:'Default CNI plugin since OCP 4.12. Built on Open Virtual Network (OVN) + Open vSwitch (OVS). Geneve tunnel encapsulation for cross-node pod traffic. Replaces kube-proxy — service load balancing done natively in OVN via OVS flows. Creates logical switches (one per node), routers, ports, ACLs (NetworkPolicy), and load balancers. Supports EgressIP, EgressFirewall, and Multus for secondary network interfaces.'},
   'multus-meta':{t:'Multus CNI (Meta-Plugin)',b:'Multus does not provide networking itself — it delegates to other CNI plugins. Acts as a "multiplexer": the primary interface (eth0) always goes to OVN-Kubernetes, while additional interfaces (net1, net2, ...) are delegated to macvlan, SR-IOV, bridge, or other plugins. Configuration is driven by NetworkAttachmentDefinition CRs. Pre-installed on every OpenShift 4.x cluster.'},
-  'multus-eth0':{t:'eth0 — Primary Interface',b:'Every pod gets eth0 from OVN-Kubernetes (the default CNI). This interface carries cluster network traffic: pod-to-pod via Geneve overlay, Service load balancing, and NetworkPolicy enforcement. IP assigned from the pod CIDR (e.g., 10.128.0.0/14). This is the only interface that NetworkPolicy applies to.'},
+  'multus-eth0':{t:'eth0 — Primary Interface',b:'The default pod interface is normally provided by OVN-Kubernetes and carries cluster-network traffic. Kubernetes NetworkPolicy governs this default or primary network. Supported Multus secondary networks can be governed separately with the optional MultiNetworkPolicy API.'},
   'multus-net1':{t:'net1 — Macvlan Interface',b:'Secondary interface attached via macvlan plugin. Pod gets its own MAC address on the host physical NIC, appearing as a separate device on the physical network. Direct L2 access — no overlay, no encapsulation. Useful for accessing VLAN-segmented networks, legacy infrastructure, or storage networks. IP managed by IPAM plugin (whereabouts or static).'},
   'multus-sriov':{t:'net2 — SR-IOV VF Interface',b:'Secondary interface using SR-IOV (Single Root I/O Virtualization). The physical NIC is split into Virtual Functions (VFs) at the hardware level. Each VF is passed directly to a pod — near-native NIC performance with minimal CPU overhead. Requires SR-IOV Network Operator. Used for telco/NFV workloads, DPDK, and high-throughput data planes. deviceType can be netdevice (kernel driver) or vfio-pci (userspace/DPDK).'},
   'multus-nad':{t:'NetworkAttachmentDefinition',b:'Custom Resource that defines a secondary network for Multus. Specifies: CNI plugin type (macvlan, bridge, SR-IOV), master interface, VLAN, IPAM configuration. Pods request attachment via annotation: k8s.v1.cni.cncf.io/networks: <nad-name>. Namespace-scoped — pods can only attach to NADs in their own namespace. For SR-IOV, the SriovNetwork CR auto-generates the NAD.'},
@@ -9297,7 +9317,7 @@ const T = {
   'res-namespace':{t:'Namespace / Project',b:'Logical isolation boundary. All namespaced resources exist within one. OpenShift Projects add default RBAC (admin/edit/view for creator), annotation templates, and node selectors. ResourceQuota and LimitRange enforce resource governance.'},
 
   // Namespaces & Projects
-  'ns-project':{t:'OpenShift Project',b:'A Kubernetes Namespace with OpenShift enhancements: automatic RBAC (admin/edit/view for the creator), annotation templates, node selectors, and network isolation via NetworkPolicy. Created with oc new-project. Every Project is a Namespace, but not every Namespace is a Project.'},
+  'ns-project':{t:'OpenShift Project',b:'A Project is the OpenShift, user-facing representation of a Kubernetes Namespace. The oc new-project workflow submits a ProjectRequest, allowing the cluster project template to add annotations, policy, quotas, and requester RBAC. Direct Namespace creation does not invoke that template.'},
   'ns-resourcequota':{t:'ResourceQuota',b:'Limits total resource consumption within a namespace: CPU requests/limits, memory requests/limits, number of pods, services, secrets, PVCs. Prevents a single namespace from consuming all cluster resources. Multiple quotas can coexist. Applied by cluster-admin.'},
   'ns-limitrange':{t:'LimitRange',b:'Sets default and max/min resource requests/limits per container or pod within a namespace. If a container does not specify requests/limits, LimitRange injects defaults. Prevents pods from running without resource constraints.'},
   'ns-netpol-scope':{t:'NetworkPolicy (Namespace Scope)',b:'NetworkPolicy rules apply within a namespace. When any NetworkPolicy selects a pod, that pod becomes isolated. Only explicitly allowed traffic passes. Namespace labels in namespaceSelector rules control cross-namespace policies.'},
@@ -9362,7 +9382,7 @@ const T = {
   'boot-s8':{t:'Step 8: OCP Components Injected',b:'The ClusterVersion Operator (CVO) deploys all cluster operators: networking, DNS, ingress, monitoring, registry, console, auth, and more.'},
   'boot-s9':{t:'Step 9: Bootstrap Torn Down',b:'The bootstrap node is removed entirely. Workers approve their CSRs and join the cluster. The cluster is now self-sustaining.'},
   'inst-connected':{t:'Connected Install',b:'Standard installation with internet access. Pulls images from registry.redhat.io, receives update graph from Cincinnati service. Simplest path.'},
-  'inst-disconnected':{t:'Disconnected Install',b:'Air-gapped or restricted network. Requires a mirror registry with all OCP images. Use oc-mirror tool to sync. ImageContentSourcePolicy redirects image pulls to mirror.'},
+  'inst-disconnected':{t:'Disconnected Install',b:'Air-gapped or restricted-network installation requires a highly available mirror registry containing the selected OCP payload, Operator catalogs, and required workload images. Use oc-mirror v2; its generated IDMS and ITMS resources configure digest and tag mirror resolution. ICSP is deprecated.'},
   'inst-dns-api':{t:'API DNS Record',b:'api.<cluster>.<domain> resolves to the API load balancer VIP. Required for oc/kubectl access and all cluster API operations. Must be resolvable before install.'},
   'inst-dns-apiint':{t:'API Internal DNS',b:'api-int.<cluster>.<domain> resolves to the internal API load balancer. Used by nodes to reach the API server internally. Critical for node bootstrap.'},
   'inst-dns-apps':{t:'Apps Wildcard DNS',b:'*.apps.<cluster>.<domain> resolves to the Ingress load balancer VIP. All Routes get hostnames under this wildcard. Enables automatic hostname resolution.'},
@@ -9418,15 +9438,15 @@ const T = {
   'plat-baremetal':{t:'Bare Metal',b:'Recommended: Agent-Based Installer (CLI-driven, air-gapped native, single bootable ISO) or Assisted Installer (Web UI, SaaS or on-prem hub, guided host discovery). MachineSet scaling via MachineAPI for day-2 node management.'},
   'plat-cloud':{t:'Cloud (AWS/Azure/GCP)',b:'IPI recommended — full automation of VPC, subnets, load balancers, DNS, compute instances. UPI also supported for custom networking or compliance requirements.'},
   'plat-edge':{t:'Edge / SNO',b:'Agent-Based Installer recommended. Single Node OpenShift for edge locations. Scale with ACM Zero Touch Provisioning (ZTP) via SiteConfig CRDs + GitOps (ArgoCD).'},
-  'plat-disconnected':{t:'Disconnected / Air-Gapped',b:'Agent-Based Installer recommended. ISO is self-contained. Use oc-mirror to mirror OCP release images to mirror registry. install-config.yaml references imageContentSources and mirror CA. No internet required at install time.'},
-  'dc-mirror-cmd':{t:'oc-mirror',b:'CLI tool that mirrors OCP release images, operator catalog images, and additional images from Red Hat registries to a mirror registry. Creates ImageContentSourcePolicy (or ImageDigestMirrorSet in OCP 4.13+) and CatalogSource manifests for disconnected install.'},
-  'dc-registry':{t:'Mirror Registry (Connected)',b:'A container image registry in the connected environment that receives mirrored images from Red Hat registries via oc-mirror. Can be Red Hat Quay, the lightweight mirror-registry tool (single-binary, no subscription needed), Harbor, Nexus, or any OCI-compliant registry. The registry data (images + metadata) is exported and transferred to the disconnected environment via portable media.'},
-  'dc-iso-gen':{t:'Generate ISO (Disconnected)',b:'openshift-install agent create image generates the bootable ISO. install-config.yaml must include imageContentSources (mirror mappings) and additionalTrustBundle (mirror registry CA certificate) for disconnected mode.'},
+  'plat-disconnected':{t:'Disconnected / Air-Gapped',b:'The Agent-based Installer supports disconnected installation. Use oc-mirror v2 to mirror the selected release payload, Operator catalogs, and additional images. Configure the installer with the generated mirror mappings and the mirror registry CA by following the procedure for the exact OCP release.'},
+  'dc-mirror-cmd':{t:'oc-mirror v2',b:'Supported mirroring workflow for OCP payloads, Operator catalogs, and additional images. It supports registry and file-based transfers and generates ImageDigestMirrorSet, ImageTagMirrorSet, catalog, and update-service resources as required. oc-mirror v1 and ICSP are deprecated.'},
+  'dc-registry':{t:'Mirror Registry',b:'A registry reachable by every cluster machine and sized for the selected payloads and catalogs. The small mirror registry for Red Hat OpenShift is included with an OpenShift subscription; production deployments can use Quay or a compatible third-party registry. The integrated OpenShift image registry cannot be the mirror target.'},
+  'dc-iso-gen':{t:'Generate ISO (Disconnected)',b:'openshift-install agent create image generates the bootable ISO. For disconnected use, install-config.yaml needs the mirror mappings expected by that OCP release plus additionalTrustBundle containing the mirror registry CA. ICSP output is legacy and deprecated.'},
   'dc-media':{t:'Transfer via Portable Media',b:'The generated ISO and mirror registry data are transferred to the disconnected environment via USB drives, portable storage, or secure media transfer. No network connection between environments.'},
   'dc-local-reg':{t:'Mirror Registry (Disconnected)',b:'Same mirror registry concept as the connected side &mdash; an OCI-compliant registry holding mirrored images. In the disconnected environment, populated from portable media (USB/disk). Contains all OCP release images, operator catalog images, and application images needed for installation and Day-2 operation. Nodes pull all container images from this registry instead of the internet.'},
   'dc-boot-hosts':{t:'Boot Hosts (Disconnected)',b:'All target hosts boot from the ISO. The rendezvous host starts the embedded Assisted Service. Other hosts register and provide hardware inventory. All images pulled from the mirror registry.'},
   'dc-install':{t:'Install (Disconnected)',b:'Standard Agent-Based installation flow: validate hosts, write RHCOS to disk, form cluster, deploy operators. All container images sourced from the mirror registry. Zero internet connectivity required.'},
-  'dc-result':{t:'Disconnected Cluster',b:'Running OCP cluster with telemetry disabled, internal catalog sources (mirrored operator catalogs), and all images referencing the mirror registry. oc-mirror used for ongoing updates.'},
+  'dc-result':{t:'Disconnected Cluster',b:'The cluster pulls platform, Operator, and workload content from its mirror sources. Preserve the oc-mirror v2 workspace/cache and repeat the documented workflow for updates. Telemetry behavior depends on the cluster connectivity and configuration; disconnected does not itself imply a specific telemetry setting.'},
   'svc-detail':{t:'Service (ClusterIP)',b:'Provides stable VIP (e.g., 172.30.1.42) and DNS name (backend.my-app.svc.cluster.local). Uses label selector (e.g., app=backend) to discover matching pods. EndpointSlice tracks healthy pod IPs. OVN-Kubernetes load balances traffic across backends.'},
   'svc-pod-match':{t:'Matching Pod',b:'This pod has labels matching the Service selector (app=backend). It is included in the EndpointSlice and receives traffic from the Service. If the pod fails readiness probe, it is removed from endpoints.'},
   'svc-pod-nomatch':{t:'Non-Matching Pod',b:'This pod has different labels (app=frontend). It does NOT match the Service selector and receives no traffic from this Service. A separate Service with matching selector would be needed.'},
@@ -9459,7 +9479,7 @@ const T = {
   'scc-deny':{t:'Denied',b:'No SCC satisfies pod spec. Forbidden error. Fix: grant less restrictive SCC to SA or adjust pod spec.'},
   'scc-list':{t:'SCC Priority',b:'restricted-v2 (most restrictive) then nonroot-v2 then anyuid then privileged (full access). Use least privilege.'},
   'sec-rbac':{t:'RBAC',b:'Role-Based Access Control. Rules (verbs + resources + API groups), Roles (collection of rules), Bindings (subjects + role). ClusterRole is cluster-scoped; Role is namespace-scoped.'},
-  'rbac-user':{t:'User',b:'Represents a human user authenticated via OAuth. Users are created automatically upon first login. Cannot be created via API — only through authentication. Identified by username string.'},
+  'rbac-user':{t:'User',b:'Represents a regular OpenShift user. A User and Identity are normally created on first successful login, and administrators can also create or manipulate User objects through the user.openshift.io/v1 API. Authentication and identity mapping still determine login access.'},
   'rbac-group':{t:'Group',b:'Collection of users. Used to grant permissions to multiple users at once. Built-in groups: system:authenticated (all logged-in users), system:unauthenticated, system:authenticated:oauth, system:cluster-admins.'},
   'rbac-sa':{t:'ServiceAccount',b:'Enables API access for pods without borrowing user credentials. Each namespace has a "default" SA. Tokens auto-mounted into pods. Create custom SAs to isolate permissions per workload (e.g., one SA per operator).'},
   'rbac-binding':{t:'RoleBinding / ClusterRoleBinding',b:'Associates subjects (users, groups, SAs) with a Role or ClusterRole. RoleBinding is namespace-scoped (can reference a ClusterRole but limits it to that namespace). ClusterRoleBinding grants permissions cluster-wide.'},
@@ -9508,7 +9528,7 @@ const T = {
   'mon-ksm':{t:'kube-state-metrics',b:'Generates metrics about Kubernetes objects: deployment replicas, pod phase, node conditions, PVC status, job completions. Does not scrape — listens to API server and converts object state to metrics.'},
   'mon-osm':{t:'openshift-state-metrics',b:'OpenShift-specific counterpart to kube-state-metrics. Emits metrics for OpenShift-specific resources: Routes, BuildConfigs, ClusterOperators, etc.'},
   'mon-etcd':{t:'etcd Metrics',b:'etcd exposes Raft consensus metrics, DB size, disk fsync duration, leader changes, and request latency. Critical for cluster health monitoring. High fsync durations indicate storage performance issues.'},
-  'mon-prom-platform':{t:'Platform Prometheus (x2 HA)',b:'Two Prometheus replicas running in openshift-monitoring namespace. Scrape all platform targets (kubelet, cAdvisor, node-exporter, kube-state-metrics, etcd, API server). Each stores data in PVC-backed TSDB. 15-day default retention. Ships 100+ built-in alerting rules.'},
+  'mon-prom-platform':{t:'Platform Prometheus (x2 HA)',b:'Two Prometheus replicas in openshift-monitoring scrape platform targets. Core metrics have a 15-day default retention setting, but a new cluster uses non-durable storage until an administrator configures PVCs. Configure persistent storage for production HA and history across pod recreation.'},
   'mon-thanos-sidecar':{t:'Thanos Sidecar',b:'Runs alongside each Prometheus replica. Exposes Prometheus data via Thanos StoreAPI on port 10901. Enables deduplication across HA replicas. The Querier connects to all Sidecars for a unified view.'},
   'mon-thanos-querier':{t:'Thanos Querier',b:'Unified PromQL query endpoint. Aggregates data from all Thanos Sidecars (platform + UWM). Deduplicates metrics from HA replicas. The OCP Console and external tools query this endpoint. Exposes PromQL API.'},
   'mon-console':{t:'OCP Console',b:'Built-in web console queries Thanos Querier for dashboards. Shows cluster health, resource usage, alerting overview, namespace metrics. No external Grafana needed for basic monitoring.'},
@@ -9637,21 +9657,21 @@ const T = {
   'odf-dr-ramen':{t:'Ramen + ACM',b:'Ramen (OpenShift DR operators) orchestrates failover/relocate via DRPolicy and DRPlacementControl CRs on the ACM hub. ACM moves the workload placement; Ramen flips volume replication direction. Since ODF 4.20, individual VMs can fail over independently.'},
 
   // Day-2
-  'upg-channel':{t:'Update Channel',b:'stable (tested), fast (early access), eus (Extended Update Support for even-numbered releases like 4.14, 4.16).'},
-  'upg-cvo':{t:'CVO Pulls Release',b:'ClusterVersion Operator pulls target release image from Cincinnati update graph. Contains desired version of every operator.'},
+  'upg-channel':{t:'Update Channel',b:'Channels expose recommended update targets for a release stream: stable, fast, candidate, and EUS where applicable. EUS applies to selected even-numbered OCP releases; always use targets presented by the cluster update graph.'},
+  'upg-cvo':{t:'CVO Pulls Release',b:'The Cluster Version Operator retrieves the selected OCP release payload and reconciles the core Cluster Operators. Layered OLM Operators are not part of that payload and require separate compatibility and update review.'},
   'upg-co':{t:'Update Operators',b:'Each Cluster Operator updated to target version. If an operator reports degraded, upgrade pauses.'},
-  'upg-mco':{t:'MCO Rolls Nodes',b:'Machine Config Operator: cordon, drain, apply, reboot, uncordon. One node at a time. Control plane first.'},
+  'upg-mco':{t:'MCO Rolls RHCOS Nodes',b:'The Machine Config Operator coordinates cordon, drain, apply, reboot, and uncordon for RHCOS nodes. Concurrency follows each MachineConfigPool maxUnavailable setting; supported RHEL compute nodes have a separate maintenance process.'},
   'upg-done':{t:'Upgrade Complete',b:'All operators report Available=True, Degraded=False. ClusterVersion shows new version.'},
   'mco-cordon':{t:'Cordon',b:'Node marked SchedulingDisabled. No new pods placed. Existing pods continue.'},
   'mco-drain':{t:'Drain',b:'Evicts all non-DaemonSet pods. Respects PodDisruptionBudgets. Pods rescheduled to other nodes.'},
   'mco-apply':{t:'Apply Config',b:'Writes new files, updates systemd units, sets kernel args. Changes written to ostree staging area.'},
   'mco-reboot':{t:'Reboot',b:'Node reboots into new ostree deployment. If boot fails, ostree auto-rolls back.'},
   'mco-uncordon':{t:'Uncordon',b:'Node marked SchedulingEnabled. MCO verifies health, then moves to next node.'},
-  'mon-prom':{t:'Prometheus',b:'TSDB as StatefulSet. Platform Prometheus in openshift-monitoring. User Workload Prometheus separate. 15-day default retention.'},
+  'mon-prom':{t:'Prometheus',b:'Core platform Prometheus runs in openshift-monitoring and has a 15-day default retention setting. Storage is not durable on a new cluster until an administrator configures PVCs. User Workload Monitoring is separate and optional.'},
   'mon-alert':{t:'Alertmanager',b:'Receives alerts, deduplicates, groups, routes to Slack/PagerDuty/email. 100+ built-in alerting rules.'},
-  'mon-grafana':{t:'Grafana / Console',b:'Built-in dashboards for cluster metrics. Add Grafana operator for custom dashboards.'},
-  'mon-loki':{t:'Loki (Logging)',b:'Log aggregation via Logging Operator. Vector collects, Loki stores. Query via Console or Grafana.'},
-  'mon-user':{t:'User Workload Monitoring',b:'Enable in cluster-monitoring-config ConfigMap. Create ServiceMonitor/PodMonitor in your namespace.'},
+  'mon-grafana':{t:'Console Dashboards',b:'The OpenShift web console provides built-in dashboards backed by the platform monitoring stack. Grafana is not part of the default core stack; deploy and support it separately if required.'},
+  'mon-loki':{t:'Loki (Optional Logging)',b:'Loki-based log aggregation is layered functionality, not part of a default OCP installation. Install and configure the supported Logging, Loki, and console integration Operators as required.'},
+  'mon-user':{t:'User Workload Monitoring',b:'Optional monitoring for user projects. Enable it in cluster-monitoring-config, then create ServiceMonitor or PodMonitor resources in permitted namespaces.'},
 
   // Compliance
   'comp-profile':{t:'TailoredProfile',b:'Customized compliance profile. Extends a base profile (CIS, NIST, PCI-DSS) with rule selections and value overrides specific to your environment.'},
@@ -9674,7 +9694,7 @@ const T = {
   'mc-node-waiting':{t:'Node: Waiting',b:'This node is queued for update. It continues running workloads normally until the MCO finishes the currently-updating node and moves to this one. Controlled by maxUnavailable.'},
   'mc-node-done':{t:'Node: Updated',b:'This node has been successfully updated to the latest rendered MachineConfig. It has been uncordoned and is accepting workloads again. The MCO moves on to the next node.'},
   'mc-maxunavail':{t:'maxUnavailable',b:'Controls how many nodes in the pool can be updating simultaneously. Default is 1. Increasing speeds up rollouts but reduces available capacity during updates. Set via the MachineConfigPool spec.'},
-  'mc-pause':{t:'Paused MCP',b:'When paused:true, the MCO will not roll out any config changes to nodes in this pool. Used during EUS-to-EUS upgrades to hold workers while the control plane updates. Also blocks certificate rotation and security patches.'},
+  'mc-pause':{t:'Paused MCP',b:'When paused:true, the MCO does not roll queued configuration to nodes in that pool. A Control Plane Only update temporarily pauses every non-control-plane MCP while the cluster explicitly updates through the intermediate minor and then the target EUS release. Unpause promptly so certificates, fixes, and host configuration can apply.'},
 
   // OADP
   'oadp-backup':{t:'Backup CR',b:'A velero.io/v1 Backup resource that defines what to back up: included namespaces, label selectors, resource types, and volume snapshot method. Creates a point-in-time backup stored in object storage.'},
