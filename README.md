@@ -12,6 +12,7 @@ A collection of OpenShift Container Platform presentations and workshops, hosted
 - [OpenShift Lightspeed](workshops/openshift-lightspeed.html) — AI-powered assistant for OpenShift
 - [F5 GTM Diagram](architecture/f5-gtm-diagram.html) — F5 GTM architecture diagram
 - [OpenShift Cluster Manage Network Explanation](architecture/openshift-cluster-manage-network-explaination.html) — OpenShift cluster management network explanation
+- [WAF Architecture — Traffic Flow Diagram](architecture/waf-diagram.html) — WAF traffic flow architecture diagram
 
 See [CHANGELOG.md](CHANGELOG.md) for recent updates.
 
