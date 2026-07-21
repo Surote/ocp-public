@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WAF Architecture — Traffic Flow Diagram</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #f5f6f8;
+  --bg-primary: #ffffff;
+  --bg-surface: #f0f2f5;
+  --bg-elevated: #e8ebf0;
+  --border: rgba(0,0,0,.08);
+  --border-active: rgba(0,0,0,.15);
+  --text: #3c4257;
+  --text-bright: #1a1f36;
+  --text-muted: #6b7394;
+  --text-dim: #a0a8c0;
+  --red: #cc0000;
+  --red-glow: rgba(204,0,0,.08);
+  --red-soft: #e53935;
+  --blue: #1a73e8;
+  --blue-dim: rgba(26,115,232,.08);
+  --teal: #0d9488;
+  --teal-dim: rgba(13,148,136,.06);
+  --amber: #d97706;
+  --amber-dim: rgba(217,119,6,.06);
+  --purple: #7c3aed;
+  --purple-dim: rgba(124,58,237,.06);
+  --green: #16a34a;
+  --green-dim: rgba(22,163,74,.06);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-xs: 6px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background: var(--bg-deep);
+  color: var(--text);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* Topbar */
+.topbar {
+  position: fixed; top:0; left:0; right:0; z-index:200;
+  height: 56px;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(20px) saturate(1.2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 28px; gap: 16px;
+}
+.topbar::after {
+  content:''; position:absolute; bottom:-1px; left:0; right:0; height:1px;
+  background: linear-gradient(90deg, transparent, var(--red), var(--blue), transparent);
+  opacity:.4;
+}
+.logo { display:flex; align-items:center; gap:10px; }
+.logo-mark {
+  width:32px; height:32px; border-radius:8px;
+  background: linear-gradient(135deg, var(--red), #ff4444);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow: 0 2px 10px var(--red-glow);
+  color: #fff; font-size: .9rem; font-weight: 700;
+}
+.logo-text { font-weight:700; font-size:1rem; color:var(--text-bright); letter-spacing:-.02em; }
+.logo-tag { font-size:.6rem; font-weight:600; color:var(--red-soft); background:var(--red-glow); padding:2px 8px; border-radius:4px; letter-spacing:.04em; text-transform:uppercase; }
+
+.topbar-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
+.mode-badge {
+  padding:4px 14px; border-radius:20px; font-size:.68rem; font-weight:700;
+  letter-spacing:.04em;
+}
+.mode-detection { background:var(--amber-dim); color:var(--amber); border:1px solid rgba(217,119,6,.2); }
+.mode-blocking { background:var(--red-glow); color:var(--red-soft); border:1px solid rgba(204,0,0,.2); }
+
+/* Controls */
+.controls {
+  display:flex; justify-content:center; gap:8px; padding:72px 16px 12px; flex-wrap:wrap;
+}
+.btn {
+  padding:8px 18px; border:1px solid var(--border); border-radius:var(--radius-sm);
+  background:var(--bg-primary); color:var(--text-muted); cursor:pointer;
+  font-size:.78rem; font-weight:500; font-family:inherit;
+  transition:all .2s; box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+.btn:hover { border-color:var(--border-active); color:var(--text); box-shadow:0 2px 8px rgba(0,0,0,.06); }
+.btn.active { background:var(--blue); border-color:var(--blue); color:#fff; box-shadow:0 2px 10px rgba(26,115,232,.25); }
+
+/* Legend */
+.legend {
+  display:flex; justify-content:center; gap:16px; padding:2px 16px 8px; flex-wrap:wrap;
+}
+.legend-item { display:flex; align-items:center; gap:6px; font-size:.68rem; color:var(--text-muted); font-weight:500; }
+.legend-sw { width:20px; height:3px; border-radius:2px; }
+.legend-sw-dash { width:20px; height:0; border-top:2px dashed; }
+
+/* Diagram container */
+.diagram-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin: 0 auto; padding: 20px;
+  max-width: 1260px;
+  position: relative; overflow-x: auto;
+}
+.diagram-box::before {
+  content:''; position:absolute; inset:0; border-radius:var(--radius);
+  background: radial-gradient(ellipse at 50% 0%, rgba(26,115,232,.03), transparent 70%);
+  pointer-events:none;
+}
+.diagram-title {
+  font-size:.68rem; text-transform:uppercase; letter-spacing:.1em;
+  color:var(--text-dim); margin-bottom:14px; font-weight:600;
+  display:flex; align-items:center; gap:8px;
+}
+.diagram-title::before {
+  content:''; width:3px; height:12px; border-radius:2px;
+  background:linear-gradient(var(--blue),var(--teal));
+}
+
+/* Canvas */
+.canvas { position:relative; width:1200px; height:660px; margin:0 auto; }
+
+/* Zones */
+.zone {
+  position:absolute; border-radius:var(--radius); z-index:0;
+}
+.zlabel {
+  position:absolute; font-size:.58rem; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; padding:3px 10px; border-radius:var(--radius-xs); z-index:0;
+}
+
+.z-ext { left:14px; top:40px; width:190px; height:420px; background:rgba(26,115,232,.04); border:1px solid rgba(26,115,232,.12); }
+.zl-ext { left:22px; top:46px; color:var(--blue); background:rgba(26,115,232,.06); }
+
+.z-waf { left:250px; top:40px; width:320px; height:420px; background:rgba(204,0,0,.03); border:1.5px solid rgba(204,0,0,.12); }
+.zl-waf { left:258px; top:46px; color:var(--red); background:rgba(204,0,0,.06); }
+
+.z-f5 { left:616px; top:40px; width:170px; height:250px; background:rgba(217,119,6,.04); border:1px solid rgba(217,119,6,.12); }
+.zl-f5 { left:624px; top:46px; color:var(--amber); background:rgba(217,119,6,.06); }
+
+.z-ocp { left:830px; top:40px; width:354px; height:580px; background:rgba(22,163,74,.03); border:1px solid rgba(22,163,74,.12); }
+.zl-ocp { left:838px; top:46px; color:var(--green); background:rgba(22,163,74,.06); }
+
+/* Nodes */
+.node {
+  position:absolute; border-radius:var(--radius); padding:14px 16px;
+  cursor:pointer; z-index:2; min-width:128px; text-align:center;
+  background:var(--bg-primary); border:1px solid var(--border);
+  box-shadow:0 1px 4px rgba(0,0,0,.04);
+  transition:all .2s ease;
+}
+.node:hover {
+  transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(0,0,0,.08);
+  border-color:var(--border-active);
+  z-index:10;
+}
+.node.highlight {
+  box-shadow:0 0 0 2px var(--hl-color, var(--blue)), 0 6px 20px rgba(0,0,0,.1);
+  transform:translateY(-1px);
+}
+.node .icon { font-size:1.4rem; display:block; margin-bottom:5px; }
+.node h3 { font-size:.78rem; font-weight:700; margin-bottom:2px; }
+.node p { font-size:.66rem; color:var(--text-muted); line-height:1.35; }
+.node .ip { font-family:'JetBrains Mono',monospace; font-size:.62rem; color:var(--text-dim); margin-top:3px; }
+
+/* Cert badge */
+.cert-badge {
+  display:inline-flex; align-items:center; gap:3px;
+  margin-top:6px; padding:2px 8px; border-radius:4px;
+  font-size:.58rem; font-weight:600; font-family:'JetBrains Mono',monospace;
+  letter-spacing:.02em;
+}
+.cert-present { background:rgba(22,163,74,.08); color:var(--green); border:1px solid rgba(22,163,74,.2); }
+.cert-none { background:var(--bg-surface); color:var(--text-dim); border:1px solid var(--border); }
+.cert-internal { background:rgba(124,58,237,.06); color:var(--purple); border:1px solid rgba(124,58,237,.15); }
+
+/* Node positions & accent colors */
+.n-client { left:36px; top:110px; --hl-color:var(--blue); border-left:3px solid var(--blue); }
+.n-client h3 { color:var(--blue); }
+.n-dns { left:36px; top:310px; --hl-color:#6366f1; border-left:3px solid #6366f1; }
+.n-dns h3 { color:#6366f1; }
+
+.n-waf { left:278px; top:90px; min-width:260px; --hl-color:var(--red); border-left:3px solid var(--red); }
+.n-waf h3 { color:var(--red); }
+.n-logs { left:278px; top:310px; min-width:240px; --hl-color:var(--purple); border-left:3px solid var(--purple); }
+.n-logs h3 { color:var(--purple); }
+
+.n-f5 { left:638px; top:110px; --hl-color:var(--amber); border-left:3px solid var(--amber); }
+.n-f5 h3 { color:var(--amber); }
+
+.n-r1 { left:855px; top:100px; --hl-color:var(--green); border-left:3px solid var(--green); }
+.n-r1 h3 { color:var(--green); }
+.n-r2 { left:1035px; top:100px; --hl-color:var(--green); border-left:3px solid var(--green); }
+.n-r2 h3 { color:var(--green); }
+.n-apps { left:910px; top:340px; --hl-color:var(--teal); border-left:3px solid var(--teal); }
+.n-apps h3 { color:var(--teal); }
+.n-api { left:910px; top:510px; --hl-color:var(--amber); border-left:3px solid var(--amber); }
+.n-api h3 { color:var(--amber); }
+
+/* SVG */
+svg.arrows { position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events:none; }
+.arrow { fill:none; stroke-width:2; stroke-linecap:round; transition:opacity .25s; }
+.lbl { font-family:'DM Sans',system-ui,sans-serif; transition:opacity .25s; }
+.lbl-main { font-size:.62rem; font-weight:600; }
+.lbl-sub { font-size:.54rem; font-weight:400; }
+
+.c-leg1 { stroke:var(--red-soft); }
+.c-leg2 { stroke:var(--amber); }
+.c-l4 { stroke:var(--green); }
+.c-int { stroke:var(--teal); }
+.c-dns { stroke:#6366f1; }
+.c-api { stroke:var(--amber); stroke-dasharray:7 5; }
+.c-log { stroke:var(--purple); stroke-dasharray:5 4; }
+
+.t-leg1 { fill:var(--red-soft); }
+.t-leg2 { fill:var(--amber); }
+.t-l4 { fill:var(--green); }
+.t-dns { fill:#6366f1; }
+.t-api { fill:var(--amber); }
+.t-log { fill:var(--purple); }
+.t-sub { fill:var(--text-dim); }
+
+/* Packets */
+.pkt { r:5; opacity:0; }
+.pkt-1 { fill:var(--red-soft); filter:drop-shadow(0 0 3px var(--red-soft)); }
+.pkt-2 { fill:var(--amber); filter:drop-shadow(0 0 3px var(--amber)); }
+.pkt-3 { fill:var(--green); filter:drop-shadow(0 0 3px var(--green)); }
+.pkt-4 { fill:var(--teal); filter:drop-shadow(0 0 3px var(--teal)); }
+.pkt-d { fill:#6366f1; filter:drop-shadow(0 0 3px #6366f1); }
+
+/* Detail panel */
+.detail-overlay {
+  position:fixed; inset:0; background:rgba(26,31,54,.15); backdrop-filter:blur(3px);
+  z-index:99; opacity:0; pointer-events:none; transition:opacity .2s;
+}
+.detail-overlay.open { opacity:1; pointer-events:all; }
+.detail-panel {
+  position:fixed; top:0; right:-440px; width:420px; height:100vh;
+  background:var(--bg-primary); border-left:1px solid var(--border);
+  padding:28px 24px; overflow-y:auto; z-index:100;
+  box-shadow:-8px 0 30px rgba(0,0,0,.06);
+  transition:right .3s cubic-bezier(.4,0,.2,1);
+}
+.detail-panel.open { right:0; }
+.detail-panel h2 { font-size:1.05rem; font-weight:700; color:var(--text-bright); margin-bottom:12px; }
+.close-btn {
+  position:absolute; top:16px; right:16px; width:30px; height:30px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-xs);
+  color:var(--text-muted); font-size:1rem; cursor:pointer; transition:all .15s;
+}
+.close-btn:hover { border-color:var(--blue); color:var(--blue); }
+.detail-panel table { width:100%; border-collapse:collapse; margin-top:10px; }
+.detail-panel td { padding:7px 10px; font-size:.8rem; border-bottom:1px solid var(--border); vertical-align:top; }
+.detail-panel td:first-child { color:var(--text-dim); width:100px; font-weight:600; font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; }
+.tag { display:inline-block; padding:2px 10px; border-radius:4px; font-size:.66rem; font-weight:600; margin:2px 3px 2px 0; }
+.tag-red { background:var(--red-glow); color:var(--red-soft); }
+.tag-blue { background:var(--blue-dim); color:var(--blue); }
+.tag-amber { background:var(--amber-dim); color:var(--amber); }
+.tag-green { background:var(--green-dim); color:var(--green); }
+.tag-purple { background:var(--purple-dim); color:var(--purple); }
+.tag-teal { background:var(--teal-dim); color:var(--teal); }
+
+/* Status bar */
+.status-bar {
+  position:fixed; bottom:0; left:0; right:0; z-index:50;
+  background:rgba(255,255,255,.92); backdrop-filter:blur(12px);
+  border-top:1px solid var(--border); padding:9px 24px;
+  display:flex; gap:18px; font-size:.7rem; font-weight:500; color:var(--text-muted);
+  flex-wrap:wrap;
+}
+.si { display:flex; align-items:center; gap:5px; }
+.sd { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-mark">W</div>
+    <span class="logo-text">WAF Architecture</span>
+    <span class="logo-tag">Traffic Flow</span>
+  </div>
+  <div class="topbar-right">
+    <span style="font-size:.78rem;color:var(--text-muted)">ocpipi.rhosovst.redhat.local</span>
+    <span class="mode-badge mode-detection">DetectionOnly</span>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <button class="btn active" onclick="sf('all',this)">All Flows</button>
+  <button class="btn" onclick="sf('https',this)">HTTPS Leg 1 &amp; 2</button>
+  <button class="btn" onclick="sf('l4',this)">F5 L4 Passthrough</button>
+  <button class="btn" onclick="sf('dns',this)">DNS Resolution</button>
+  <button class="btn" onclick="sf('api',this)">API Direct</button>
+  <button class="btn" id="animBtn" onclick="anim(this)">Animate Traffic</button>
+</div>
+<div class="legend">
+  <div class="legend-item"><div class="legend-sw" style="background:var(--red-soft)"></div>TLS Leg 1</div>
+  <div class="legend-item"><div class="legend-sw" style="background:var(--amber)"></div>TLS Leg 2</div>
+  <div class="legend-item"><div class="legend-sw" style="background:var(--green)"></div>F5 L4</div>
+  <div class="legend-item"><div class="legend-sw" style="background:#6366f1"></div>DNS</div>
+  <div class="legend-item"><div class="legend-sw-dash" style="border-color:var(--amber)"></div>API :6443</div>
+  <div class="legend-item"><div class="legend-sw-dash" style="border-color:var(--purple)"></div>Audit Log</div>
+  <div class="legend-item"><div class="legend-sw" style="background:var(--green);width:10px;height:10px;border-radius:3px;font-size:0"></div><span style="font-family:'JetBrains Mono',monospace">TLS cert location</span></div>
+</div>
+
+<!-- Diagram -->
+<div class="diagram-box" style="margin:0 20px;">
+  <div class="diagram-title">Network Architecture &mdash; WAF + F5 + OpenShift</div>
+  <div class="canvas">
+
+    <!-- Zones -->
+    <div class="zone z-ext"></div><div class="zlabel zl-ext">External</div>
+    <div class="zone z-waf"></div><div class="zlabel zl-waf">WAF Node &mdash; RHEL 9</div>
+    <div class="zone z-f5"></div><div class="zlabel zl-f5">F5 Big-IP</div>
+    <div class="zone z-ocp"></div><div class="zlabel zl-ocp">OpenShift Cluster</div>
+
+    <!-- Nodes -->
+    <div class="node n-client" onclick="sd('client')">
+      <span class="icon">&#128187;</span>
+      <h3>Client / Browser</h3>
+      <p>End user &bull; oc CLI</p>
+      <div class="cert-badge cert-none">no cert</div>
+    </div>
+
+    <div class="node n-dns" onclick="sd('dns')">
+      <span class="icon">&#127760;</span>
+      <h3>Corporate DNS</h3>
+      <p>*.apps resolution</p>
+    </div>
+
+    <div class="node n-waf" onclick="sd('waf')">
+      <span class="icon">&#128737;</span>
+      <h3>NGINX + ModSecurity v3</h3>
+      <p>OWASP CRS &bull; 850 rules<br>TLS terminate &amp; re-encrypt</p>
+      <div class="ip">172.16.28.40:443</div>
+      <div class="cert-badge cert-present">&#128274; wildcard.crt/key</div>
+      <div style="font-size:.54rem;color:var(--text-dim);margin-top:2px">/opt/waf/certs/ &rarr; /etc/nginx/certs/</div>
+    </div>
+
+    <div class="node n-logs" onclick="sd('logs')">
+      <span class="icon">&#128196;</span>
+      <h3>Audit Log (JSON)</h3>
+      <p>modsec_audit.log<br>RelevantOnly &bull; logrotate 14d</p>
+    </div>
+
+    <div class="node n-f5" onclick="sd('f5')">
+      <span class="icon">&#9878;</span>
+      <h3>F5 VIP</h3>
+      <p>Layer 4 Passthrough<br>TCP forward only</p>
+      <div class="ip">172.16.46.8:443</div>
+      <div class="cert-badge cert-none">no TLS termination</div>
+    </div>
+
+    <div class="node n-r1" onclick="sd('router')">
+      <span class="icon">&#128259;</span>
+      <h3>Router Pod 1</h3>
+      <p>haproxy</p>
+      <div class="ip">172.16.46.36</div>
+      <div class="cert-badge cert-internal">&#128274; router-certs-default</div>
+    </div>
+    <div class="node n-r2" onclick="sd('router')">
+      <span class="icon">&#128259;</span>
+      <h3>Router Pod 2</h3>
+      <p>haproxy</p>
+      <div class="ip">172.16.46.27</div>
+      <div class="cert-badge cert-internal">&#128274; router-certs-default</div>
+    </div>
+
+    <div class="node n-apps" onclick="sd('apps')">
+      <span class="icon">&#128230;</span>
+      <h3>App Pods</h3>
+      <p>console &bull; oauth<br>monitoring &bull; downloads</p>
+      <div class="cert-badge cert-internal">&#128274; per-route certs</div>
+    </div>
+
+    <div class="node n-api" onclick="sd('api')">
+      <span class="icon">&#128272;</span>
+      <h3>API VIP :6443</h3>
+      <p>Direct &mdash; <b>bypasses WAF</b></p>
+      <div class="ip">172.16.46.7</div>
+      <div class="cert-badge cert-internal">&#128274; api-server cert</div>
+    </div>
+
+    <!-- SVG Curves -->
+    <svg class="arrows" viewBox="0 0 1200 660">
+      <defs>
+        <marker id="a1" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6" fill="var(--red-soft)"/></marker>
+        <marker id="a2" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6" fill="var(--amber)"/></marker>
+        <marker id="a3" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6" fill="var(--green)"/></marker>
+        <marker id="a4" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6" fill="#6366f1"/></marker>
+        <marker id="a5" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6" fill="var(--amber)"/></marker>
+        <marker id="a6" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6" fill="var(--purple)"/></marker>
+        <marker id="a7" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6" fill="var(--teal)"/></marker>
+      </defs>
+
+      <!-- DNS: down/up -->
+      <path id="pd1" class="arrow c-dns f-dns" d="M110,195 C110,230 100,260 100,300" marker-end="url(#a4)"/>
+      <path id="pd2" class="arrow c-dns f-dns" d="M130,300 C130,260 140,230 140,195" marker-end="url(#a4)"/>
+      <text class="lbl lbl-main t-dns f-dns" x="146" y="244">DNS query</text>
+      <text class="lbl lbl-sub t-sub f-dns" x="146" y="256">&rarr; resolves to WAF IP</text>
+
+      <!-- Leg 1: Client -> WAF (curve up) -->
+      <path id="pl1" class="arrow c-leg1 f-https" d="M185,145 C230,90 255,85 278,130" marker-end="url(#a1)"/>
+      <text class="lbl lbl-main t-leg1 f-https" x="195" y="82">HTTPS :443</text>
+      <text class="lbl lbl-sub t-sub f-https" x="195" y="94">TLS Leg 1 &mdash; *.apps wildcard cert terminates here</text>
+
+      <!-- Leg 2: WAF -> F5 (gentle curve) -->
+      <path id="pl2" class="arrow c-leg2 f-https f-l4" d="M538,145 C570,115 600,115 638,145" marker-end="url(#a2)"/>
+      <text class="lbl lbl-main t-leg2 f-https f-l4" x="552" y="108">HTTPS :443</text>
+      <text class="lbl lbl-sub t-sub f-https f-l4" x="552" y="120">TLS Leg 2 &mdash; re-encrypted, SNI=$host</text>
+
+      <!-- F5 -> Router 1 (curve right) -->
+      <path id="pf1" class="arrow c-l4 f-l4" d="M786,155 C810,145 835,140 855,148" marker-end="url(#a3)"/>
+      <text class="lbl lbl-sub t-l4 f-l4" x="800" y="136">L4 TCP</text>
+
+      <!-- F5 -> Router 2 (bigger curve down-right) -->
+      <path id="pf2" class="arrow c-l4 f-l4" d="M786,185 C840,210 940,210 1035,165" marker-end="url(#a3)"/>
+      <text class="lbl lbl-main t-l4 f-l4" x="870" y="220">L4 passthrough</text>
+      <text class="lbl lbl-sub t-sub f-l4" x="870" y="232">TCP only &mdash; TLS passes through intact</text>
+
+      <!-- Router 1 -> Apps -->
+      <path id="pr1" class="arrow c-int f-https f-l4" d="M930,210 C935,260 945,300 950,340" marker-end="url(#a7)"/>
+
+      <!-- Router 2 -> Apps -->
+      <path id="pr2" class="arrow c-int f-https f-l4" d="M1090,210 C1080,270 1010,310 990,340" marker-end="url(#a7)"/>
+
+      <!-- API direct (long dashed curve bottom) -->
+      <path id="pa" class="arrow c-api f-api" d="M165,200 C200,380 480,550 910,545" marker-end="url(#a5)"/>
+      <text class="lbl lbl-main t-api f-api" x="400" y="480">api.ocpipi:6443 &mdash; DIRECT</text>
+      <text class="lbl lbl-sub t-sub f-api" x="400" y="493">bypasses WAF &amp; F5 app VIP entirely</text>
+
+      <!-- Audit log (short curve down) -->
+      <path id="pg" class="arrow c-log f-log" d="M410,260 C410,275 410,290 410,310" marker-end="url(#a6)"/>
+      <text class="lbl lbl-main t-log f-log" x="418" y="288">audit</text>
+
+      <!-- Packets -->
+      <circle class="pkt pkt-d" id="pk0"><animateMotion dur=".8s" begin="indefinite" fill="freeze" id="am0"><mpath href="#pd1"/></animateMotion></circle>
+      <circle class="pkt pkt-1" id="pk1"><animateMotion dur=".7s" begin="indefinite" fill="freeze" id="am1"><mpath href="#pl1"/></animateMotion></circle>
+      <circle class="pkt pkt-2" id="pk2"><animateMotion dur=".6s" begin="indefinite" fill="freeze" id="am2"><mpath href="#pl2"/></animateMotion></circle>
+      <circle class="pkt pkt-3" id="pk3"><animateMotion dur=".4s" begin="indefinite" fill="freeze" id="am3"><mpath href="#pf1"/></animateMotion></circle>
+      <circle class="pkt pkt-4" id="pk4"><animateMotion dur=".5s" begin="indefinite" fill="freeze" id="am4"><mpath href="#pr1"/></animateMotion></circle>
+    </svg>
+  </div>
+</div>
+
+<!-- Overlays -->
+<div class="detail-overlay" id="ov" onclick="cd()"></div>
+<div class="detail-panel" id="dp">
+  <button class="close-btn" onclick="cd()">&times;</button>
+  <div id="dc"></div>
+</div>
+
+<!-- Status -->
+<div class="status-bar">
+  <div class="si"><div class="sd" style="background:var(--red-soft)"></div>WAF 172.16.28.40</div>
+  <div class="si"><div class="sd" style="background:var(--amber)"></div>F5 VIP 172.16.46.8</div>
+  <div class="si"><div class="sd" style="background:var(--green)"></div>Routers .36 / .27</div>
+  <div class="si"><div class="sd" style="background:var(--amber)"></div>API 172.16.46.7</div>
+  <div class="si"><div class="sd" style="background:var(--purple)"></div>Engine: DetectionOnly</div>
+  <div class="si"><div class="sd" style="background:var(--teal)"></div>CRS: 850 rules</div>
+</div>
+
+<script>
+const D={
+  client:{t:'Client / Browser / oc CLI',tags:[{x:'HTTPS :443',c:'tag-red'},{x:'API :6443',c:'tag-amber'}],r:[
+    ['Role','End-user or operator accessing OpenShift apps'],
+    ['App flow','DNS &rarr; WAF &rarr; F5 VIP (L4) &rarr; Router &rarr; App pod'],
+    ['API flow','api:6443 goes DIRECT to API VIP &mdash; bypasses WAF &amp; F5 app VIP'],
+    ['TLS cert','Client trusts the *.apps wildcard cert served by WAF (or skips verify with <code>-k</code>)'],
+  ]},
+  dns:{t:'Corporate DNS',tags:[{x:'Not cut over yet',c:'tag-amber'}],r:[
+    ['Record','*.apps.ocpipi.rhosovst.redhat.local'],
+    ['Current','Points to F5 VIP (172.16.46.8)'],
+    ['After cutover','Will point to WAF IP (172.16.28.40)'],
+    ['Rollback','Revert DNS to F5 VIP &mdash; instant, no cluster change'],
+    ['Strategy','Lower TTL to 60s before cutover, restore after 1 week'],
+  ]},
+  waf:{t:'NGINX WAF Node',tags:[{x:'DetectionOnly',c:'tag-amber'},{x:'PL1',c:'tag-blue'},{x:'ModSec v3',c:'tag-red'},{x:'CRS',c:'tag-red'}],r:[
+    ['Host','172.16.28.40 (RHEL09PROXY01)'],
+    ['OS','RHEL 9.6 &bull; 4 vCPU &bull; 7.5GB RAM'],
+    ['Container','owasp/modsecurity-crs:nginx via podman'],
+    ['Engine','ModSecurity v3 (libmodsecurity 3.0.16)'],
+    ['Mode','DetectionOnly (logging only, not blocking)'],
+    ['Rules','850 OWASP CRS rules loaded &bull; Paranoia Level 1'],
+    ['TLS Leg 1','Terminates client TLS using *.apps wildcard cert'],
+    ['TLS Leg 2','Re-encrypts to F5 VIP :443, SNI = $host (critical for passthrough routes)'],
+    ['Cert file','<code>/opt/waf/certs/wildcard.crt</code> &rarr; mounted at <code>/etc/nginx/certs/wildcard.crt</code>'],
+    ['Key file','<code>/opt/waf/certs/wildcard.key</code> &rarr; mounted at <code>/etc/nginx/certs/wildcard.key</code>'],
+    ['Cert source','Extracted from OpenShift secret <code>router-certs-default</code> in <code>openshift-ingress</code>'],
+    ['Cert SAN','<code>*.apps.ocpipi.rhosovst.redhat.local</code> &bull; valid until 2028-06-29'],
+    ['Headers','X-Forwarded-For &bull; X-Forwarded-Proto injected'],
+    ['Limits','client_max_body_size 512m &bull; proxy timeout 300s'],
+  ]},
+  logs:{t:'Audit Logging',tags:[{x:'JSON',c:'tag-purple'},{x:'RelevantOnly',c:'tag-blue'}],r:[
+    ['Path','<code>/opt/waf/logs/modsec_audit.log</code>'],
+    ['Format','JSON (machine-parseable)'],
+    ['Engine','RelevantOnly &mdash; only rule-triggering requests logged'],
+    ['Rotation','Daily &bull; 14 copies &bull; compressed (logrotate)'],
+    ['SIEM','Not configured yet (no SIEM_HOST)'],
+    ['Detected','XSS (941100) &bull; SQLi (942100) &bull; anomaly (949110)'],
+  ]},
+  f5:{t:'F5 Big-IP VIP',tags:[{x:'L4 passthrough',c:'tag-amber'},{x:'No change',c:'tag-green'},{x:'No TLS',c:'tag-blue'}],r:[
+    ['VIP','172.16.46.8:443'],
+    ['Mode','Layer 4 (TCP) passthrough &mdash; does NOT terminate TLS'],
+    ['TLS cert','<b>None</b> &mdash; F5 does not hold any TLS cert for this VIP. It forwards encrypted TCP as-is.'],
+    ['Pool members','172.16.46.36 (worker-0-vl5h4) &bull; 172.16.46.27 (worker-0-hm26m)'],
+    ['Behavior','Receives TLS from WAF (Leg 2) &rarr; forwards TCP to a router node &rarr; router terminates TLS using SNI'],
+    ['Changed?','NO &mdash; completely untouched by WAF deployment'],
+  ]},
+  router:{t:'Router Pods (haproxy)',tags:[{x:'No change',c:'tag-green'},{x:'HostNetwork',c:'tag-teal'}],r:[
+    ['Replicas','2 (HostNetwork mode)'],
+    ['Router 1','172.16.46.36 (worker-0-vl5h4)'],
+    ['Router 2','172.16.46.27 (worker-0-hm26m)'],
+    ['TLS cert','<code>router-certs-default</code> secret in <code>openshift-ingress</code> namespace'],
+    ['Cert SAN','<code>*.apps.ocpipi.rhosovst.redhat.local</code> (same cert as WAF copy)'],
+    ['Cert usage','Router uses this cert for edge/reencrypt routes. Passthrough routes forward TLS to app pods.'],
+    ['SNI','WAF sends SNI=$host &rarr; F5 passes it through &rarr; router selects correct route/cert'],
+    ['Changed?','NO &mdash; no PROXY protocol, no route changes'],
+  ]},
+  apps:{t:'Application Pods',tags:[{x:'reencrypt',c:'tag-green'},{x:'passthrough',c:'tag-blue'},{x:'edge',c:'tag-purple'}],r:[
+    ['Console','console-openshift-console (reencrypt) &mdash; router terminates + re-encrypts to pod'],
+    ['OAuth','oauth-openshift (passthrough) &mdash; TLS terminates at oauth pod itself'],
+    ['Downloads','downloads-openshift-console (edge) &mdash; router terminates TLS'],
+    ['Monitoring','prometheus-k8s, alertmanager, thanos (reencrypt)'],
+    ['TLS certs','Each pod has its own serving cert (service-ca signed or custom)'],
+    ['Client IP','Visible via X-Forwarded-For header injected by WAF'],
+  ]},
+  api:{t:'API VIP (:6443)',tags:[{x:'Bypasses WAF',c:'tag-amber'},{x:'No change',c:'tag-green'}],r:[
+    ['VIP','172.16.46.7:6443'],
+    ['TLS cert','API server certificate (kube-apiserver serving cert, cluster CA signed)'],
+    ['Changed?','NO &mdash; completely untouched'],
+    ['Traffic','oc CLI, kubectl, API calls go DIRECT to API VIP'],
+    ['Why bypass','API traffic is not app traffic; WAF only covers *.apps'],
+  ]},
+};
+
+function sd(k){
+  const d=D[k]; if(!d) return;
+  let h='<h2>'+d.t+'</h2><div style="margin-bottom:12px">';
+  d.tags.forEach(t=>{h+='<span class="tag '+t.c+'">'+t.x+'</span>';});
+  h+='</div><table>';
+  d.r.forEach(r=>{h+='<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>';});
+  h+='</table>';
+  document.getElementById('dc').innerHTML=h;
+  document.getElementById('dp').classList.add('open');
+  document.getElementById('ov').classList.add('open');
+}
+function cd(){
+  document.getElementById('dp').classList.remove('open');
+  document.getElementById('ov').classList.remove('open');
+}
+
+function sf(f,b){
+  document.querySelectorAll('.btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  const els=document.querySelectorAll('.arrow,.lbl');
+  const ns=document.querySelectorAll('.node');
+  if(f==='all'){
+    els.forEach(e=>e.style.opacity='1');
+    ns.forEach(n=>{n.classList.remove('highlight');n.style.opacity='1';});
+    return;
+  }
+  els.forEach(e=>e.style.opacity='.06');
+  ns.forEach(n=>{n.classList.remove('highlight');n.style.opacity='.3';});
+  document.querySelectorAll('.f-'+f).forEach(e=>e.style.opacity='1');
+  const m={
+    https:['n-client','n-waf','n-f5','n-r1','n-r2','n-apps','n-logs'],
+    l4:['n-waf','n-f5','n-r1','n-r2','n-apps'],
+    dns:['n-client','n-dns'],
+    api:['n-client','n-api'],
+    log:['n-waf','n-logs'],
+  };
+  (m[f]||[]).forEach(c=>{const e=document.querySelector('.'+c);if(e){e.classList.add('highlight');e.style.opacity='1';}});
+}
+
+let ar=false;
+function anim(b){
+  if(ar) return; ar=true; b.classList.add('active');
+  const s=[
+    {p:'pk0',a:'am0',d:0},
+    {p:'pk1',a:'am1',d:1000},
+    {p:'pk2',a:'am2',d:1800},
+    {p:'pk3',a:'am3',d:2500},
+    {p:'pk4',a:'am4',d:3000},
+  ];
+  s.forEach(x=>{document.getElementById(x.p).style.opacity='0';});
+  s.forEach((x,i)=>{
+    setTimeout(()=>{
+      const p=document.getElementById(x.p);
+      p.style.opacity='1';
+      document.getElementById(x.a).beginElement();
+      const fd=i<s.length-1?s[i+1].d-x.d:600;
+      setTimeout(()=>{p.style.opacity='0';},fd);
+    },x.d);
+  });
+  setTimeout(()=>{ar=false;b.classList.remove('active');},3800);
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')cd();});
+</script>
+</body>
+</html>
