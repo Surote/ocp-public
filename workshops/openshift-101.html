@@ -4690,6 +4690,116 @@ EOF
   </tbody>
 </table>
 
+<h2>Volume Binding Mode</h2>
+<p><code>volumeBindingMode</code> is a field on the <strong>StorageClass</strong> that controls <em>when</em> a PVC is actually bound to a PV &mdash; immediately on PVC creation, or only once a Pod that uses it has been scheduled to a node.</p>
+<div class="diagram-box">
+  <div class="diagram-title">Volume Binding Mode &mdash; Immediate vs WaitForFirstConsumer</div>
+  <svg width="820" height="345" viewBox="0 0 820 345" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',system-ui,sans-serif">
+    <defs>
+      <marker id="aVbm" markerWidth="5" markerHeight="3.5" refX="5" refY="1.75" orient="auto"><path d="M0,0L5,1.75L0,3.5" fill="var(--blue)"/></marker>
+      <marker id="aVbmG" markerWidth="5" markerHeight="3.5" refX="5" refY="1.75" orient="auto"><path d="M0,0L5,1.75L0,3.5" fill="var(--green)"/></marker>
+      <marker id="aVbmR" markerWidth="5" markerHeight="3.5" refX="5" refY="1.75" orient="auto"><path d="M0,0L5,1.75L0,3.5" fill="var(--rose)"/></marker>
+      <marker id="aVbmA" markerWidth="5" markerHeight="3.5" refX="5" refY="1.75" orient="auto"><path d="M0,0L5,1.75L0,3.5" fill="var(--amber)"/></marker>
+    </defs>
+
+    <!-- Column headers -->
+    <text x="150" y="16" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".08em">IMMEDIATE</text>
+    <text x="670" y="16" text-anchor="middle" fill="var(--text-dim)" font-weight="600" font-size="9" letter-spacing=".08em">WAITFORFIRSTCONSUMER</text>
+
+    <!-- Divider -->
+    <line x1="410" y1="15" x2="410" y2="330" stroke="var(--border)" stroke-width="1" stroke-dasharray="4"/>
+
+    <!-- LEFT COLUMN: Immediate -->
+    <g class="d-node" data-tip="vbm-imm-pvc">
+      <rect x="20" y="28" width="260" height="55" rx="10" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="150" y="50" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="12">PVC Created</text>
+      <text x="150" y="68" text-anchor="middle" fill="var(--text-muted)" font-size="8.5">volumeBindingMode: Immediate</text>
+    </g>
+
+    <line x1="60" y1="83" x2="60" y2="108" stroke="var(--green)" stroke-width="2" marker-end="url(#aVbmG)"/>
+    <text x="75" y="99" fill="var(--green)" font-size="7.5" font-weight="600">provisioned + bound instantly</text>
+
+    <g class="d-node" data-tip="vbm-imm-pv">
+      <rect x="20" y="108" width="260" height="55" rx="10" fill="var(--purple-dim)" stroke="var(--purple)" stroke-opacity=".5"/>
+      <text x="150" y="130" text-anchor="middle" fill="var(--purple)" font-weight="700" font-size="12">PV Provisioned + Bound</text>
+      <text x="150" y="148" text-anchor="middle" fill="var(--text-muted)" font-size="8.5">Instantly &mdash; before any pod exists</text>
+    </g>
+
+    <line x1="60" y1="163" x2="60" y2="188" stroke="var(--blue)" stroke-width="2" marker-end="url(#aVbm)"/>
+    <text x="75" y="179" fill="var(--text-dim)" font-size="7.5">pod scheduled later</text>
+
+    <g class="d-node" data-tip="vbm-imm-pod">
+      <rect x="20" y="188" width="260" height="55" rx="10" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="150" y="210" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="12">Pod Scheduled Later</text>
+      <text x="150" y="228" text-anchor="middle" fill="var(--text-muted)" font-size="8.5">Scheduler must fit the existing PV</text>
+    </g>
+
+    <line x1="60" y1="243" x2="60" y2="268" stroke="var(--rose)" stroke-width="2" marker-end="url(#aVbmR)"/>
+    <text x="75" y="259" fill="var(--rose)" font-size="7.5" font-weight="600">risk: node mismatch</text>
+
+    <g class="d-node" data-tip="vbm-imm-warn">
+      <rect x="20" y="268" width="260" height="55" rx="10" fill="var(--rose-dim)" stroke="var(--rose)" stroke-opacity=".5"/>
+      <text x="150" y="288" text-anchor="middle" fill="var(--rose)" font-weight="700" font-size="11.5">&#9888; Node Affinity Conflict</text>
+      <text x="150" y="305" text-anchor="middle" fill="var(--text-muted)" font-size="8">Volume placed before scheduler input</text>
+      <text x="150" y="317" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">May land in the wrong zone or node</text>
+    </g>
+
+    <!-- RIGHT COLUMN: WaitForFirstConsumer -->
+    <g class="d-node" data-tip="vbm-wffc-pvc">
+      <rect x="540" y="28" width="260" height="55" rx="10" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="670" y="50" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="12">PVC Created</text>
+      <text x="670" y="68" text-anchor="middle" fill="var(--text-muted)" font-size="8.5">volumeBindingMode: WaitForFirstConsumer</text>
+    </g>
+
+    <line x1="580" y1="83" x2="580" y2="108" stroke="var(--amber)" stroke-width="2" marker-end="url(#aVbmA)"/>
+    <text x="595" y="99" fill="var(--amber)" font-size="7.5" font-weight="600">stays Pending</text>
+
+    <g class="d-node" data-tip="vbm-wffc-pending">
+      <rect x="540" y="108" width="260" height="55" rx="10" fill="var(--amber-dim)" stroke="var(--amber)" stroke-opacity=".5"/>
+      <text x="670" y="130" text-anchor="middle" fill="var(--amber)" font-weight="700" font-size="12">PVC Stays Pending</text>
+      <text x="670" y="148" text-anchor="middle" fill="var(--text-muted)" font-size="8.5">Normal &mdash; waiting for first consumer</text>
+    </g>
+
+    <line x1="580" y1="163" x2="580" y2="188" stroke="var(--blue)" stroke-width="2" marker-end="url(#aVbm)"/>
+    <text x="595" y="179" fill="var(--text-dim)" font-size="7.5">scheduler picks node first</text>
+
+    <g class="d-node" data-tip="vbm-wffc-pod">
+      <rect x="540" y="188" width="260" height="55" rx="10" fill="var(--blue-dim)" stroke="var(--blue)" stroke-opacity=".5"/>
+      <text x="670" y="210" text-anchor="middle" fill="var(--blue)" font-weight="700" font-size="12">Pod Created &amp; Scheduled</text>
+      <text x="670" y="228" text-anchor="middle" fill="var(--text-muted)" font-size="8.5">Scheduler picks the node first</text>
+    </g>
+
+    <line x1="580" y1="243" x2="580" y2="268" stroke="var(--green)" stroke-width="2" marker-end="url(#aVbmG)"/>
+    <text x="595" y="259" fill="var(--green)" font-size="7.5" font-weight="600">PV provisioned on node</text>
+
+    <g class="d-node" data-tip="vbm-wffc-pv">
+      <rect x="540" y="268" width="260" height="55" rx="10" fill="var(--green-dim)" stroke="var(--green)" stroke-opacity=".5"/>
+      <text x="670" y="288" text-anchor="middle" fill="var(--green)" font-weight="700" font-size="12">PV Provisioned + Bound</text>
+      <text x="670" y="305" text-anchor="middle" fill="var(--text-muted)" font-size="8">On/near the chosen node</text>
+      <text x="670" y="317" text-anchor="middle" fill="var(--text-dim)" font-size="7.5">Topology guaranteed to match</text>
+    </g>
+  </svg>
+</div>
+
+<table>
+  <thead><tr><th></th><th>Immediate</th><th>WaitForFirstConsumer</th></tr></thead>
+  <tbody>
+    <tr><td><strong>When binding happens</strong></td><td>As soon as the PVC is created</td><td>After a Pod using the PVC is scheduled</td></tr>
+    <tr><td><strong>PVC state before pod exists</strong></td><td>Bound</td><td>Pending (normal, expected)</td></tr>
+    <tr><td><strong>Topology awareness</strong></td><td>None &mdash; provisioner picks blind</td><td>Scheduler-driven &mdash; volume follows the chosen node</td></tr>
+    <tr><td><strong>Typical use</strong></td><td>Network storage reachable from every node (Ceph, NFS)</td><td>Zonal cloud disks, local storage, LVM Storage</td></tr>
+    <tr><td><strong>Default when unspecified</strong></td><td colspan="2">Immediate</td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+  <strong>Issues with Immediate:</strong> In multi-zone clusters, the PV can be provisioned in zone A before the pod is scheduled &mdash; the pod is then pinned to that zone or becomes unschedulable, surfacing as a <code>volume node affinity conflict</code> error. For local disks or LVM storage, the volume is pinned to a specific node before the scheduler ever weighs CPU, memory, or affinity rules &mdash; the Pod can end up stuck <code>Pending</code> forever if that node can't also satisfy the pod's other requirements.
+</div>
+
+<div class="callout">
+  <strong>OpenShift reality:</strong> vSphere CSI (<code>thin-csi</code>), cloud provider StorageClasses (AWS EBS <code>gp3-csi</code>, Azure Disk), and LVM Storage all ship with <code>WaitForFirstConsumer</code> by default. ODF's <code>ceph-rbd</code> / <code>cephfs</code> StorageClasses ship with <code>Immediate</code> &mdash; that's fine because Ceph is reachable from every node in the cluster. Seeing a PVC sit in <code>Pending</code> under a WaitForFirstConsumer StorageClass before any pod uses it is <strong>normal</strong>, not an error.
+</div>
+
 <h2>Access Modes</h2>
 <table>
   <thead><tr><th>Mode</th><th>Abbreviation</th><th>Description</th><th>Backends</th></tr></thead>
@@ -9470,6 +9580,14 @@ const T = {
   'am-rwo':{t:'ReadWriteOnce',b:'Single node read/write. Most common. Used for databases, general storage. One pod at a time.'},
   'am-rwx':{t:'ReadWriteMany',b:'Multiple nodes read/write simultaneously. Requires CephFS, NFS, or similar. Shared data across pods.'},
   'am-rox':{t:'ReadOnlyMany',b:'Multiple nodes read-only. For shared reference data, ML models, static content.'},
+  'vbm-imm-pvc':{t:'PVC Created (Immediate)',b:'StorageClass has volumeBindingMode: Immediate. Binding starts the moment the PVC is created, with no knowledge of which node any future pod will land on.'},
+  'vbm-imm-pv':{t:'PV Provisioned + Bound Instantly',b:'The CSI driver provisions and binds a PV right away — before any pod that will use it even exists. Fine for storage reachable from every node; risky for zonal or local storage.'},
+  'vbm-imm-pod':{t:'Pod Scheduled Later',b:'When a pod finally references the PVC, the scheduler must fit the pod to a node that can reach the already-provisioned PV — it cannot pick the ideal node freely.'},
+  'vbm-imm-warn':{t:'Node Affinity Conflict',b:'If the PV landed in the wrong zone or on a node that can\'t satisfy the pod\'s other constraints, the pod becomes unschedulable with a "volume node affinity conflict" error, or gets stuck Pending.'},
+  'vbm-wffc-pvc':{t:'PVC Created (WaitForFirstConsumer)',b:'StorageClass has volumeBindingMode: WaitForFirstConsumer. The PVC is created but binding is deliberately delayed until a pod needs it.'},
+  'vbm-wffc-pending':{t:'PVC Stays Pending',b:'This is expected and normal — the PVC will show Pending until a pod that mounts it is created and scheduled. Not an error.'},
+  'vbm-wffc-pod':{t:'Pod Created & Scheduled First',b:'The scheduler picks a node using its full normal criteria (CPU, memory, affinity/anti-affinity, taints) — completely unconstrained by storage placement.'},
+  'vbm-wffc-pv':{t:'PV Provisioned + Bound (Topology-Aware)',b:'Only now does the CSI driver provision the volume, on or near the node the scheduler already chose. Guarantees topology match — essential for zonal disks, local volumes, and LVM Storage.'},
 
   // Security
   'scc-create':{t:'Pod Create',b:'API server receives pod creation request. SCC admission controller intercepts before pod is created.'},
