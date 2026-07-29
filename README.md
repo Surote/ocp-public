@@ -23,3 +23,7 @@ See [CHANGELOG.md](CHANGELOG.md) for recent updates.
 ## View Online
 
 Visit the GitHub Pages site: [https://surote.github.io/ocp-public/](https://surote.github.io/ocp-public/)
+
+---
+
+> **Note:** The content in this repository is AI-generated. Please review and verify all material before relying on it.
