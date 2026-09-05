@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MaaS on OpenShift — Architecture</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
 <style>
 :root {
   --bg: #fafaf8;
@@ -32,6 +32,10 @@
   --ns-maas: #8e24aa;
   --ns-kuadrant: #f4511e;
   --ns-observability: #00897b;
+  --ns-infra: #d81b60;
+  --ns-infra-light: #fce4ec;
+  --ns-external: #5d4037;
+  --ns-external-light: #efebe9;
   --mono: 'IBM Plex Mono', monospace;
   --sans: 'IBM Plex Sans', sans-serif;
   --serif: 'DM Serif Display', serif;
@@ -79,7 +83,7 @@ header .cluster-badge .dot { width: 7px; height: 7px; border-radius: 50%; backgr
 }
 
 /* ── Request Flow (horizontal) ── */
-.request-flow { display: flex; align-items: flex-start; gap: 0; min-width: 1220px; padding: 20px 0; }
+.request-flow { display: flex; align-items: flex-start; gap: 0; min-width: 1400px; padding: 20px 0; }
 .flow-stage { display: flex; flex-direction: column; align-items: center; position: relative; flex-shrink: 0; }
 .flow-stage:not(:last-child)::after {
   content: ''; position: absolute; right: -30px; top: 38px; width: 28px; height: 2px; background: var(--border-strong);
@@ -102,6 +106,8 @@ header .cluster-badge .dot { width: 7px; height: 7px; border-radius: 50%; backgr
 .flow-node.route { border-color: var(--ns-gateway); margin-right: 30px; }
 .flow-node.epp { border-color: var(--ns-model); margin-right: 30px; }
 .flow-node.vllm { border-color: var(--ns-model); }
+.flow-node.ipp { border-color: var(--ns-gateway); border-style: dashed; margin-right: 30px; }
+.flow-node.ext { border-color: var(--ns-external); }
 .flow-ns-label {
   font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 1px;
   text-transform: uppercase; margin-top: 10px; padding: 2px 8px; border-radius: 3px; white-space: nowrap;
@@ -109,6 +115,7 @@ header .cluster-badge .dot { width: 7px; height: 7px; border-radius: 50%; backgr
 .flow-ns-label.ns-ingress { background: var(--blue-light); color: var(--blue); }
 .flow-ns-label.ns-kuadrant { background: var(--orange-light); color: var(--orange); }
 .flow-ns-label.ns-model { background: var(--green-light); color: var(--green); }
+.flow-ns-label.ns-infra { background: var(--ns-infra-light); color: var(--ns-infra); }
 .replica-fan { display: flex; flex-direction: column; gap: 10px; }
 .replica-fan .flow-node { width: 126px; }
 .replica-label { font-family: var(--mono); font-size: 9px; color: var(--text-tertiary); text-align: center; margin-top: 2px; }
@@ -176,6 +183,8 @@ header .cluster-badge .dot { width: 7px; height: 7px; border-radius: 50%; backgr
 .ns-box.ns-ingress-ns .ns-header { background: var(--blue-light); color: var(--ns-gateway); }
 .ns-box.ns-observability-ns { border-color: var(--ns-observability); }
 .ns-box.ns-observability-ns .ns-header { background: var(--teal-light); color: var(--ns-observability); }
+.ns-box.ns-infra-ns { border-color: var(--ns-infra); }
+.ns-box.ns-infra-ns .ns-header { background: var(--ns-infra-light); color: var(--ns-infra); }
 .resource-list { list-style: none; }
 .resource-list li {
   padding: 8px 10px; border-radius: 6px; margin-bottom: 6px;
@@ -470,12 +479,12 @@ footer {
 <div class="page">
 
 <header>
-  <div class="eyebrow">Architecture Reference — verified against live cluster</div>
+  <div class="eyebrow">Architecture Reference — verified against live cluster · RHOAI 3.5</div>
   <h1>Models as a Service on OpenShift</h1>
-  <p class="subtitle">How MaaS and llm-d serve LLMs behind an Envoy gateway with API-key authentication, token-based rate limiting, and prefix-cache-aware request routing on RHOAI 3.4</p>
+  <p class="subtitle">How MaaS serves internal vLLM models and external providers behind one Envoy gateway with API-key authentication, token-based rate limiting, and body-based model routing on RHOAI 3.5</p>
   <div class="cluster-badge">
     <span class="dot"></span>
-    rosa-h100-jp &nbsp;·&nbsp; OpenShift 4.20 &nbsp;·&nbsp; RHOAI 3.4.2 &nbsp;·&nbsp; RHCL 1.3.5 &nbsp;·&nbsp; NVIDIA H100 80GB (MIG 2×3g.40gb)
+    rsaijp &nbsp;·&nbsp; OpenShift 4.20.32 &nbsp;·&nbsp; RHOAI 3.5.0 &nbsp;·&nbsp; RHCL 1.4.2 &nbsp;·&nbsp; H100 MIG 2×3g.40gb (node scaled down)
   </div>
 </header>
 
@@ -486,12 +495,13 @@ footer {
 <section class="diagram-section">
   <div class="section-number">01 — The Big Picture</div>
   <h2 class="section-title">Request Flow</h2>
-  <p class="section-subtitle">Every inference request passes seven checkpoints. The gateway is an Envoy proxy (Istio); auth and rate limiting are enforced <em>inside</em> Envoy via callouts to Authorino and Limitador — traffic never detours.</p>
+  <p class="section-subtitle">Every inference request passes the same Envoy filter chain. On RHOAI 3.5 two <em>external processors</em> bracket the Kuadrant policy shim: <strong>ipp-pre</strong> reads the model name out of the body <em>before</em> auth, so OpenAI-standard <span class="code-inline">POST /v1/chat/completions</span> works with no path prefix; <strong>ipp</strong> runs after policy and rewrites the request for the backend. Traffic never leaves Envoy for a detour — Authorino and Limitador are gRPC callouts.</p>
 
   <div class="legend">
     <div class="legend-item"><span class="swatch" style="border-color: var(--ns-gateway)"></span> openshift-ingress</div>
     <div class="legend-item"><span class="swatch" style="border-color: var(--ns-kuadrant)"></span> kuadrant-system</div>
-    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-model)"></span> swongpai-maas</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-model)"></span> swongpai-vllm</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-external)"></span> external provider</div>
   </div>
 
   <div class="diagram-container">
@@ -500,7 +510,7 @@ footer {
         <div class="flow-node client">
           <div class="icon">⬡</div>
           <div class="name">Client</div>
-          <div class="detail">Bearer sk-oai-…<br>OpenAI-compatible API</div>
+          <div class="detail">Bearer sk-oai-…<br>{"model":"gpt-5.6-luna"}<br>any OpenAI SDK</div>
         </div>
       </div>
       <div class="flow-stage">
@@ -512,10 +522,18 @@ footer {
         <div class="flow-ns-label ns-ingress">openshift-ingress</div>
       </div>
       <div class="flow-stage">
+        <div class="flow-node ipp">
+          <div class="icon">⇣</div>
+          <div class="name">ipp-pre</div>
+          <div class="detail">payload-pre-processing<br>ext_proc :9004 · fail-open<br>body.model → header</div>
+        </div>
+        <div class="flow-ns-label ns-ingress">openshift-ingress</div>
+      </div>
+      <div class="flow-stage">
         <div class="flow-node auth">
           <div class="icon">⊘</div>
           <div class="name">Authorino</div>
-          <div class="detail">ext_authz gRPC :50051<br>key validation + OPA<br>group membership</div>
+          <div class="detail">ext_authz gRPC :50051<br>maas-gateway-auth · OPA<br>allow-map of models</div>
         </div>
         <div class="flow-ns-label ns-kuadrant">kuadrant-system</div>
       </div>
@@ -523,41 +541,41 @@ footer {
         <div class="flow-node rate">
           <div class="icon">◔</div>
           <div class="name">Limitador</div>
-          <div class="detail">ratelimit gRPC :8081<br>1000 tokens/min<br>per user</div>
+          <div class="detail">ratelimit gRPC :8081<br>tokens per user per<br>subscription window</div>
         </div>
         <div class="flow-ns-label ns-kuadrant">kuadrant-system</div>
+      </div>
+      <div class="flow-stage">
+        <div class="flow-node ipp">
+          <div class="icon">⇡</div>
+          <div class="name">ipp</div>
+          <div class="detail">payload-processing<br>ext_proc :9004 · fail-closed<br>rewrite · key inject · usage</div>
+        </div>
+        <div class="flow-ns-label ns-ingress">openshift-ingress</div>
       </div>
       <div class="flow-stage">
         <div class="flow-node route">
           <div class="icon">⇉</div>
           <div class="name">HTTPRoute</div>
-          <div class="detail">path match +<br>URLRewrite strips<br>ns/model prefix</div>
+          <div class="detail">header match (body-based)<br>or path prefix (legacy)<br>one route per model</div>
         </div>
-        <div class="flow-ns-label ns-model">swongpai-maas</div>
-      </div>
-      <div class="flow-stage">
-        <div class="flow-node epp">
-          <div class="icon">◎</div>
-          <div class="name">EPP Scheduler</div>
-          <div class="detail">gRPC :9002<br>queue-scorer ×2<br>prefix-cache-scorer ×3</div>
-        </div>
-        <div class="flow-ns-label ns-model">swongpai-maas</div>
+        <div class="flow-ns-label ns-model">swongpai-vllm</div>
       </div>
       <div class="flow-stage">
         <div class="replica-fan">
           <div class="flow-node vllm">
             <div class="icon">▣</div>
-            <div class="name">vLLM Pod 1</div>
-            <div class="detail">Llama 3.1 8B<br>:8000 · MIG 3g.40gb</div>
+            <div class="name">vLLM Pod</div>
+            <div class="detail">LLMInferenceService<br>:8000 · needs GPU<br>0 running today</div>
           </div>
-          <div class="flow-node vllm">
-            <div class="icon">▣</div>
-            <div class="name">vLLM Pod 2</div>
-            <div class="detail">Llama 3.1 8B<br>:8000 · MIG 3g.40gb</div>
+          <div class="flow-node ext">
+            <div class="icon">☁</div>
+            <div class="name">api.openai.com</div>
+            <div class="detail">ExternalModel gpt-5.6-luna<br>via ExternalName svc<br>openai-prod · TLS origination</div>
           </div>
         </div>
-        <div class="flow-ns-label ns-model">swongpai-maas</div>
-        <div class="replica-label">2 replicas · same H100 node</div>
+        <div class="flow-ns-label ns-model">swongpai-vllm</div>
+        <div class="replica-label">internal (GPU) or external (provider) — same policy path</div>
       </div>
     </div>
   </div>
@@ -570,7 +588,7 @@ footer {
 <section class="diagram-section">
   <div class="section-number">02 — On the Wire</div>
   <h2 class="section-title">Step-by-Step Request Journey</h2>
-  <p class="section-subtitle">What actually happens, hop by hop, when a client sends <span class="code-inline">POST /swongpai-maas/redhataillama-31-8b-instruct/v1/chat/completions</span>. Every step below is verified against the live cluster configuration.</p>
+  <p class="section-subtitle">What happens, hop by hop, when a client sends <span class="code-inline">POST /v1/chat/completions</span> with <span class="code-inline">{"model":"gpt-5.6-luna"}</span> — the body-based form that any OpenAI SDK produces unmodified. The legacy path form <span class="code-inline">POST /swongpai-vllm/gpt-5.6-luna/v1/chat/completions</span> takes the same route; only the identity lookup in step 4 differs. Filter order below was read from the gateway's Envoy <span class="code-inline">config_dump</span>, not from CRs.</p>
 
   <div class="diagram-container">
     <div class="sequence">
@@ -579,9 +597,9 @@ footer {
         <div class="seq-num">1</div>
         <div class="seq-hop">Client → AWS NLB<br><span class="proto https">HTTPS 443</span></div>
         <div class="seq-desc">
-          Client resolves <strong>maas.apps.rosa.rosa-h100-jp.g4b0.p3.openshiftapps.com</strong> (Route53 → NLB
-          <span class="code-inline">a83033…elb.amazonaws.com</span>) and sends the request with header
-          <span class="code-inline">Authorization: Bearer sk-oai-…</span>. The NLB forwards raw TCP to the gateway pod — no TLS termination here.
+          Client resolves <strong>swongpai-maas.apps.rosa.rsaijp.na2y.p3.openshiftapps.com</strong> (Route53 → NLB
+          <span class="code-inline">a2d5644f…elb.amazonaws.com</span>) and sends the request with
+          <span class="code-inline">Authorization: Bearer sk-oai-…</span>. The NLB forwards raw TCP — no TLS termination here.
         </div>
       </div>
 
@@ -589,90 +607,98 @@ footer {
         <div class="seq-num">2</div>
         <div class="seq-hop">NLB → Envoy Gateway<br><span class="proto https">TLS terminate</span></div>
         <div class="seq-desc">
-          Pod <strong>maas-default-gateway-openshift-default</strong> (an <span class="code-inline">istio-proxy</span> Envoy managed by
-          <span class="code-inline">istiod-openshift-gateway</span>) terminates TLS using the <span class="code-inline">maas-gateway-tls</span>
-          secret (ROSA wildcard cert). From here on, Kuadrant's WASM filter chain runs inside this Envoy for every request.
+          Pod <strong>maas-default-gateway-openshift-default</strong> (an <span class="code-inline">istio-proxy</span> Envoy programmed by
+          <span class="code-inline">istiod-openshift-gateway</span> — OpenShift 4.20's built-in Gateway API, no Service Mesh operator) terminates TLS with
+          <span class="code-inline">maas-gateway-tls</span>, a copy of the ROSA wildcard cert (expires 2026-11-09, rotated by CronJob). The HTTP filter chain that follows is:
+          <span class="code-inline">ext_proc.ipp-pre → wasm (Kuadrant) → ext_proc.ipp → router</span>.
         </div>
       </div>
 
       <div class="seq-step">
         <div class="seq-num">3</div>
-        <div class="seq-hop">Envoy → Authorino<br><span class="proto grpc">gRPC ext_authz :50051</span></div>
+        <div class="seq-hop">Envoy → payload-pre-processing<br><span class="proto grpc">gRPC ext_proc :9004</span></div>
         <div class="seq-desc">
-          Envoy pauses the request and sends a <strong>CheckRequest</strong> to Authorino. The <span class="code-inline">AuthPolicy</span> matches the
-          key pattern <span class="code-inline">^Bearer sk-oai-.*</span> and validates the key by calling
-          <span class="code-inline">maas-api:8443/internal/v1/api-keys/validate</span> (which checks PostgreSQL); a second metadata call to
-          <span class="code-inline">/internal/v1/subscriptions/select</span> resolves the user's subscription. Two OPA/Rego
-          policies then run: <strong>auth-valid</strong> (is the credential valid?) and <strong>require-group-membership</strong>
-          (is the user in <span class="code-inline">cluster-admins</span> or <span class="code-inline">rhods-admins</span>?). Results are cached 60s.
-          Failure → <span class="fail">401 / 403</span>. OpenShift tokens are also accepted — but only for the <span class="code-inline">/v1/models</span> listing endpoint.
+          <strong>ipp-pre</strong> streams the request body (<span class="code-inline">FULL_DUPLEX_STREAMED</span>), reads <span class="code-inline">.model</span> and
+          promotes it to a header: <span class="code-inline">X-Gateway-Model-Name: gpt-5.6-luna</span>, plus <span class="code-inline">x-ipp-selected-provider: openai-prod</span>
+          for external models. It then clears Envoy's route cache so routing re-evaluates with the new headers. Configured
+          <span class="code-inline">failure_mode_allow: true</span> — if it dies, body-based routing breaks but path-based requests keep flowing.
+          This is the piece that makes step 4 possible <em>before</em> policy, closing <a href="https://redhat.atlassian.net/browse/RHAISTRAT-1540">RHAISTRAT-1540</a>.
         </div>
       </div>
 
       <div class="seq-step">
         <div class="seq-num">4</div>
-        <div class="seq-hop">Authorino → Envoy<br><span class="proto internal">identity metadata</span></div>
+        <div class="seq-hop">Envoy wasm → Authorino<br><span class="proto grpc">gRPC ext_authz :50051</span></div>
         <div class="seq-desc">
-          On success Authorino returns <strong>OK plus identity metadata</strong>: <span class="code-inline">userid</span>,
-          <span class="code-inline">selected_subscription</span> (e.g. <span class="code-inline">models-as-a-service/admin-sub@swongpai-maas/redhataillama-31-8b-instruct</span>),
-          and group list. Envoy stores these as dynamic metadata — the rate limiter and telemetry both read them downstream.
+          The Kuadrant shim sends a <strong>CheckRequest</strong>. On 3.5 there is <strong>one gateway-scoped AuthPolicy</strong>, <span class="code-inline">maas-gateway-auth</span>, not one per model.
+          Authentication: keys matching <span class="code-inline">^Bearer sk-oai-.*</span> (priority 0) are validated by calling
+          <span class="code-inline">maas-api:8443/internal/v1/api-keys/validate</span> in <span class="code-inline">redhat-ai-gateway-infra</span>; anything else goes to Kubernetes
+          <span class="code-inline">TokenReview</span> (priority 2) — so <span class="code-inline">oc whoami -t</span> works on every path, not just <span class="code-inline">/v1/models</span>.
+          Authorization is three OPA/Rego checks: <strong>auth-valid</strong>, <strong>require-group-membership</strong>
+          (derives a <em>model identity</em> — <span class="code-inline">ns/name</span> from the path if it has two segments, else the <span class="code-inline">X-Gateway-Model-Name</span> header —
+          and looks it up in a generated allow-map; here <span class="code-inline">gpt-5.6-luna → cluster-admins</span>), and
+          <strong>deny-client-identity-headers</strong> (rejects client-supplied <span class="code-inline">x-maas-username</span> / <span class="code-inline">x-maas-group</span>). Verdicts cached 60s.
+          Failure → <span class="fail">401 / 403</span>. A bare <span class="code-inline">Access denied</span> almost always means the identity string is not an allow-map key — a naming mismatch.
         </div>
       </div>
 
       <div class="seq-step">
         <div class="seq-num">5</div>
-        <div class="seq-hop">Envoy → Limitador<br><span class="proto grpc">gRPC ratelimit :8081</span></div>
+        <div class="seq-hop">Authorino → Envoy<br><span class="proto internal">identity metadata</span></div>
         <div class="seq-desc">
-          Envoy asks Limitador: does user <span class="code-inline">auth.identity.userid</span> still have token budget? The live
-          <span class="code-inline">TokenRateLimitPolicy</span> allows <strong>1000 tokens per 1-minute window</strong> per user for this subscription
-          (the <span class="code-inline">/v1/models</span> path is exempt). A gateway-wide <strong>deny-all-by-default</strong> policy
-          (limit 0) blocks any path that isn't a configured model or the maas-api. Over budget → <span class="fail">429</span>.
+          On success Authorino returns <strong>OK plus identity metadata</strong>: <span class="code-inline">userid</span>, groups, and
+          <span class="code-inline">selected_subscription_key</span> — e.g. <span class="code-inline">models-as-a-service/gpt-5-6-luna-subscription@swongpai-vllm/gpt-5.6-luna</span>.
+          The key was minted against one subscription; that string is what the rate limiter matches on in the next step.
         </div>
       </div>
 
       <div class="seq-step">
         <div class="seq-num">6</div>
-        <div class="seq-hop">Envoy: HTTPRoute match<br><span class="proto internal">URLRewrite</span></div>
+        <div class="seq-hop">Envoy wasm → Limitador<br><span class="proto grpc">gRPC ratelimit :8081</span></div>
         <div class="seq-desc">
-          The <span class="code-inline">HTTPRoute</span> has separate rules for <span class="code-inline">/v1/completions</span>,
-          <span class="code-inline">/v1/chat/completions</span>, and <span class="code-inline">/v1/responses</span> — each strips the
-          <span class="code-inline">/swongpai-maas/redhataillama-31-8b-instruct</span> prefix and forwards to the
-          <strong>InferencePool</strong> backend (a Gateway API extension, not a normal Service). A catch-all rule routes anything else
-          directly to the workload Service.
+          Does <span class="code-inline">auth.identity.userid</span> still have budget? The route's <span class="code-inline">TokenRateLimitPolicy</span>
+          <span class="code-inline">maas-trlp-gpt-5.6-luna</span> carries one limit per subscription that includes the model:
+          <strong>100 000 tokens / 1h</strong> for <span class="code-inline">gpt-5-6-luna-subscription</span>, <strong>90 000 / 1s</strong> for <span class="code-inline">sa-premium</span>
+          (<span class="code-inline">/v1/models</span> exempt). A gateway-wide <span class="code-inline">gateway-default-deny</span> (limit 0) covers any path that is not a model route or
+          <span class="code-inline">/maas-api</span>, <span class="code-inline">/v1/models</span>, <span class="code-inline">/v1/subscriptions</span>, <span class="code-inline">/v1/api-keys</span>. Over budget → <span class="fail">429</span>.
         </div>
       </div>
 
       <div class="seq-step">
         <div class="seq-num">7</div>
-        <div class="seq-hop">Envoy → EPP<br><span class="proto grpc">gRPC ext_proc :9002</span></div>
+        <div class="seq-hop">Envoy → payload-processing<br><span class="proto grpc">gRPC ext_proc :9004</span></div>
         <div class="seq-desc">
-          Because the backend is an InferencePool, Envoy consults the <strong>Endpoint Picker (EPP)</strong> before choosing a pod.
-          The live EPP config runs three plugins: <span class="code-inline">queue-scorer</span> (weight 2 — prefer pods with shorter queues),
-          <span class="code-inline">prefix-cache-scorer</span> (weight 3 — prefer the pod that already has this prompt's prefix in KV cache),
-          and <span class="code-inline">max-score-picker</span> (choose the highest combined score). The EPP's tokenizer sidecar tokenizes
-          the prompt to compute prefix-cache matches.
+          <strong>ipp</strong> runs <em>after</em> policy and is <span class="code-inline">failure_mode_allow: false</span> — <strong>if this pod is down, every gateway request fails</strong>.
+          Its stages: <span class="code-inline">maas-headers-guard</span> (strip MaaS identity headers), <span class="code-inline">stream-usage-enforcer</span> (force
+          <span class="code-inline">stream_options.include_usage</span> on streamed responses), <span class="code-inline">model-provider-resolver</span>,
+          <span class="code-inline">api-translation</span> (rewrite <span class="code-inline">:path</span> to <span class="code-inline">/v1/chat/completions</span>; for Anthropic providers also the body), and
+          <span class="code-inline">apikey-injection</span> (replace the client's <span class="code-inline">Authorization</span> with the provider key from Secret
+          <span class="code-inline">openai-api-key</span>, label <span class="code-inline">inference.llm-d.ai/ipp-managed</span>). For an internal vLLM model these stages are no-ops except the header guard.
         </div>
       </div>
 
       <div class="seq-step">
         <div class="seq-num">8</div>
-        <div class="seq-hop">Envoy → vLLM pod<br><span class="proto https">HTTP :8000</span></div>
+        <div class="seq-hop">Envoy: HTTPRoute match<br><span class="proto internal">router</span></div>
         <div class="seq-desc">
-          The rewritten request (<span class="code-inline">POST /v1/chat/completions</span>) lands on the chosen vLLM pod.
-          vLLM runs the model on its <strong>MIG 3g.40gb slice</strong> (40GB VRAM), reusing cached KV tensors when the prefix matched.
-          Weights were loaded at startup from the OCI modelcar image <span class="code-inline">modelcar-llama-3-1-8b-instruct:1.5</span> — no
-          external download, no PVC.
+          <strong>External:</strong> <span class="code-inline">HTTPRoute/gpt-5.6-luna</span> (owned by the ExternalModel) matches <span class="code-inline">X-Gateway-Model-Name: gpt-5.6-luna</span>
+          + <span class="code-inline">x-ipp-selected-provider: openai-prod</span> on <span class="code-inline">PathPrefix /</span>, sets <span class="code-inline">Host: api.openai.com</span>, and forwards to
+          <span class="code-inline">Service/openai-prod</span> — an <span class="code-inline">ExternalName</span> with a <span class="code-inline">ServiceEntry</span> (MESH_EXTERNAL) and a <span class="code-inline">DestinationRule</span>
+          (TLS <span class="code-inline">SIMPLE</span>) named after the <em>provider</em>, shared by every model on it. Timeout 300s.<br>
+          <strong>Internal:</strong> <span class="code-inline">…-kserve-route</span> (owned by the LLMInferenceService) matches
+          <span class="code-inline">/swongpai-vllm/&lt;model&gt;/v1/{completions,chat/completions,responses,messages}</span> and the newer
+          <span class="code-inline">/publishers/swongpai-vllm/models/&lt;model&gt;/…</span> form, URL-rewrites the prefix away, and sends to the
+          <span class="code-inline">…-kserve-workload-svc:8000</span> with no timeout (streaming). No InferencePool on these three models — <span class="code-inline">router.scheduler</span> is unset.
         </div>
       </div>
 
       <div class="seq-step">
         <div class="seq-num">9</div>
-        <div class="seq-hop">Response → payload-processing<br><span class="proto grpc">gRPC ext_proc :9004</span></div>
+        <div class="seq-hop">Response → payload-processing<br><span class="proto grpc">ext_proc response path</span></div>
         <div class="seq-desc">
-          As the response streams back through Envoy, the <strong>payload-processing</strong> service inspects the response body and
-          extracts <span class="code-inline">usage.total_tokens</span> from the OpenAI-format JSON. This count is reported to
-          <strong>Limitador</strong>, which decrements the user's remaining token budget — this is how <em>token-based</em> (not request-based)
-          rate limiting works.
+          <span class="code-inline">ipp</span> also processes the response (<span class="code-inline">response_body_mode: FULL_DUPLEX_STREAMED</span>): it parses the OpenAI-format body
+          — or the SSE stream's final usage chunk — for <span class="code-inline">usage.total_tokens</span> and reports the count to <strong>Limitador</strong>, which debits the user's
+          counter. This is how the limit is <em>tokens</em>, not requests. The body reaching the client is unchanged.
         </div>
       </div>
 
@@ -680,10 +706,10 @@ footer {
         <div class="seq-num">10</div>
         <div class="seq-hop">Envoy → Client<br><span class="proto https">HTTPS 200</span></div>
         <div class="seq-desc">
-          The completed response returns to the client. In parallel, the <span class="code-inline">TelemetryPolicy</span> enriches Envoy's
-          Prometheus metrics with <span class="code-inline">model</span>, <span class="code-inline">user</span>,
-          <span class="code-inline">subscription</span>, <span class="code-inline">organization_id</span>, and
-          <span class="code-inline">cost_center</span> labels — feeding the MaaS observability dashboard for usage attribution and showback.
+          The response returns to the client. In parallel the <span class="code-inline">TelemetryPolicy/maas-telemetry</span> tries to label Envoy's Prometheus metrics with
+          <span class="code-inline">model</span> (from the response body), <span class="code-inline">user</span> and <span class="code-inline">subscription</span>. On RHCL 1.4.2 the two
+          <span class="code-inline">auth.identity.*</span> selectors fail to resolve (<span class="code-inline">CelError::Resolve</span>, every request) — the label is missing, the request is unaffected.
+          Traces sample at 0.1 into Tempo.
         </div>
       </div>
 
@@ -698,7 +724,7 @@ footer {
 <section class="diagram-section">
   <div class="section-number">03 — Before the First Request</div>
   <h2 class="section-title">Where API Keys Come From</h2>
-  <p class="section-subtitle">Inference needs a key. Keys are minted by maas-api, scoped to a subscription, and stored in PostgreSQL. The subscription — not the key — decides which models you can reach and how many tokens you get.</p>
+  <p class="section-subtitle">Inference needs a key. Keys are minted by maas-api — which on 3.5 lives in its own namespace, <span class="code-inline">redhat-ai-gateway-infra</span> — scoped to a subscription, and stored in PostgreSQL. The subscription, not the key, decides which models you reach and how many tokens you get. Max lifetime 90 days; expired keys are swept every 15 minutes.</p>
 
   <div class="diagram-container">
     <div class="keyflow">
@@ -706,14 +732,14 @@ footer {
         <div class="flow-node user">
           <div class="icon">◉</div>
           <div class="name">User</div>
-          <div class="detail">Must be in cluster-admins<br>or rhods-admins group</div>
+          <div class="detail">Must be in a group named<br>in MaaSSubscription.owner<br>(cluster-admins here)</div>
         </div>
       </div>
       <div class="flow-stage">
         <div class="flow-node dashboard">
           <div class="icon">▤</div>
           <div class="name">RHOAI Dashboard</div>
-          <div class="detail">maas-ui plugin, or direct<br>POST /maas-api/v1/api-keys<br>with OpenShift token</div>
+          <div class="detail">maas-ui module, or direct<br>POST /maas-api/v1/api-keys<br>with OpenShift token</div>
         </div>
         <div class="flow-ns-label" style="background: var(--accent-light); color: var(--ns-control)">redhat-ods-applications</div>
       </div>
@@ -721,15 +747,15 @@ footer {
         <div class="flow-node maasapi">
           <div class="icon">⚙</div>
           <div class="name">maas-api</div>
-          <div class="detail">Validates group against<br>MaaSSubscription owner ·<br>generates sk-oai-… key</div>
+          <div class="detail">HTTPRoute maas-api-route<br>on the MaaS gateway ·<br>generates sk-oai-… key</div>
         </div>
-        <div class="flow-ns-label" style="background: var(--accent-light); color: var(--ns-control)">redhat-ods-applications</div>
+        <div class="flow-ns-label ns-infra">redhat-ai-gateway-infra</div>
       </div>
       <div class="flow-stage">
         <div class="flow-node postgres">
           <div class="icon">◫</div>
           <div class="name">PostgreSQL</div>
-          <div class="detail">CNPG postgres-ha<br>3-instance HA ·<br>key hash stored</div>
+          <div class="detail">CNPG postgres-ha-app<br>PG 18.4 · 3 instances (2 up)<br>key hash stored</div>
         </div>
         <div class="flow-ns-label" style="background: var(--teal-light); color: var(--teal)">maas-postgres</div>
       </div>
@@ -737,7 +763,7 @@ footer {
         <div class="flow-node key">
           <div class="icon">⚿</div>
           <div class="name">API Key</div>
-          <div class="detail">Returned once, at creation.<br>Scoped to subscription<br>admin-sub · 1000 tok/min</div>
+          <div class="detail">Returned once. Scoped to<br>gpt-5-6-luna-subscription 100k/1h<br>or sa-premium 90k/1s</div>
         </div>
       </div>
     </div>
@@ -751,12 +777,13 @@ footer {
 <section class="diagram-section">
   <div class="section-number">04 — Topology</div>
   <h2 class="section-title">Control Plane by Namespace</h2>
-  <p class="section-subtitle">Resources grouped by namespace — how operators, controllers, and CRDs compose the platform.</p>
+  <p class="section-subtitle">Resources grouped by namespace, as they exist on 3.5. Two namespaces are new since 3.4: <span class="code-inline">redhat-ai-gateway-infra</span> (maas-api moved here) and <span class="code-inline">ai-tenants</span> (the AITenant that binds a tenant namespace to a Gateway).</p>
 
   <div class="legend">
     <div class="legend-item"><span class="swatch" style="border-color: var(--ns-control)"></span> redhat-ods-applications</div>
-    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-model)"></span> swongpai-maas</div>
-    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-maas)"></span> models-as-a-service</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-infra)"></span> redhat-ai-gateway-infra</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-maas)"></span> models-as-a-service · ai-tenants</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-model)"></span> swongpai-vllm</div>
     <div class="legend-item"><span class="swatch" style="border-color: var(--ns-kuadrant)"></span> kuadrant-system</div>
     <div class="legend-item"><span class="swatch" style="border-color: var(--ns-gateway)"></span> openshift-ingress</div>
     <div class="legend-item"><span class="swatch" style="border-color: var(--ns-observability)"></span> redhat-ods-monitoring</div>
@@ -769,66 +796,90 @@ footer {
         <div class="ns-header">redhat-ods-applications</div>
         <ul class="resource-list">
           <li><span class="res-kind">Deployment</span><span class="res-name">maas-controller</span>
-            <div class="res-detail">Reconciles MaaS CRs → Kuadrant policies · creates Tenant</div></li>
-          <li><span class="res-kind">Deployment</span><span class="res-name">maas-api</span>
-            <div class="res-detail">REST :8443 · API key CRUD · key validation for Authorino</div></li>
+            <div class="res-detail">Reconciles Config / AITenant / MaaS CRs → maas-api, gateway AuthPolicy, TRLPs, EnvoyFilter</div></li>
+          <li><span class="res-kind">Deployment</span><span class="res-name">ai-gateway-operator</span>
+            <div class="res-detail">New in 3.5 · AI Gateway platform operator</div></li>
           <li><span class="res-kind">Deployment</span><span class="res-name">llmisvc-controller-manager</span>
             <div class="res-detail">KServe llm-d controller · reconciles LLMInferenceService</div></li>
-          <li><span class="res-kind">Secret</span><span class="res-name">maas-db-config</span>
-            <div class="res-detail">PostgreSQL URL → postgres-ha-rw.maas-postgres</div></li>
-          <li><span class="res-kind">HTTPRoute</span><span class="res-name">maas-api-route</span>
-            <div class="res-detail">/maas-api + /v1/models exposed on the MaaS gateway</div></li>
+          <li><span class="res-kind">Deployment</span><span class="res-name">maas-ui · model-serving-api</span>
+            <div class="res-detail">Dashboard MaaS module (:8243) · serving API for the dashboard</div></li>
+          <li><span class="res-kind">Deployment</span><span class="res-name">ogx-k8s-operator · mcp-lifecycle-operator</span>
+            <div class="res-detail">GenAI playground (OGX) and MCP lifecycle — both Managed in the DSC</div></li>
           <li><span class="res-kind">OdhDashboardConfig</span><span class="res-name">odh-dashboard-config</span>
-            <div class="res-detail">vLLMDeploymentOnMaaS · observabilityDashboard</div></li>
+            <div class="res-detail">vLLMDeploymentOnMaaS · genAiStudio · observabilityDashboard = true</div></li>
+          <li><span class="res-kind">Secret · CronJob</span><span class="res-name">maas-db-config · maas-api-key-cleanup</span>
+            <div class="res-detail"><em>3.4 leftovers</em> — no consumer; db-secret-sync still targets this copy</div></li>
         </ul>
       </div>
 
-      <div class="ns-box ns-model-ns">
-        <div class="ns-header">swongpai-maas</div>
+      <div class="ns-box ns-infra-ns">
+        <div class="ns-header">redhat-ai-gateway-infra <span style="font-weight:400;opacity:.7">— new in 3.5</span></div>
         <ul class="resource-list">
-          <li><span class="res-kind">LLMInferenceService</span><span class="res-name">redhataillama-31-8b-instruct</span>
-            <div class="res-detail">2 replicas · oci modelcar 1.5 · router: gateway + scheduler</div></li>
-          <li><span class="res-kind">InferencePool</span><span class="res-name">…-inference-pool</span>
-            <div class="res-detail">endpointPickerRef → epp-service:9002 · targetPort 8000</div></li>
-          <li><span class="res-kind">Deployment ×2 pods</span><span class="res-name">…-kserve</span>
-            <div class="res-detail">vLLM main + modelcar sidecar · nvidia.com/gpu: 1 each</div></li>
-          <li><span class="res-kind">Deployment</span><span class="res-name">…-kserve-router-scheduler</span>
-            <div class="res-detail">EPP main + tokenizer + modelcar (3 containers)</div></li>
-          <li><span class="res-kind">MaaSModelRef</span><span class="res-name">redhataillama-31-8b-instruct</span>
-            <div class="res-detail">Registers model with MaaS · endpoint published</div></li>
-          <li><span class="res-kind">AuthPolicy</span><span class="res-name">maas-auth-…-instruct</span>
-            <div class="res-detail">sk-oai key validation + OPA group check · created by maas-controller</div></li>
-          <li><span class="res-kind">TokenRateLimitPolicy</span><span class="res-name">maas-trlp-…-instruct</span>
-            <div class="res-detail">1000 tokens/1m per userid · targets the HTTPRoute</div></li>
-          <li><span class="res-kind">HTTPRoute</span><span class="res-name">…-kserve-route</span>
-            <div class="res-detail">4 rules · URLRewrite → InferencePool + workload svc</div></li>
+          <li><span class="res-kind">Deployment</span><span class="res-name">maas-api</span>
+            <div class="res-detail">REST :8443 · key CRUD · validation backend for Authorino · owned by Config/default</div></li>
+          <li><span class="res-kind">Secret</span><span class="res-name">maas-db-config</span>
+            <div class="res-detail">migrated-from: redhat-ods-applications · postgres-ha-app-rw · sslmode=require</div></li>
+          <li><span class="res-kind">HTTPRoute</span><span class="res-name">maas-api-route</span>
+            <div class="res-detail">/v1/models · /v1/subscriptions · /v1/api-keys · /maas-api → maas-api:8443</div></li>
+          <li><span class="res-kind">CronJob</span><span class="res-name">maas-api-key-cleanup</span>
+            <div class="res-detail">*/15 * * * * · purges expired keys (max 90 days)</div></li>
+          <li><span class="res-kind">Secret</span><span class="res-name">maas-api-serving-cert</span>
+            <div class="res-detail">service-ca TLS for :8443</div></li>
         </ul>
       </div>
 
       <div class="ns-box ns-maas-ns">
-        <div class="ns-header">models-as-a-service</div>
+        <div class="ns-header">models-as-a-service · ai-tenants</div>
         <ul class="resource-list">
+          <li><span class="res-kind">Config</span><span class="res-name">default</span>
+            <div class="res-detail">Root of the 3.5 chain · usageLogging: false · limitadorScrapeInterval: 30s</div></li>
+          <li><span class="res-kind">AITenant</span><span class="res-name">models-as-a-service <em>(ai-tenants)</em></span>
+            <div class="res-detail">Binds tenant ns → Gateway maas-default-gateway · owned by Config</div></li>
+          <li><span class="res-kind">MaasTenantConfig</span><span class="res-name">default-tenant</span>
+            <div class="res-detail">apiKeys / telemetry knobs · infraNamespace: redhat-ai-gateway-infra</div></li>
           <li><span class="res-kind">Tenant</span><span class="res-name">default-tenant</span>
-            <div class="res-detail">gatewayRef → maas-default-gateway · telemetry on</div></li>
-          <li><span class="res-kind">MaaSAuthPolicy</span><span class="res-name">admin-sub-policy</span>
-            <div class="res-detail">Grants cluster-admins + rhods-admins → model access</div></li>
-          <li><span class="res-kind">MaaSSubscription</span><span class="res-name">admin-sub</span>
-            <div class="res-detail">1000 tokens/1m · priority 0 · owner: admin groups</div></li>
+            <div class="res-detail"><em>deprecated-by MaasTenantConfig</em> — spec ignored, left in place</div></li>
+          <li><span class="res-kind">MaaSAuthPolicy ×2</span><span class="res-name">sa-premium-policy · gpt-5-6-luna-access</span>
+            <div class="res-detail">cluster-admins → 3 internal models / 1 external model</div></li>
+          <li><span class="res-kind">MaaSSubscription ×2</span><span class="res-name">sa-premium · gpt-5-6-luna-subscription</span>
+            <div class="res-detail">90k tok/1s (Degraded — GPU down) · 100k tok/1h (Active)</div></li>
         </ul>
         <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 12px; line-height: 1.5;">
-          User-intent layer: humans write these; maas-controller translates them into the Kuadrant AuthPolicy + TokenRateLimitPolicy in the model namespace.
+          Intent layer. maas-controller compiles the two policies into <em>one</em> gateway AuthPolicy allow-map and one TokenRateLimitPolicy per model route.
         </p>
+      </div>
+
+      <div class="ns-box ns-model-ns">
+        <div class="ns-header">swongpai-vllm</div>
+        <ul class="resource-list">
+          <li><span class="res-kind">LLMInferenceService ×3</span><span class="res-name">muse-glimmer-llmisvc-nightly · qwen38-27b-018 · redhataiqwen3-coder-next-nvfp4</span>
+            <div class="res-detail">1 GPU each · router gateway+route (no scheduler) · all down: no GPU node</div></li>
+          <li><span class="res-kind">ExternalProvider</span><span class="res-name">openai-prod</span>
+            <div class="res-detail">openai · api.openai.com · apikey Secret openai-api-key → Service/ServiceEntry/DestinationRule</div></li>
+          <li><span class="res-kind">ExternalModel</span><span class="res-name">gpt-5.6-luna</span>
+            <div class="res-detail">inference.opendatahub.io · targetModel gpt-5.6-luna · owns HTTPRoute gpt-5.6-luna</div></li>
+          <li><span class="res-kind">MaaSModelRef ×4</span><span class="res-name">gpt-5.6-luna (Ready) · 3× internal (Pending)</span>
+            <div class="res-detail">Registers model with MaaS · Pending until governance pairs and runtime is healthy</div></li>
+          <li><span class="res-kind">HTTPRoute ×2</span><span class="res-name">gpt-5.6-luna · muse-…-kserve-route</span>
+            <div class="res-detail">Stopped LLMISvc render no route</div></li>
+          <li><span class="res-kind">TokenRateLimitPolicy ×2</span><span class="res-name">maas-trlp-gpt-5.6-luna · maas-trlp-muse-…</span>
+            <div class="res-detail">Created by MaaSSubscription · targets the model HTTPRoute</div></li>
+          <li><span class="res-kind">OGXServer · MCPServer</span><span class="res-name">lsd-genai-playground · rh-demo-mcp-ocp</span>
+            <div class="res-detail">GenAI Studio backend (replaces LlamaStackDistribution) · MCP server (not yet on the gateway)</div></li>
+        </ul>
       </div>
 
       <div class="ns-box ns-kuadrant-ns">
         <div class="ns-header">kuadrant-system</div>
         <ul class="resource-list">
           <li><span class="res-kind">Kuadrant</span><span class="res-name">kuadrant</span>
-            <div class="res-detail">observability.enable: true → PodMonitors</div></li>
-          <li><span class="res-kind">Deployment</span><span class="res-name">authorino</span>
-            <div class="res-detail">ext_authz gRPC :50051 · TLS via service-serving cert</div></li>
-          <li><span class="res-kind">Deployment</span><span class="res-name">limitador-limitador</span>
-            <div class="res-detail">ratelimit gRPC :8081, HTTP :8080 · token counters</div></li>
+            <div class="res-detail">observability.enable: true · ArgoCD-owned (openshift-ai-operator-set)</div></li>
+          <li><span class="res-kind">Authorino</span><span class="res-name">authorino</span>
+            <div class="res-detail">clusterWide · ext_authz gRPC :50051 · TLS via authorino-server-cert (service-ca)</div></li>
+          <li><span class="res-kind">Limitador</span><span class="res-name">limitador</span>
+            <div class="res-detail">ratelimit gRPC :8081, HTTP :8080 · limits compiled from every TRLP</div></li>
+          <li><span class="res-kind">CronJob</span><span class="res-name">authorino-tls-setup</span>
+            <div class="res-detail">weekly · re-asserts the serving-cert annotation + Authorino TLS spec</div></li>
         </ul>
       </div>
 
@@ -836,21 +887,23 @@ footer {
         <div class="ns-header">openshift-ingress</div>
         <ul class="resource-list">
           <li><span class="res-kind">Gateway</span><span class="res-name">maas-default-gateway</span>
-            <div class="res-detail">HTTPS :443 · LoadBalancer (AWS NLB) · Programmed</div></li>
+            <div class="res-detail">HTTPS :443 · openshift-default class · AWS NLB · 3 routes · ArgoCD-owned</div></li>
           <li><span class="res-kind">Pod</span><span class="res-name">maas-default-gateway-openshift-default</span>
-            <div class="res-detail">istio-proxy (Envoy) — the actual data plane</div></li>
+            <div class="res-detail">istio-proxy (Envoy) — the data plane</div></li>
           <li><span class="res-kind">Pod</span><span class="res-name">istiod-openshift-gateway</span>
-            <div class="res-detail">Istio control plane — programs the Envoy</div></li>
-          <li><span class="res-kind">Deployment</span><span class="res-name">payload-processing</span>
-            <div class="res-detail">ext_proc gRPC :9004 · extracts token usage from responses</div></li>
+            <div class="res-detail">OpenShift-managed Istio control plane (no OSSM operator)</div></li>
+          <li><span class="res-kind">Deployment ×2</span><span class="res-name">payload-pre-processing · payload-processing</span>
+            <div class="res-detail">ext_proc :9004 · ipp-pre (fail-open) and ipp (fail-closed) · same image</div></li>
+          <li><span class="res-kind">EnvoyFilter</span><span class="res-name">payload-processing</span>
+            <div class="res-detail">Config-owned · inserts both ext_proc filters around the Kuadrant wasm · priority 10</div></li>
+          <li><span class="res-kind">AuthPolicy</span><span class="res-name">maas-gateway-auth</span>
+            <div class="res-detail">Gateway-scoped · Enforced · OPA allow-map of all models</div></li>
+          <li><span class="res-kind">AuthPolicy · TRLP</span><span class="res-name">maas-default-gateway-authn · gateway-default-deny</span>
+            <div class="res-detail">Both Accepted, Enforced=False (overridden) — deny-by-default backstops</div></li>
+          <li><span class="res-kind">TelemetryPolicy</span><span class="res-name">maas-telemetry</span>
+            <div class="res-detail">model / user / subscription labels (user+subscription unresolved on RHCL 1.4.2)</div></li>
           <li><span class="res-kind">Secret</span><span class="res-name">maas-gateway-tls</span>
-            <div class="res-detail">kubernetes.io/tls · ROSA wildcard cert copy</div></li>
-          <li><span class="res-kind">AuthPolicy ×2</span><span class="res-name">gateway-default-auth / …-authn</span>
-            <div class="res-detail">Deny unconfigured models · k8s TokenReview + SAR fallback</div></li>
-          <li><span class="res-kind">TokenRateLimitPolicy</span><span class="res-name">gateway-default-deny</span>
-            <div class="res-detail">limit 0 default — deny-by-default posture</div></li>
-          <li><span class="res-kind">TelemetryPolicy + Telemetry</span><span class="res-name">maas-telemetry / latency-per-subscription</span>
-            <div class="res-detail">model/user/subscription/cost_center metric labels</div></li>
+            <div class="res-detail">ROSA wildcard copy · CronJob tls-cert-rotator 1st &amp; 15th</div></li>
         </ul>
       </div>
 
@@ -858,15 +911,15 @@ footer {
         <div class="ns-header">redhat-ods-monitoring</div>
         <ul class="resource-list">
           <li><span class="res-kind">MonitoringStack</span><span class="res-name">data-science-monitoringstack</span>
-            <div class="res-detail">Prometheus + Alertmanager (2 each) · 5Gi · 90d</div></li>
-          <li><span class="res-kind">StatefulSet</span><span class="res-name">tempo-…-tempomonolithic</span>
-            <div class="res-detail">Distributed tracing · PV backend · 2160h retention</div></li>
-          <li><span class="res-kind">StatefulSet</span><span class="res-name">data-science-perses</span>
-            <div class="res-detail">Dashboard renderer for RHOAI console (Tech Preview)</div></li>
+            <div class="res-detail">Prometheus ×1 + Alertmanager ×2 · 5Gi · 90d · thanos-querier</div></li>
+          <li><span class="res-kind">TempoMonolithic</span><span class="res-name">data-science-tempomonolithic</span>
+            <div class="res-detail">Tempo 2.10.5 · PV · 2160h retention · sampleRatio 0.1</div></li>
           <li><span class="res-kind">OpenTelemetryCollector</span><span class="res-name">data-science-collector</span>
-            <div class="res-detail">2 replicas + target allocator · scrape + trace pipeline</div></li>
-          <li><span class="res-kind">Deployment</span><span class="res-name">thanos-querier</span>
-            <div class="res-detail">Unified metric queries across Prometheus shards</div></li>
+            <div class="res-detail">0.152.1 · statefulset 2/2 + target allocator</div></li>
+          <li><span class="res-kind">Perses + 8 dashboards</span><span class="res-name">data-science-perses</span>
+            <div class="res-detail">cluster · model · maas-usage · llm-d traffic / utilization / performance · tempo-traces</div></li>
+          <li><span class="res-kind">ServiceMonitor</span><span class="res-name">limitador-metrics</span>
+            <div class="res-detail">Config-owned · app=limitador · 30s</div></li>
         </ul>
       </div>
 
@@ -881,7 +934,7 @@ footer {
 <section class="diagram-section">
   <div class="section-number">05 — Reference</div>
   <h2 class="section-title">Component Catalog</h2>
-  <p class="section-subtitle">Every component in the request path and control plane, by layer — with live images, ports, and role. All pulled from the running cluster.</p>
+  <p class="section-subtitle">Every component in the request path and control plane, by layer — with live images, ports, and role. Pulled from the running 3.5 cluster on 2026-09-04.</p>
 
   <div class="diagram-container">
 
@@ -890,29 +943,32 @@ footer {
       <thead><tr><th style="width:220px">Component</th><th style="width:120px">Ports</th><th>Role</th><th style="width:300px">Image</th></tr></thead>
       <tbody>
         <tr><td>AWS NLB + Route53</td><td><span class="port-tag">443</span></td>
-          <td>Cloud entry point. DNS <span class="code-inline">maas.apps.…</span> → NLB → gateway pod. Auto-created by OpenShift when the Gateway was applied.</td>
+          <td>Cloud entry point. <span class="code-inline">swongpai-maas.apps.…</span> → NLB → gateway pod. Created by OpenShift when the Gateway was applied.</td>
           <td class="img-tag">—</td></tr>
         <tr><td>maas-default-gateway<br>(istio-proxy)</td><td><span class="port-tag">443 TLS</span><span class="port-tag">15021 health</span></td>
-          <td>The Envoy data plane. Terminates TLS, runs Kuadrant WASM filters (auth, rate-limit callouts), matches HTTPRoutes, consults EPP. Everything flows through this pod.</td>
+          <td>The Envoy data plane. Terminates TLS, runs ipp-pre → Kuadrant wasm → ipp → router, matches HTTPRoutes. Everything flows through this pod.</td>
           <td class="img-tag">openshift-service-mesh/istio-proxyv2-rhel9</td></tr>
         <tr><td>istiod-openshift-gateway</td><td><span class="port-tag">15010</span><span class="port-tag">15012</span><span class="port-tag">15014</span></td>
-          <td>Istio control plane. Translates Gateway API resources into Envoy configuration and pushes it to the gateway pod via xDS.</td>
+          <td>OpenShift 4.20's built-in Gateway API control plane. Translates Gateway/HTTPRoute/EnvoyFilter into xDS. No OpenShift Service Mesh operator is installed.</td>
           <td class="img-tag">openshift-service-mesh/istio-pilot-rhel9</td></tr>
       </tbody>
     </table>
 
-    <div class="catalog-layer">Layer 2 — Policy Enforcement (Kuadrant / RHCL)</div>
+    <div class="catalog-layer">Layer 2 — Policy Enforcement (Kuadrant / RHCL 1.4.2) &amp; Payload Processing</div>
     <table class="components-table">
       <thead><tr><th style="width:220px">Component</th><th style="width:120px">Ports</th><th>Role</th><th style="width:300px">Image</th></tr></thead>
       <tbody>
+        <tr><td>payload-pre-processing<br>(ext_proc <em>ipp-pre</em>)</td><td><span class="port-tag">9004 grpc</span></td>
+          <td><strong>New in 3.5.</strong> Runs before policy. Extracts <span class="code-inline">.model</span> from the request body into <span class="code-inline">X-Gateway-Model-Name</span>, resolves the provider header, clears the route cache. Fail-open. Enables body-based routing.</td>
+          <td class="img-tag">rhoai/odh-ai-gateway-payload-processing-rhel9</td></tr>
         <tr><td>authorino</td><td><span class="port-tag">50051 grpc</span><span class="port-tag">5001 http</span></td>
-          <td>External authorization. Validates <span class="code-inline">sk-oai-*</span> API keys (via maas-api), runs OPA/Rego group-membership checks, caches verdicts 60s, injects identity metadata for downstream policies.</td>
-          <td class="img-tag">rhcl-1/authorino-rhel9</td></tr>
+          <td>External authorization for the gateway-scoped <span class="code-inline">maas-gateway-auth</span>. Validates <span class="code-inline">sk-oai-*</span> keys via maas-api, does k8s TokenReview for everything else, runs three OPA/Rego checks, caches 60s.</td>
+          <td class="img-tag">rhcl-1/authorino-rhel9 (1.4.2)</td></tr>
         <tr><td>limitador-limitador</td><td><span class="port-tag">8081 grpc</span><span class="port-tag">8080 http</span></td>
-          <td>Rate limit service. Keeps token counters per <span class="code-inline">userid</span> per subscription window. Answers Envoy's should-rate-limit checks; decremented post-response by actual token usage.</td>
-          <td class="img-tag">rhcl-1/limitador-rhel9</td></tr>
-        <tr><td>payload-processing</td><td><span class="port-tag">9004 grpc</span><span class="port-tag">9005 metrics</span></td>
-          <td>Envoy ext_proc service. Parses OpenAI-format response bodies to extract <span class="code-inline">usage.total_tokens</span> and model name — the bridge that makes <em>token-based</em> rate limiting and per-model telemetry possible.</td>
+          <td>Rate-limit service. One token counter per <span class="code-inline">userid</span> per subscription window, compiled from every TokenRateLimitPolicy. Debited post-response by real usage.</td>
+          <td class="img-tag">rhcl-1/limitador-rhel9 (1.4.1)</td></tr>
+        <tr><td>payload-processing<br>(ext_proc <em>ipp</em>)</td><td><span class="port-tag">9004 grpc</span></td>
+          <td>Runs after policy. Request side: header guard, stream-usage enforcer, provider resolution, API translation, provider-key injection. Response side: extracts <span class="code-inline">usage.total_tokens</span> for Limitador. <strong>Fail-closed</strong> — outage stops all gateway traffic.</td>
           <td class="img-tag">rhoai/odh-ai-gateway-payload-processing-rhel9</td></tr>
       </tbody>
     </table>
@@ -922,57 +978,66 @@ footer {
       <thead><tr><th style="width:220px">Component</th><th style="width:120px">Ports</th><th>Role</th><th style="width:300px">Image</th></tr></thead>
       <tbody>
         <tr><td>maas-controller</td><td>—</td>
-          <td>Operator. Watches MaaSSubscription / MaaSAuthPolicy / MaaSModelRef / Tenant CRs and generates the enforcing Kuadrant AuthPolicy + TokenRateLimitPolicy per model. The translator between user intent and gateway enforcement.</td>
+          <td>Operator. Bootstraps <span class="code-inline">Config → AITenant → MaasTenantConfig</span>, deploys maas-api into <span class="code-inline">--infra-namespace</span>, compiles MaaSAuthPolicy/MaaSSubscription/MaaSModelRef into the gateway AuthPolicy allow-map and per-route TRLPs, owns the payload-processing EnvoyFilter and the Limitador ServiceMonitor.</td>
           <td class="img-tag">rhoai/odh-maas-controller-rhel9</td></tr>
-        <tr><td>maas-api</td><td><span class="port-tag">8443 https</span></td>
-          <td>REST API for key lifecycle: create/list/revoke API keys, list models. Checks subscription owner groups before minting. Also serves as Authorino's key-validation backend. State in PostgreSQL.</td>
+        <tr><td>ai-gateway-operator</td><td>—</td>
+          <td><strong>New in 3.5.</strong> Platform operator for the AI Gateway layer (payload processing images, gateway integration). Runs in redhat-ods-applications alongside maas-controller.</td>
+          <td class="img-tag">rhoai/odh-ai-gateway-operator-rhel9</td></tr>
+        <tr><td>maas-api<br>(redhat-ai-gateway-infra)</td><td><span class="port-tag">8443 https</span><span class="port-tag">9090 metrics</span></td>
+          <td>REST API for key lifecycle and the model catalog (<span class="code-inline">/v1/models</span>). Checks subscription owner groups before minting. Authorino's key-validation backend. Ships <span class="code-inline">SSL_CERT_DIR</span> for the service-ca — the 3.4 env patch is gone. Reached through <span class="code-inline">HTTPRoute/maas-api-route</span> on the MaaS gateway.</td>
           <td class="img-tag">rhoai/odh-maas-api-rhel9</td></tr>
-        <tr><td>postgres-ha (CNPG)</td><td><span class="port-tag">5432</span></td>
-          <td>3-instance HA PostgreSQL 18 cluster (namespace <span class="code-inline">maas-postgres</span>). Stores API key hashes and subscription state. Reached via <span class="code-inline">postgres-ha-rw</span> service, sslmode=require.</td>
-          <td class="img-tag">CloudNativePG 1.30.0</td></tr>
-        <tr><td>maas-ui (dashboard plugin)</td><td>—</td>
-          <td>MaaS panel inside the RHOAI dashboard — self-service key creation and model catalog. One of the modular UI containers in the rhods-dashboard pod.</td>
+        <tr><td>postgres-ha-app (CNPG)</td><td><span class="port-tag">5432</span></td>
+          <td>3-instance PostgreSQL 18.4 in <span class="code-inline">maas-postgres</span>; 2 healthy today (instance 2's PV is in AZ 1c, both nodes are in 1a). Reached via <span class="code-inline">postgres-ha-app-rw</span>, sslmode=require.</td>
+          <td class="img-tag">cloudnative-pg/postgresql:18.4 · CNPG 1.30.0</td></tr>
+        <tr><td>maas-ui (dashboard module)</td><td><span class="port-tag">8243</span></td>
+          <td>MaaS panel in the RHOAI dashboard — self-service keys and catalog. Separate Deployment owned by <span class="code-inline">Dashboard/default-dashboard</span> on 3.5.</td>
           <td class="img-tag">rhoai/odh-mod-arch-maas-rhel9</td></tr>
       </tbody>
     </table>
 
-    <div class="catalog-layer">Layer 4 — Model Serving (llm-d / KServe)</div>
+    <div class="catalog-layer">Layer 4 — Model Serving (KServe llm-d, internal) &amp; External Providers</div>
     <table class="components-table">
       <thead><tr><th style="width:220px">Component</th><th style="width:120px">Ports</th><th>Role</th><th style="width:300px">Image</th></tr></thead>
       <tbody>
         <tr><td>llmisvc-controller-manager</td><td>—</td>
-          <td>KServe's LLMInferenceService controller. From one CR it materializes: vLLM Deployment, EPP Deployment, InferencePool, HTTPRoute, Services, and the MaaSModelRef.</td>
+          <td>KServe's LLMInferenceService controller. Expands one CR into vLLM Deployment, Services, HTTPRoute (and EPP + InferencePool when <span class="code-inline">router.scheduler</span> is set — not on the current three). 3.5 adds <span class="code-inline">v3-5-0-*</span> presets incl. single/multi-node and prefill/decode templates.</td>
           <td class="img-tag">rhoai/odh-kserve-llmisvc-controller-rhel9</td></tr>
-        <tr><td>EPP router-scheduler<br>(main + tokenizer)</td><td><span class="port-tag">9002 grpc</span><span class="port-tag">9003 health</span><span class="port-tag">9090 metrics</span><span class="port-tag">5557 zmq</span></td>
-          <td>Endpoint Picker. Scores every vLLM replica per request: <span class="code-inline">queue-scorer</span> (w2) + <span class="code-inline">prefix-cache-scorer</span> (w3) → <span class="code-inline">max-score-picker</span>. Tokenizer sidecar computes prompt prefixes; ZMQ channel receives KV-cache events from vLLM pods.</td>
-          <td class="img-tag">rhoai/odh-llm-d-inference-scheduler-rhel9 + odh-llm-d-kv-cache-rhel9</td></tr>
-        <tr><td>vLLM pods ×2<br>(main + modelcar)</td><td><span class="port-tag">8000 http</span></td>
-          <td>The inference engines. OpenAI-compatible API, Llama 3.1 8B in bf16, one MIG 3g.40gb slice each (requests/limits <span class="code-inline">nvidia.com/gpu: 1</span>, cpu 2, mem 4Gi). Modelcar sidecar provides weights via image filesystem.</td>
-          <td class="img-tag">rhaii/vllm-cuda-rhel9 + rhelai1/modelcar-llama-3-1-8b-instruct:1.5</td></tr>
-        <tr><td>InferencePool</td><td><span class="port-tag">→ 8000</span></td>
-          <td>Gateway API extension resource. Selects vLLM pods by label (<span class="code-inline">kserve.io/component: workload</span>) and delegates per-request endpoint choice to the EPP via <span class="code-inline">endpointPickerRef</span>.</td>
+        <tr><td>vLLM pods (×3 defined, 0 running)</td><td><span class="port-tag">8000 http</span></td>
+          <td><span class="code-inline">muse-glimmer-llmisvc-nightly</span> (pvc, Muse-Glimmer-30B-NVFP4), <span class="code-inline">qwen38-27b-018</span> (oci modelcar-catalog), <span class="code-inline">redhataiqwen3-coder-next-nvfp4</span> (oci registry.redhat.io/rhai). 1 GPU each; two are annotated <span class="code-inline">serving.kserve.io/stop</span>. Need the H100 node.</td>
+          <td class="img-tag">rhaii/vllm-cuda-rhel9 + modelcar</td></tr>
+        <tr><td>ExternalProvider openai-prod<br>+ Service / ServiceEntry / DestinationRule</td><td><span class="port-tag">→ 443</span></td>
+          <td><strong>New in 3.5.</strong> <span class="code-inline">inference.opendatahub.io</span> CRD. One per upstream: ExternalName Service to api.openai.com, ServiceEntry (MESH_EXTERNAL, DNS), DestinationRule (TLS SIMPLE). Shared by every ExternalModel on that provider.</td>
           <td class="img-tag">— (CRD)</td></tr>
+        <tr><td>ExternalModel gpt-5.6-luna</td><td>—</td>
+          <td>Object name = <span class="code-inline">modelName</span> = <span class="code-inline">targetModel</span> = upstream id — the one naming rule. Owns <span class="code-inline">HTTPRoute/gpt-5.6-luna</span> (4 rules: path-based and header-based, each with and without the provider header). Body is forwarded to OpenAI untouched.</td>
+          <td class="img-tag">— (CRD)</td></tr>
+        <tr><td>OGXServer lsd-genai-playground</td><td><span class="port-tag">8321</span></td>
+          <td>GenAI Studio backend. Replaces the 3.4 LlamaStackDistribution (DSC <span class="code-inline">llamastackoperator: Removed</span>, <span class="code-inline">ogx: Managed</span>). <span class="code-inline">VLLM_TLS_VERIFY=false</span> for intra-namespace vLLM; pgvector for RAG.</td>
+          <td class="img-tag">rhoai/odh-ogx-core-rhel9</td></tr>
+        <tr><td>MCPServer rh-demo-mcp-ocp</td><td><span class="port-tag">8080 /mcp</span></td>
+          <td>OpenShift MCP server (Tech Preview) managed by mcp-gateway 0.7.1 + DSC <span class="code-inline">mcplifecycleoperator</span>. Not registered on the MaaS gateway yet.</td>
+          <td class="img-tag">openshift-mcp-tech-preview/openshift-mcp-server-rhel9:0.4</td></tr>
       </tbody>
     </table>
 
-    <div class="catalog-layer">Layer 5 — Observability</div>
+    <div class="catalog-layer">Layer 5 — Observability (COO 1.5.2 · Tempo 0.21.0-3 · OTel 0.152.0-2)</div>
     <table class="components-table">
       <thead><tr><th style="width:220px">Component</th><th style="width:120px">Ports</th><th>Role</th><th style="width:300px">Image</th></tr></thead>
       <tbody>
         <tr><td>Prometheus (MonitoringStack)</td><td><span class="port-tag">9090</span></td>
-          <td>Scrapes gateway/Limitador/vLLM metrics — including the TelemetryPolicy's enriched labels. 5Gi PV, 90-day retention, Thanos sidecar for federation.</td>
+          <td>Scrapes gateway / Limitador (Config-owned ServiceMonitor, 30s) / vLLM metrics with the TelemetryPolicy's labels. 5Gi PV, 90-day retention, Thanos sidecar.</td>
           <td class="img-tag">cluster-observability-operator/prometheus-rhel9</td></tr>
         <tr><td>OpenTelemetry Collector</td><td>—</td>
-          <td>2 replicas + target allocator. Collects metrics and traces from RHOAI components and forwards to Prometheus / Tempo.</td>
+          <td>Statefulset 2/2 + target allocator (0.152.1). Metrics and traces from RHOAI components → Prometheus / Tempo.</td>
           <td class="img-tag">rhosdt/opentelemetry-collector-rhel9</td></tr>
         <tr><td>Tempo (monolithic)</td><td>—</td>
-          <td>Distributed tracing backend. PV storage, 2160h (90-day) retention, 0.1 sample ratio configured in DSCI.</td>
+          <td>Tracing backend, Tempo 2.10.5. PV storage, 2160h retention, 0.1 sample ratio from the DSCI.</td>
           <td class="img-tag">rhosdt/tempo-rhel9</td></tr>
         <tr><td>Perses</td><td>—</td>
-          <td>Dashboard engine rendering the MaaS observability dashboard (tokens by subscription, requests, error rates) inside the RHOAI console. Tech Preview.</td>
+          <td>Renders 8 dashboards in the RHOAI console, including <span class="code-inline">dashboard-3-maas-usage-admin</span> (shipped by maas-controller) and the llm-d traffic / utilization / performance set. Tech Preview.</td>
           <td class="img-tag">cluster-observability-operator/perses-rhel9</td></tr>
         <tr><td>Alertmanager + Thanos Querier</td><td>—</td>
-          <td>Alert routing (2 replicas) and unified cross-shard metric queries for the dashboard proxies.</td>
+          <td>Alert routing (2 replicas) and unified cross-shard queries for the dashboard proxies.</td>
           <td class="img-tag">cluster-observability-operator/alertmanager-rhel9, thanos-rhel9</td></tr>
       </tbody>
     </table>
@@ -987,7 +1052,11 @@ footer {
 <section class="diagram-section">
   <div class="section-number">06 — The Brain of the Data Plane</div>
   <h2 class="section-title">llm-d &amp; the Endpoint Picker</h2>
-  <p class="section-subtitle">llm-d is a Kubernetes-native distributed inference framework (Red Hat, Google, CoreWeave, IBM, NVIDIA — built on vLLM and the Gateway API Inference Extension). RHOAI 3.4 ships it as the engine behind every <span class="code-inline">LLMInferenceService</span>. Its core idea: <strong>the load balancer should understand LLMs.</strong></p>
+  <p class="section-subtitle">llm-d is a Kubernetes-native distributed inference framework (Red Hat, Google, CoreWeave, IBM, NVIDIA — built on vLLM and the Gateway API Inference Extension). RHOAI 3.5 ships it as the engine behind every <span class="code-inline">LLMInferenceService</span>. Its core idea: <strong>the load balancer should understand LLMs.</strong></p>
+
+  <div class="explanation-full" style="border-left: 4px solid var(--orange); background: var(--orange-light);">
+    <p style="margin:0"><strong>Provenance.</strong> This section was recorded on 2026-07-06 against <span class="code-inline">redhataillama-31-8b-instruct</span> (2 replicas, namespace <span class="code-inline">swongpai-maas</span>) when the H100 was up and the LLMInferenceService set <span class="code-inline">router.scheduler</span>. The three models defined today run <span class="code-inline">router.gateway + router.route</span> only — no EPP, no InferencePool, plain Service routing — and the GPU node is scaled down. The mechanics are unchanged on 3.5 and 3.5 adds <span class="code-inline">v3-5-0-*</span> presets for single/multi-node and prefill/decode; add <span class="code-inline">spec.router.scheduler: {}</span> to an LLMInferenceService to get the picture below.</p>
+  </div>
 
   <div class="explanation-full">
     <h3>Why Classic Load Balancing Fails for LLMs</h3>
@@ -1007,7 +1076,7 @@ footer {
   <div class="explanation-full">
     <h3>Inside a Scheduling Decision</h3>
     <p>
-      The EPP runs as the <span class="code-inline">…-kserve-router-scheduler</span> pod (3 containers: scheduler, tokenizer, modelcar). Envoy holds each request and consults it over gRPC :9002. Here is the decision pipeline, as configured live:
+      The EPP runs as the <span class="code-inline">…-kserve-router-scheduler</span> pod (3 containers: scheduler, tokenizer, modelcar). Envoy holds each request and consults it over gRPC :9002. Here is the decision pipeline as it was configured in July:
     </p>
 
     <div class="diagram-container" style="padding: 32px; margin: 20px 0;">
@@ -1097,7 +1166,7 @@ footer {
     </p>
 
     <details class="yaml-block">
-      <summary>EndpointPickerConfig — as deployed<span class="src-badge">live cluster</span></summary>
+      <summary>EndpointPickerConfig — as deployed<span class="src-badge">recorded 2026-07 · GPU node up</span></summary>
       <pre>apiVersion: inference.networking.x-k8s.io/v1alpha1
 kind: EndpointPickerConfig
 plugins:
@@ -1115,7 +1184,7 @@ schedulingProfiles:
   - pluginRef: max-score-picker</pre>
     </details>
     <details class="yaml-block">
-      <summary>InferencePool — endpointPickerRef wiring<span class="src-badge">live cluster</span></summary>
+      <summary>InferencePool — endpointPickerRef wiring<span class="src-badge">recorded 2026-07 · GPU node up</span></summary>
       <pre>apiVersion: inference.networking.k8s.io/v1
 kind: InferencePool
 metadata:
@@ -1237,7 +1306,7 @@ spec:
       </tbody>
     </table>
     <details class="yaml-block">
-      <summary>spec — unified mode (your current config)<span class="src-badge">live cluster</span></summary>
+      <summary>spec — unified mode (historical config)<span class="src-badge">recorded 2026-07 · GPU node up</span></summary>
       <pre>apiVersion: serving.kserve.io/v1alpha2
 kind: LLMInferenceService
 metadata:
@@ -1425,7 +1494,7 @@ spec:
       forces cross-node RDMA when that's what you're benchmarking.
     </p>
     <details class="yaml-block">
-      <summary>spec — disaggregated mode (example for this cluster)<span class="src-badge">example</span></summary>
+      <summary>spec — disaggregated mode (capacity example; not deployed)<span class="src-badge">example</span></summary>
       <pre>apiVersion: serving.kserve.io/v1alpha2
 kind: LLMInferenceService
 metadata:
@@ -1619,7 +1688,7 @@ metadata:
   name: deepseek-r1
 spec:
   model:
-    uri: oci://…/deepseek-r1-671b:latest
+    uri: oci://…/deepseek-r1-671b:&lt;pinned-tag&gt;
 
   replicas: 1
   parallelism:
@@ -1659,7 +1728,7 @@ spec:
       <li><strong>DeepSeek-R1 in multi-node expert mode</strong> — for research/batch workloads needing the largest models</li>
     </ul>
     <p>
-      Each gets its own InferencePool, EPP, HTTPRoute, and MaaS policies. They share the Gateway and MaaS control plane (maas-api, Authorino, Limitador).
+      Each gets its own HTTPRoute and MaaS policies. Models with <span class="code-inline">router.scheduler</span> also get their own InferencePool and EPP; models without it use plain Service routing. They share the Gateway and MaaS control plane (maas-api, Authorino, Limitador).
       Subscriptions and rate limits are per-model — fully independent quota management.
     </p>
     <p>
@@ -1673,17 +1742,17 @@ spec:
       small requests and disaggregated mode for large ones — the closest thing to "mixed" within one model.
     </p>
 
-    <h4 style="margin-top: 28px; font-size: 18px;">What Fits on Your H100? (2 × 3g.40gb MIG slices)</h4>
-    <p>Your cluster has exactly 2 GPU slots. Here's what's physically possible:</p>
+    <h4 style="margin-top: 28px; font-size: 18px;">What Fits When the H100 Returns? (2 × 3g.40gb MIG slices)</h4>
+    <p>The machinepool is at zero today. After respin and MIG relabeling, the node exposes exactly 2 GPU slots:</p>
     <table class="mode-fit">
       <thead>
         <tr><th style="width:300px">Configuration</th><th>Slot 1</th><th>Slot 2</th><th>Mode</th><th>Viable?</th></tr>
       </thead>
       <tbody>
         <tr>
-          <td>Current: Llama 8B × 2 unified</td>
+          <td>Historical July: Llama 8B × 2 unified</td>
           <td>vLLM replica 1</td><td>vLLM replica 2</td><td>Unified</td>
-          <td><span class="yes">✓ Running now</span></td>
+          <td><span class="yes">✓ Fit verified in July; not running today</span></td>
         </tr>
         <tr>
           <td>Llama 8B disaggregated</td>
@@ -1708,9 +1777,9 @@ spec:
       </tbody>
     </table>
     <p style="margin-top: 16px;">
-      <strong>Practical recommendation for this cluster:</strong> Stay unified. Your 8B model prefills fast enough that disaggregation
-      adds overhead without payoff. If you add a second model (e.g., Granite 3B on the spare slice when current replicas drop to 1),
-      use unified for both — independent LLMInferenceServices, independent EPPs, both behind the same Gateway.
+      <strong>Practical recommendation for this cluster:</strong> With only two slices after respin, use unified serving unless a measured
+      workload justifies spending both slices on one disaggregated model. Two one-GPU models can coexist as independent
+      LLMInferenceServices behind the same Gateway. Add <span class="code-inline">router.scheduler</span> only when EPP scheduling is needed.
     </p>
   </div>
 
@@ -1723,72 +1792,83 @@ spec:
 <section class="explanation">
   <div class="section-number">07 — Deep Dive</div>
   <h2 class="section-title">How It Works</h2>
-  <p class="section-subtitle">The mechanics behind the diagrams — with the actual configuration from the live cluster, collapsible below each explanation.</p>
+  <p class="section-subtitle">The mechanics behind the diagrams — with the actual 3.5 configuration from the live cluster, collapsible below each explanation.</p>
 
   <div class="explanation-grid">
 
     <div class="explanation-card">
-      <h3>Two Chains of Command</h3>
-      <p><strong>The intent chain (humans → policy):</strong> An admin writes three small CRs — <span class="code-inline">MaaSSubscription</span> (who gets how many tokens), <span class="code-inline">MaaSAuthPolicy</span> (who may access which models), <span class="code-inline">MaaSModelRef</span> (which model). The <strong>maas-controller</strong> watches these and generates the low-level enforcement objects: a Kuadrant <span class="code-inline">AuthPolicy</span> with OPA rules and a <span class="code-inline">TokenRateLimitPolicy</span> with counters, both attached to the model's HTTPRoute.</p>
-      <p><strong>The serving chain (model → pods):</strong> A user creates one <span class="code-inline">LLMInferenceService</span>. The <strong>llmisvc-controller</strong> expands it into the entire serving stack: vLLM Deployment (2 replicas), EPP scheduler Deployment, InferencePool, HTTPRoute with URL rewrites, and a MaaSModelRef that self-registers the model with MaaS.</p>
-      <p>Neither chain touches the other's objects — they meet only at the HTTPRoute, where the policy attaches to the route the serving chain created.</p>
+      <h3>Three Chains of Command</h3>
+      <p><strong>The platform chain (operator → infra):</strong> Setting <span class="code-inline">kserve.modelsAsService: Managed</span> in the DSC makes <strong>maas-controller</strong> bootstrap a <span class="code-inline">Config/default</span>, which owns an <span class="code-inline">AITenant</span> (tenant namespace ↔ Gateway), a <span class="code-inline">MaasTenantConfig</span>, the <span class="code-inline">maas-api</span> Deployment in <span class="code-inline">redhat-ai-gateway-infra</span>, its HTTPRoute, the <span class="code-inline">payload-processing</span> EnvoyFilter and a Limitador ServiceMonitor. The 3.4 <span class="code-inline">Tenant</span> is still there, annotated deprecated, and ignored.</p>
+      <p><strong>The intent chain (humans → policy):</strong> Admins write <span class="code-inline">MaaSAuthPolicy</span> (who may reach which models), <span class="code-inline">MaaSSubscription</span> (how many tokens), <span class="code-inline">MaaSModelRef</span> (which model). maas-controller compiles <em>all</em> auth policies into <strong>one</strong> gateway-scoped Kuadrant <span class="code-inline">AuthPolicy</span> with an OPA allow-map, and each subscription into a <span class="code-inline">TokenRateLimitPolicy</span> on the model's HTTPRoute.</p>
+      <p><strong>The serving chain (model → backend):</strong> Internal — an <span class="code-inline">LLMInferenceService</span> is expanded by <strong>llmisvc-controller</strong> into vLLM Deployment, Services and HTTPRoute. External — an <span class="code-inline">ExternalProvider</span> + <span class="code-inline">ExternalModel</span> pair yields an ExternalName Service, ServiceEntry, DestinationRule and HTTPRoute. Either way the chains meet only at the HTTPRoute.</p>
     </div>
 
     <div class="explanation-card">
       <h3>Deny by Default</h3>
-      <p>The gateway ships with a <strong>zero-trust posture</strong> enforced by two gateway-wide policies:</p>
+      <p>Three gateway-wide policies enforce a <strong>zero-trust posture</strong>; on 3.5 only the first is what actually decides:</p>
       <ol class="step-list">
-        <li><span class="code-inline">gateway-default-auth</span> — an AuthPolicy that denies requests to any model that has no explicit MaaSAuthPolicy. A model-specific policy <em>overrides</em> this default for its route.</li>
-        <li><span class="code-inline">gateway-default-deny</span> — a TokenRateLimitPolicy with <strong>limit: 0</strong> for any path that isn't <span class="code-inline">/maas-api</span> or <span class="code-inline">/v1/models</span>. No subscription = no tokens = 429 on the first request.</li>
-        <li><span class="code-inline">maas-default-gateway-authn</span> — accepts OpenShift service-account tokens via TokenReview + SubjectAccessReview against <span class="code-inline">serving.kserve.io</span> resources, extracting the target namespace and model from the URL path. This is how the RHOAI dashboard itself can browse models without an API key.</li>
+        <li><span class="code-inline">maas-gateway-auth</span> — <strong>Enforced.</strong> Authenticates API keys or Kubernetes tokens, then authorizes by looking the request's model identity up in the allow-map. A model with no MaaSAuthPolicy has no key in the map → <span class="code-inline">Access denied</span>.</li>
+        <li><span class="code-inline">gateway-default-deny</span> — a TokenRateLimitPolicy with <strong>limit: 0</strong> for any path that isn't a maas-api path. Reports <span class="code-inline">Enforced=False (overridden)</span>: every model route carries its own TRLP that takes precedence. It only bites on routes with no subscription.</li>
+        <li><span class="code-inline">maas-default-gateway-authn</span> — the 3.4-era k8s TokenReview + SubjectAccessReview policy. Also <span class="code-inline">Enforced=False</span>; its job moved into <span class="code-inline">maas-gateway-auth</span>'s <span class="code-inline">openshift-identities</span> rule.</li>
       </ol>
-      <p style="margin-top:12px">Adding a model therefore <em>opens</em> exactly one path through the gate — everything else stays shut.</p>
+      <p style="margin-top:12px">Adding a model therefore adds exactly two keys to one allow-map (<span class="code-inline">&lt;name&gt;</span> and <span class="code-inline">&lt;ns&gt;/&lt;name&gt;</span>) and one TRLP — everything else stays shut. Deleting a model does <em>not</em> prune its allow-map key.</p>
     </div>
 
   </div>
 
   <!-- Routing detail -->
   <div class="explanation-full">
-    <h3>Routing — One Route, Four Rules</h3>
+    <h3>Routing — Two Shapes of Route</h3>
     <p>
-      The HTTPRoute created by the llmisvc-controller exposes the model under a namespaced path prefix and rewrites it to the
-      OpenAI paths vLLM expects. Three explicit API rules go to the <strong>InferencePool</strong> (so the EPP picks the pod);
-      a catch-all rule (health checks, tokenizer info, metrics) bypasses the EPP and goes straight to the workload Service.
+      An <strong>external</strong> model's route matches on headers that <span class="code-inline">ipp-pre</span> injected, so the client never needs a path prefix.
+      An <strong>internal</strong> model's route is the classic prefix-and-rewrite. Both attach to the same Gateway and both are policy targets.
     </p>
     <details class="yaml-block">
-      <summary>HTTPRoute rules (abridged)<span class="src-badge">live cluster</span></summary>
+      <summary>HTTPRoute gpt-5.6-luna — external, 4 rules<span class="src-badge">live cluster</span></summary>
       <pre>parentRefs:
-- kind: Gateway
-  name: maas-default-gateway
-  namespace: openshift-ingress
+- {kind: Gateway, name: maas-default-gateway, namespace: openshift-ingress}
 rules:
-# /swongpai-maas/redhataillama-31-8b-instruct/v1/chat/completions
-#   → InferencePool :8000, rewritten to /v1/chat/completions
+# body-based: header set by ipp-pre, provider resolved
 - matches:
-  - path: {type: PathPrefix, value: /swongpai-maas/redhataillama-31-8b-instruct/v1/chat/completions}
+  - path: {type: PathPrefix, value: /}
+    headers:
+    - {name: X-Gateway-Model-Name,      type: Exact, value: gpt-5.6-luna}
+    - {name: x-ipp-selected-provider,   type: Exact, value: openai-prod}
   filters:
-  - type: URLRewrite
-    urlRewrite: {path: {type: ReplacePrefixMatch, replacePrefixMatch: /v1/chat/completions}}
+  - type: RequestHeaderModifier
+    requestHeaderModifier: {set: [{name: Host, value: api.openai.com}]}
   backendRefs:
-  - {group: inference.networking.x-k8s.io, kind: InferencePool,
-     name: redhataillama-31-8b-instruct-inference-pool, port: 8000}
-  timeouts: {request: 0s, backendRequest: 0s}   # streaming: no timeout
+  - {kind: Service, name: openai-prod, port: 443}      # ExternalName → api.openai.com
+  timeouts: {request: 300s}
 
-# identical rules exist for /v1/completions and /v1/responses …
-
-# catch-all → workload Service directly (bypasses EPP)
+# path-based (legacy): /swongpai-vllm/gpt-5.6-luna, with and without the provider header
 - matches:
-  - path: {type: PathPrefix, value: /swongpai-maas/redhataillama-31-8b-instruct}
-  filters:
-  - type: URLRewrite
-    urlRewrite: {path: {type: ReplacePrefixMatch, replacePrefixMatch: /}}
-  backendRefs:
-  - {kind: Service, name: redhataillama-31-8b-instruct-kserve-workload-svc, port: 8000}</pre>
+  - path: {type: PathPrefix, value: /swongpai-vllm/gpt-5.6-luna}
+    headers: [{name: x-ipp-selected-provider, type: Exact, value: openai-prod}]
+  # … same filters / backend / timeout …
+# + the two header-less fallbacks of each shape (4 rules total). The path is rewritten
+#   to /v1/chat/completions by ipp's api-translation stage, not by the route.</pre>
+    </details>
+    <details class="yaml-block">
+      <summary>HTTPRoute muse-glimmer-llmisvc-nightly-kserve-route — internal, 10 rules<span class="src-badge">live cluster</span></summary>
+      <pre>rules:
+# four OpenAI-style APIs × two path forms, each rewritten to the bare API path
+- matches: [{path: {type: PathPrefix, value: /swongpai-vllm/muse-glimmer-llmisvc-nightly/v1/chat/completions}}]
+  filters: [{type: URLRewrite, urlRewrite: {path: {type: ReplacePrefixMatch, replacePrefixMatch: /v1/chat/completions}}}]
+  backendRefs: [{kind: Service, name: muse-glimmer-llmisvc-nightly-kserve-workload-svc, port: 8000}]
+  timeouts: {request: 0s, backendRequest: 0s}          # streaming: no timeout
+# identical rules for /v1/completions, /v1/responses, /v1/messages …
+# and for the 3.5 catalog form:
+- matches: [{path: {type: PathPrefix, value: /publishers/swongpai-vllm/models/muse-glimmer-llmisvc-nightly/v1/chat/completions}}]
+  # … same rewrite / backend …
+# catch-all for both prefixes → / on the workload Service
+- matches: [{path: {type: PathPrefix, value: /swongpai-vllm/muse-glimmer-llmisvc-nightly}}]
+  filters: [{type: URLRewrite, urlRewrite: {path: {type: ReplacePrefixMatch, replacePrefixMatch: /}}}]
+  backendRefs: [{kind: Service, name: muse-glimmer-llmisvc-nightly-kserve-workload-svc, port: 8000}]</pre>
     </details>
     <p>
-      Status on this route confirms both policy attachments:
-      <span class="code-inline">kuadrant.io/AuthPolicyAffected</span> and <span class="code-inline">kuadrant.io/TokenRateLimitPolicyAffected</span> — the
-      hard evidence that auth and rate limiting are active on this exact route.
+      No <span class="code-inline">InferencePool</span> appears here: the three current LLMInferenceServices set <span class="code-inline">router.gateway</span> + <span class="code-inline">router.route</span> only.
+      Section 06 describes what changes when <span class="code-inline">router.scheduler</span> is added.
     </p>
   </div>
 
@@ -1796,58 +1876,73 @@ rules:
   <div class="explanation-full">
     <h3>Authentication &amp; Authorization — the Full Ruleset</h3>
     <p>
-      The model's AuthPolicy accepts <strong>three credential types</strong>, evaluated in priority order:
-      API keys matching <span class="code-inline">^Bearer sk-oai-.*</span> (priority 0), then OpenShift/OIDC tokens (priority 1, only for
-      <span class="code-inline">/v1/models</span> listing). Authorization is two OPA/Rego checks — credential validity, then group membership —
-      each cached for 60 seconds to keep per-request latency negligible.
+      One AuthPolicy on the Gateway. <strong>Two credential types</strong>: API keys matching <span class="code-inline">^Bearer sk-oai-.*</span> (priority 0) and any other bearer
+      token via Kubernetes TokenReview (priority 2). <strong>Three authorization rules</strong>, the middle one carrying the compiled allow-map.
+      Cache keys include the model identity, so a verdict is per user × model for 60s.
     </p>
     <details class="yaml-block">
-      <summary>AuthPolicy — authentication + authorization (abridged)<span class="src-badge">live cluster</span></summary>
-      <pre>rules:
-  authentication:
-    api-keys:
-      plain: {selector: request.headers.authorization}
-      priority: 0
-      when:
-      - {selector: request.headers.authorization, operator: matches, value: ^Bearer sk-oai-.*}
-    kubernetes-tokens:
-      kubernetesTokenReview:
-        audiences: [https://oidc.op1.openshiftapps.com/…]
-      priority: 1
-      when:
-      - {selector: request.url_path, operator: matches, value: .*/v1/models$}
-  authorization:
-    auth-valid:
-      cache: {ttl: 60}
-      opa:
-        rego: |
-          allow { input.auth.metadata.apiKeyValidation.valid == true }
-          allow { input.auth.identity.user.username != "" }
-          allow { input.auth.identity.sub != "" }
-    require-group-membership:
-      cache: {ttl: 60}
-      opa:
-        rego: |
-          allowed_groups := ["cluster-admins","rhods-admins"]
-          # … username extraction from key / OIDC / k8s token …
-          # allow when user's groups intersect allowed_groups</pre>
+      <summary>AuthPolicy maas-gateway-auth (abridged)<span class="src-badge">live cluster</span></summary>
+      <pre>targetRef: {group: gateway.networking.k8s.io, kind: Gateway, name: maas-default-gateway}
+defaults:
+  rules:
+    authentication:
+      api-keys:
+        plain: {selector: request.headers.authorization}
+        priority: 0
+        when: [{selector: request.headers.authorization, operator: matches, value: ^Bearer sk-oai-.*}]
+      openshift-identities:
+        kubernetesTokenReview: {audiences: [https://oidc.op1.openshiftapps.com/…]}
+        priority: 2
+        when: [{predicate: '!request.headers.authorization.startsWith("Bearer sk-oai-")'}]
+    authorization:
+      auth-valid:                       # key was validated by maas-api, or it is not a key at all
+        cache: {ttl: 60}
+        opa:
+          rego: |
+            allow { input.auth.metadata.apiKeyValidation.valid == true }
+            allow { not input.auth.metadata.apiKeyValidation }
+      deny-client-identity-headers:     # clients may not forge MaaS identity
+        patternMatching:
+          patterns:
+          - {predicate: '!("x-maas-username" in request.headers)'}
+          - {predicate: '!("x-maas-group" in request.headers)'}
+      require-group-membership:
+        cache: {ttl: 60}
+        opa:
+          rego: |
+            model_access := {
+              "gpt-5.6-luna":                                                 {"groups": ["cluster-admins"]},
+              "swongpai-vllm/gpt-5.6-luna":                                   {"groups": ["cluster-admins"]},
+              "swongpai-vllm/muse-glimmer-llmisvc-nightly":                   {"groups": ["cluster-admins"]},
+              "publishers/swongpai-vllm/models/muse-glimmer-llmisvc-nightly": {"groups": ["cluster-admins"]},
+              "swongpai-vllm/redhataiqwen3-coder-next-nvfp4":                 {"groups": ["cluster-admins"]},
+            }
+            path_parts := [p | p := split(request_path, "/")[_]; p != ""]
+            path_model_identity := sprintf("%s/%s", [path_parts[0], path_parts[1]]) {
+              count(path_parts) >= 2; path_parts[0] != "v1"; path_parts[0] != "maas-api"
+            }
+            header_model_identity := object.get(request_headers, "x-gateway-model-name", "")
+            model_identity := path_model_identity else header_model_identity
+            # allow when the caller's groups intersect model_access[model_identity].groups</pre>
     </details>
     <details class="yaml-block">
-      <summary>TokenRateLimitPolicy — the live limit<span class="src-badge">live cluster</span></summary>
-      <pre>spec:
-  targetRef:
-    kind: HTTPRoute
-    name: redhataillama-31-8b-instruct-kserve-route
-  limits:
-    models-as-a-service-admin-sub-…-tokens:
-      counters:
-      - expression: auth.identity.userid          # one counter per user
-      rates:
-      - {limit: 1000, window: 1m}                 # 1000 tokens per minute
-      when:
-      - predicate: auth.identity.selected_subscription_key ==
-          "models-as-a-service/admin-sub@swongpai-maas/redhataillama-31-8b-instruct"
-          &amp;&amp; !request.path.endsWith("/v1/models")  # listing is free</pre>
+      <summary>TokenRateLimitPolicy maas-trlp-gpt-5.6-luna — two subscriptions, two limits<span class="src-badge">live cluster</span></summary>
+      <pre>targetRef: {group: gateway.networking.k8s.io, kind: HTTPRoute, name: gpt-5.6-luna}
+limits:
+  models-as-a-service-gpt-5-6-luna-subscription-gpt-5.6-luna-tokens:
+    counters: [{expression: auth.identity.userid}]
+    rates:    [{limit: 100000, window: 1h}]
+    when:
+    - predicate: auth.identity.selected_subscription_key ==
+        "models-as-a-service/gpt-5-6-luna-subscription@swongpai-vllm/gpt-5.6-luna"
+        &amp;&amp; !request.path.endsWith("/v1/models")
+  models-as-a-service-sa-premium-gpt-5.6-luna-tokens:
+    counters: [{expression: auth.identity.userid}]
+    rates:    [{limit: 90000, window: 1s}]              # mint external keys against the other subscription
+    when:
+    - predicate: auth.identity.selected_subscription_key ==
+        "models-as-a-service/sa-premium@swongpai-vllm/gpt-5.6-luna"
+        &amp;&amp; !request.path.endsWith("/v1/models")</pre>
     </details>
     <details class="yaml-block">
       <summary>Gateway — listener &amp; TLS<span class="src-badge">live cluster</span></summary>
@@ -1856,52 +1951,89 @@ kind: Gateway
 metadata:
   name: maas-default-gateway
   namespace: openshift-ingress
+  annotations:
+    security.opendatahub.io/authorino-tls-bootstrap: "true"
+    argocd.argoproj.io/tracking-id: openshift-ai-maas-config:…   # owned by Surote/ocp-configuration
 spec:
   gatewayClassName: openshift-default
   listeners:
   - name: https
     port: 443
     protocol: HTTPS
-    hostname: maas.apps.rosa.rosa-h100-jp.g4b0.p3.openshiftapps.com
+    hostname: swongpai-maas.apps.rosa.rsaijp.na2y.p3.openshiftapps.com
     tls:
       mode: Terminate
       certificateRefs: [{kind: Secret, name: maas-gateway-tls}]
     allowedRoutes:
       namespaces: {from: All}
-# status: Programmed=True
-# address: a8303341340bc47d69c1cedc14940d56-…elb.amazonaws.com (AWS NLB)</pre>
+# status: Programmed=True · attachedRoutes: 3
+# address: a2d5644ffe0094200ac4bb0f2ec8f0b2-…elb.amazonaws.com (AWS NLB)</pre>
+    </details>
+    <details class="yaml-block">
+      <summary>EnvoyFilter payload-processing — how the two ext_proc filters land<span class="src-badge">live cluster</span></summary>
+      <pre># owned by Config/default · priority: 10
+configPatches:
+- applyTo: HTTP_FILTER
+  match: {listener: {filterChain: {filter: {name: envoy.filters.network.http_connection_manager,
+          subFilter: {name: extensions.istio.io/wasmplugin/openshift-ingress.kuadrant-maas-default-gateway}}}}}
+  patch:
+    operation: INSERT_BEFORE
+    value:
+      name: envoy.filters.http.ext_proc.ipp-pre
+      typed_config:
+        failure_mode_allow: true
+        grpc_service: {envoy_grpc: {cluster_name: outbound|9004||payload-pre-processing.openshift-ingress.svc.cluster.local}}
+        processing_mode: {request_header_mode: SEND, request_body_mode: FULL_DUPLEX_STREAMED,
+                          response_header_mode: SKIP, response_body_mode: NONE}
+- applyTo: HTTP_FILTER
+  match: {… same anchor …}
+  patch:
+    operation: INSERT_AFTER
+    value:
+      name: envoy.filters.http.ext_proc.ipp
+      typed_config:
+        failure_mode_allow: false
+        grpc_service: {envoy_grpc: {cluster_name: outbound|9004||payload-processing.openshift-ingress.svc.cluster.local}}
+        processing_mode: {request_body_mode: FULL_DUPLEX_STREAMED, response_body_mode: FULL_DUPLEX_STREAMED, …}
+# + duplicate patches anchored on envoy.filters.http.wasm (covers both anchor spellings — the 3.4 skew fix)
+# + HTTP_ROUTE MERGE patches disabling both filters on the maas-api routes
+#
+# Verify it took (Istio drops a non-matching patch silently):
+#   oc exec -n openshift-ingress &lt;gateway-pod&gt; -- pilot-agent request GET config_dump
+#   → ext_proc.ipp-pre, wasm, ext_proc.ipp, router</pre>
     </details>
   </div>
 
   <!-- GPU -->
   <div class="explanation-full">
-    <h3>GPU Layout — NVIDIA H100 MIG</h3>
+    <h3>GPU Layout — NVIDIA H100 MIG (node scaled down)</h3>
     <p>
-      The H100 80GB is partitioned with Multi-Instance GPU (MIG) into two isolated <strong>3g.40gb</strong> slices — separate compute,
-      memory, and L2 cache, zero noisy-neighbor interference. With <span class="code-inline">mig.strategy=single</span> both slices surface as
-      the plain <span class="code-inline">nvidia.com/gpu</span> resource, so each vLLM pod requests <span class="code-inline">nvidia.com/gpu: 1</span>
-      and lands on its own slice. Both replicas of the model run on the same physical GPU — yet fully isolated.
+      The H100 machinepool is at zero right now to save cost; only two <span class="code-inline">c5.4xlarge</span> workers remain. What persists is the plan:
+      the GPU Operator (26.3.3, <span class="code-inline">mig.strategy: single</span>) and NFD stay installed, and on respin the node gets
+      <span class="code-inline">nvidia.com/mig.config=all-3g.40gb</span> — two isolated <strong>3g.40gb</strong> slices that surface as two plain <span class="code-inline">nvidia.com/gpu</span>.
+      Each LLMInferenceService asks for one. The label is per node and must be re-applied after any machinepool replacement.
     </p>
     <div style="display:flex; justify-content:center; margin:24px 0;">
       <div class="gpu-outer">
-        <div class="gpu-outer-label">NVIDIA H100 80GB HBM3 — mig.config=all-3g.40gb — node ip-10-0-28-205</div>
+        <div class="gpu-outer-label">NVIDIA H100 80GB HBM3 — mig.config=all-3g.40gb — machinepool scaled to 0 (2026-09-04)</div>
         <div class="gpu-diagram">
           <div class="gpu-card">
             <div class="gpu-label">Slice 0 — 3g.40gb</div>
-            <div class="gpu-detail">vLLM Pod 1 · Llama 3.1 8B</div>
-            <div class="gpu-detail">~16GB weights + ~24GB KV cache</div>
+            <div class="gpu-detail">candidate: muse-glimmer-llmisvc-nightly</div>
+            <div class="gpu-detail">Muse-Glimmer-30B-NVFP4 · pvc</div>
           </div>
           <div class="gpu-card">
             <div class="gpu-label">Slice 1 — 3g.40gb</div>
-            <div class="gpu-detail">vLLM Pod 2 · Llama 3.1 8B</div>
-            <div class="gpu-detail">~16GB weights + ~24GB KV cache</div>
+            <div class="gpu-detail">candidate: redhataiqwen3-coder-next-nvfp4</div>
+            <div class="gpu-detail">or qwen38-27b-018 · oci modelcar</div>
           </div>
         </div>
       </div>
     </div>
     <p>
-      Why 2 replicas beat 1 big one here: the EPP spreads sessions across both slices, prefix-cache routing keeps repeat users sticky
-      to "their" cache, and one slice can drain/restart while the other keeps serving.
+      Three 1-GPU models are defined for two slices — on respin, two run and one stays <span class="code-inline">serving.kserve.io/stop: "true"</span>.
+      Until then every LLMInferenceService is <span class="code-inline">Stopped</span> / <span class="code-inline">MinimumReplicasUnavailable</span>, their MaaSModelRefs <span class="code-inline">Pending</span>,
+      and <span class="code-inline">sa-premium</span> reports <span class="code-inline">Degraded</span>. None of that is a fault.
     </p>
   </div>
 
@@ -1911,15 +2043,16 @@ spec:
     <table class="components-table">
       <thead><tr><th style="width:240px">Component down</th><th>Effect on traffic</th></tr></thead>
       <tbody>
-        <tr><td>Envoy gateway pod</td><td>Total outage for MaaS hostname until the Deployment reschedules. NLB health check (:15021) stops routing immediately.</td></tr>
-        <tr><td>Authorino</td><td>All requests fail auth → 5xx from ext_authz. Nothing reaches models. (60s verdict cache does not help new connections.)</td></tr>
-        <tr><td>Limitador</td><td>Rate-limit checks fail; depending on failure mode requests may pass unlimited or be denied. Token accounting stops.</td></tr>
-        <tr><td>payload-processing</td><td>Traffic fails — the ext_proc filter is configured <span class="code-inline">failure_mode_allow: false</span> (fail closed), so requests through the gateway error out until the pod recovers. Deliberate: token accounting is not allowed to silently disappear.</td></tr>
-        <tr><td>EPP scheduler</td><td><span class="code-inline">failureMode: FailOpen</span> — Envoy falls back to normal (cache-blind) load balancing across pool pods. Latency worsens; traffic survives.</td></tr>
-        <tr><td>One vLLM pod</td><td>EPP scores it out (or endpoints drop); the surviving replica takes all traffic at reduced capacity.</td></tr>
-        <tr><td>maas-api</td><td>No new keys, no key validation → API-key auth starts failing as caches expire. Existing k8s-token access to /v1/models unaffected.</td></tr>
-        <tr><td>PostgreSQL (all 3)</td><td>maas-api loses state — key ops fail. CNPG's 3-instance HA makes this the least likely failure in the stack.</td></tr>
-        <tr><td>maas-controller / llmisvc-controller</td><td>Data plane unaffected. Changes to CRs stop reconciling — existing policies and pods keep running as-is.</td></tr>
+        <tr><td>Envoy gateway pod</td><td>Total outage for the MaaS hostname until the Deployment reschedules. NLB health check (:15021) stops routing immediately.</td></tr>
+        <tr><td>payload-pre-processing (ipp-pre)</td><td><span class="code-inline">failure_mode_allow: true</span> — requests continue, but no <span class="code-inline">X-Gateway-Model-Name</span> is set. Body-based calls 404 (no route match); path-based calls keep working.</td></tr>
+        <tr><td>Authorino</td><td>All requests fail auth → 5xx from the wasm shim. Nothing reaches models. The 60s verdict cache does not help new connections.</td></tr>
+        <tr><td>Limitador</td><td>Rate-limit checks fail; requests may pass unlimited or be denied depending on shim failure mode. Token accounting stops.</td></tr>
+        <tr><td>payload-processing (ipp)</td><td><strong>All gateway traffic fails</strong> — <span class="code-inline">failure_mode_allow: false</span> and on 3.5 the filter is genuinely in the chain (it was not on 3.4.x). Deliberate: no silent loss of token accounting or provider-key injection. This is the live single point of failure to watch.</td></tr>
+        <tr><td>api.openai.com / provider key</td><td>External model only. Bad or missing Secret → <span class="code-inline">500 credentials not found</span>; upstream outage → 5xx passed through. Internal models unaffected.</td></tr>
+        <tr><td>One vLLM pod</td><td>Its route's Service loses the endpoint; with one replica the model is down until rescheduled. (With an EPP, traffic would fail over across replicas.)</td></tr>
+        <tr><td>maas-api</td><td>No new keys, no key validation → API-key auth fails as caches expire. Kubernetes-token access keeps working (TokenReview does not touch maas-api).</td></tr>
+        <tr><td>PostgreSQL (all instances)</td><td>maas-api loses state — key ops fail. Today 2 of 3 CNPG instances are up (AZ pinning); primary + one replica is still HA.</td></tr>
+        <tr><td>maas-controller / llmisvc-controller</td><td>Data plane unaffected. CR changes stop reconciling — existing allow-map, TRLPs and pods keep running as-is.</td></tr>
         <tr><td>Prometheus / Tempo / Perses</td><td>Zero traffic impact. Dashboards and usage attribution go blind until restored.</td></tr>
       </tbody>
     </table>
@@ -1928,9 +2061,10 @@ spec:
 </section>
 
 <footer>
-  <span>Generated from live cluster state · rosa-h100-jp · 2026-07-06 (updated pass 3 — llm-d deep dive)</span>
-  <span>RHOAI 3.4.2 · RHCL 1.3.5 · CNPG 1.30.0 · GPU Operator · OpenShift Service Mesh</span>
+  <span>Generated from live cluster state · rsaijp · 2026-09-04 (pass 4 — RHOAI 3.5 baseline; llm-d section retained from 2026-07-06)</span>
+  <span>OpenShift 4.20.32 · RHOAI 3.5.0 · RHCL 1.4.2 · COO 1.5.2 · CNPG 1.30.0 · GPU Operator 26.3.3 · Gateway API (built-in istiod)</span>
 </footer>
+
 
 </div>
 </body>
