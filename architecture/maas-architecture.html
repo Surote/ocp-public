@@ -198,6 +198,59 @@ header .cluster-badge .dot { width: 7px; height: 7px; border-radius: 50%; backgr
 .resource-list .res-name { font-family: var(--mono); font-size: 12px; font-weight: 500; }
 .resource-list .res-detail { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
 
+/* ── Object graph (SVG) ── */
+.graph { width: 1352px; height: auto; display: block; }
+.graph text { font-family: var(--mono); }
+.graph .n rect { fill: #fff; stroke: var(--border-strong); stroke-width: 1.5; }
+.graph .gw rect { fill: var(--blue-light); stroke: var(--ns-gateway); stroke-width: 2; }
+.graph .route rect { stroke: var(--purple); stroke-width: 2; }
+.graph .svc rect { stroke: var(--ns-model); }
+.graph .ext rect { fill: var(--ns-external-light); stroke: var(--ns-external); }
+.graph .epp rect { fill: var(--green-light); stroke: var(--ns-model); stroke-dasharray: 5 4; }
+.graph .pol rect { fill: var(--orange-light); stroke: var(--ns-kuadrant); stroke-dasharray: 5 4; }
+.graph .own rect { fill: var(--bg); stroke: var(--border-strong); stroke-dasharray: 3 3; }
+.graph .dead rect { fill: var(--accent-light); stroke: var(--accent); stroke-dasharray: 5 4; }
+.graph .idle rect { fill: var(--bg); stroke: var(--border-strong); stroke-dasharray: 5 4; }
+.graph path.e-dead { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.graph .k { font-size: 8.5px; fill: var(--text-tertiary); letter-spacing: .4px; }
+.graph .t { font-size: 11.5px; font-weight: 600; fill: var(--text); }
+.graph .d { font-size: 9.5px; fill: var(--text-secondary); }
+.graph .lbl { font-size: 9px; font-weight: 600; fill: var(--text-tertiary); }
+.graph .cap { font-size: 9.5px; font-weight: 600; letter-spacing: 1.5px; fill: var(--text-tertiary); }
+.graph path.e { fill: none; stroke: var(--text-tertiary); stroke-width: 1.5; }
+.graph path.e-pol { fill: none; stroke: var(--ns-kuadrant); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.graph path.e-own { fill: none; stroke: var(--border-strong); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.graph .n:hover rect { filter: drop-shadow(0 4px 10px rgba(0,0,0,.12)); }
+
+/* ── Gateway wiring ── */
+.wiring { display: grid; grid-template-columns: 300px 1fr 1fr; gap: 26px; min-width: 1100px; align-items: start; }
+.wire-col-label {
+  font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 12px;
+  padding-bottom: 6px; border-bottom: 2px solid var(--border-strong);
+}
+.wire-card {
+  border: 1.5px solid var(--border-strong); border-radius: 10px;
+  padding: 12px 14px; background: white; margin-bottom: 12px; position: relative;
+}
+.wire-card .wc-kind {
+  font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: .5px;
+  text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 4px;
+}
+.wire-card .wc-name { font-family: var(--mono); font-size: 12px; font-weight: 600; margin-bottom: 4px; word-break: break-all; }
+.wire-card .wc-line { font-family: var(--mono); font-size: 10px; color: var(--text-secondary); line-height: 1.55; }
+.wire-card.gw { border-color: var(--ns-gateway); background: var(--blue-light); }
+.wire-card.route { border-color: var(--purple); }
+.wire-card.svc { border-color: var(--ns-model); }
+.wire-card.ext { border-color: var(--ns-external); background: var(--ns-external-light); }
+.wire-card.pol { border-color: var(--ns-kuadrant); border-style: dashed; }
+.match-tag {
+  display: inline-block; font-family: var(--mono); font-size: 9.5px;
+  padding: 1px 7px; margin: 3px 3px 0 0; border-radius: 3px; word-break: break-all;
+}
+.match-tag.path { background: var(--bg); border: 1px solid var(--border-strong); color: var(--text-secondary); }
+.match-tag.hdr { background: var(--purple-light); border: 1px solid var(--purple); color: var(--purple); }
+
 /* ── Component Catalog ── */
 .catalog-layer {
   font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
@@ -479,12 +532,12 @@ footer {
 <div class="page">
 
 <header>
-  <div class="eyebrow">Architecture Reference — verified against live cluster · RHOAI 3.5</div>
+  <div class="eyebrow">Architecture Reference — verified against live cluster · RHOAI 3.5 · 2026-09-17</div>
   <h1>Models as a Service on OpenShift</h1>
-  <p class="subtitle">How MaaS serves internal vLLM models and external providers behind one Envoy gateway with API-key authentication, token-based rate limiting, and body-based model routing on RHOAI 3.5</p>
+  <p class="subtitle">How MaaS serves internal vLLM models and two external providers (OpenAI, Anthropic) behind one Envoy gateway with API-key authentication, token-based rate limiting, and body-based model routing on RHOAI 3.5</p>
   <div class="cluster-badge">
     <span class="dot"></span>
-    rsaijp &nbsp;·&nbsp; OpenShift 4.20.32 &nbsp;·&nbsp; RHOAI 3.5.0 &nbsp;·&nbsp; RHCL 1.4.2 &nbsp;·&nbsp; H100 MIG 2×3g.40gb (node scaled down)
+    &lt;cluster&gt; &nbsp;·&nbsp; OpenShift 4.20.32 &nbsp;·&nbsp; RHOAI 3.5.0 &nbsp;·&nbsp; RHCL 1.4.2 &nbsp;·&nbsp; GPU node scaled down — 2× c5.4xlarge only &nbsp;·&nbsp; read live 2026-09-17
   </div>
 </header>
 
@@ -557,7 +610,7 @@ footer {
         <div class="flow-node route">
           <div class="icon">⇉</div>
           <div class="name">HTTPRoute</div>
-          <div class="detail">header match (body-based)<br>or path prefix (legacy)<br>one route per model</div>
+          <div class="detail">header match (body-based, external only)<br>or path prefix (internal + legacy)<br>one route per model</div>
         </div>
         <div class="flow-ns-label ns-model">swongpai-vllm</div>
       </div>
@@ -565,17 +618,17 @@ footer {
         <div class="replica-fan">
           <div class="flow-node vllm">
             <div class="icon">▣</div>
-            <div class="name">vLLM Pod</div>
-            <div class="detail">LLMInferenceService<br>:8000 · needs GPU<br>0 running today</div>
+            <div class="name">EPP → vLLM</div>
+            <div class="detail">muse-glimmer-llmd<br>InferencePool :54321 → :8000<br><strong>Pending</strong> — no GPU node</div>
           </div>
           <div class="flow-node ext">
             <div class="icon">☁</div>
-            <div class="name">api.openai.com</div>
-            <div class="detail">ExternalModel gpt-5.6-luna<br>via ExternalName svc<br>openai-prod · TLS origination</div>
+            <div class="name">provider API</div>
+            <div class="detail">gpt-5.6-luna → api.openai.com<br>claude-sonnet-5 → api.anthropic.com<br>ExternalName svc · TLS origination</div>
           </div>
         </div>
         <div class="flow-ns-label ns-model">swongpai-vllm</div>
-        <div class="replica-label">internal (GPU) or external (provider) — same policy path</div>
+        <div class="replica-label">internal (GPU, EPP-scheduled) or external (provider) — same policy path</div>
       </div>
     </div>
   </div>
@@ -597,8 +650,8 @@ footer {
         <div class="seq-num">1</div>
         <div class="seq-hop">Client → AWS NLB<br><span class="proto https">HTTPS 443</span></div>
         <div class="seq-desc">
-          Client resolves <strong>swongpai-maas.apps.rosa.rsaijp.na2y.p3.openshiftapps.com</strong> (Route53 → NLB
-          <span class="code-inline">a2d5644f…elb.amazonaws.com</span>) and sends the request with
+          Client resolves <strong>maas.apps.&lt;cluster-domain&gt;</strong> (Route53 → NLB
+          <span class="code-inline">&lt;nlb&gt;.…elb.amazonaws.com</span>) and sends the request with
           <span class="code-inline">Authorization: Bearer sk-oai-…</span>. The NLB forwards raw TCP — no TLS termination here.
         </div>
       </div>
@@ -687,8 +740,11 @@ footer {
           (TLS <span class="code-inline">SIMPLE</span>) named after the <em>provider</em>, shared by every model on it. Timeout 300s.<br>
           <strong>Internal:</strong> <span class="code-inline">…-kserve-route</span> (owned by the LLMInferenceService) matches
           <span class="code-inline">/swongpai-vllm/&lt;model&gt;/v1/{completions,chat/completions,responses,messages}</span> and the newer
-          <span class="code-inline">/publishers/swongpai-vllm/models/&lt;model&gt;/…</span> form, URL-rewrites the prefix away, and sends to the
-          <span class="code-inline">…-kserve-workload-svc:8000</span> with no timeout (streaming). No InferencePool on these three models — <span class="code-inline">router.scheduler</span> is unset.
+          <span class="code-inline">/publishers/swongpai-vllm/models/&lt;model&gt;/…</span> form, URL-rewrites the prefix away, and sends to
+          <span class="code-inline">InferencePool/muse-glimmer-llmd-inference-pool:8000</span> — on the one model that sets
+          <span class="code-inline">router.scheduler</span>, so a per-route ext_proc override asks the EPP which pod to use before the router picks an
+          endpoint. Catch-all and body-based rules go to <span class="code-inline">…-kserve-workload-svc:8000</span> instead, no EPP, no timeout (streaming).
+          Full route table in section 05.
         </div>
       </div>
 
@@ -706,9 +762,11 @@ footer {
         <div class="seq-num">10</div>
         <div class="seq-hop">Envoy → Client<br><span class="proto https">HTTPS 200</span></div>
         <div class="seq-desc">
-          The response returns to the client. In parallel the <span class="code-inline">TelemetryPolicy/maas-telemetry</span> tries to label Envoy's Prometheus metrics with
-          <span class="code-inline">model</span> (from the response body), <span class="code-inline">user</span> and <span class="code-inline">subscription</span>. On RHCL 1.4.2 the two
-          <span class="code-inline">auth.identity.*</span> selectors fail to resolve (<span class="code-inline">CelError::Resolve</span>, every request) — the label is missing, the request is unaffected.
+          The response returns to the client. In parallel the <span class="code-inline">TelemetryPolicy/maas-telemetry</span> labels Envoy's Prometheus metrics with
+          <span class="code-inline">model</span> (from the response body), <span class="code-inline">user</span>, <span class="code-inline">subscription</span>,
+          <span class="code-inline">organization_id</span> and <span class="code-inline">cost_center</span>. Since tenant telemetry was enabled on
+          <span class="code-inline">MaasTenantConfig</span> (2026-09-11) the policy is written by <strong>maas-controller</strong> with
+          <span class="code-inline">has(...) ? ... : ""</span> guards, so the old <span class="code-inline">CelError::Resolve</span> flood on RHCL 1.4.x is gone.
           Traces sample at 0.1 into Tempo.
         </div>
       </div>
@@ -724,7 +782,7 @@ footer {
 <section class="diagram-section">
   <div class="section-number">03 — Before the First Request</div>
   <h2 class="section-title">Where API Keys Come From</h2>
-  <p class="section-subtitle">Inference needs a key. Keys are minted by maas-api — which on 3.5 lives in its own namespace, <span class="code-inline">redhat-ai-gateway-infra</span> — scoped to a subscription, and stored in PostgreSQL. The subscription, not the key, decides which models you reach and how many tokens you get. Max lifetime 90 days; expired keys are swept every 15 minutes.</p>
+  <p class="section-subtitle">Inference needs a key. Keys are minted by maas-api — which on 3.5 lives in its own namespace, <span class="code-inline">redhat-ai-gateway-infra</span> — scoped to a subscription, and stored in PostgreSQL. The subscription, not the key, decides which models you reach and how many tokens you get. Three subscriptions exist today — <span class="code-inline">sa-premium</span> (5 modelRefs), <span class="code-inline">gpt-5-6-luna-subscription</span>, <span class="code-inline">claude-sub</span> — all at <span class="code-inline">priority: 0</span>, which the controller flags as <span class="code-inline">SharedPriority</span>. Max lifetime 90 days; expired keys are swept every 15 minutes.</p>
 
   <div class="diagram-container">
     <div class="keyflow">
@@ -763,7 +821,7 @@ footer {
         <div class="flow-node key">
           <div class="icon">⚿</div>
           <div class="name">API Key</div>
-          <div class="detail">Returned once. Scoped to<br>gpt-5-6-luna-subscription 100k/1h<br>or sa-premium 90k/1s</div>
+          <div class="detail">Returned once. Scoped to one of<br>gpt-5-6-luna-subscription 100k/1h ·<br>claude-sub 90k/1s · sa-premium 90k/1s</div>
         </div>
       </div>
     </div>
@@ -839,10 +897,10 @@ footer {
             <div class="res-detail">apiKeys / telemetry knobs · infraNamespace: redhat-ai-gateway-infra</div></li>
           <li><span class="res-kind">Tenant</span><span class="res-name">default-tenant</span>
             <div class="res-detail"><em>deprecated-by MaasTenantConfig</em> — spec ignored, left in place</div></li>
-          <li><span class="res-kind">MaaSAuthPolicy ×2</span><span class="res-name">sa-premium-policy · gpt-5-6-luna-access</span>
-            <div class="res-detail">cluster-admins → 3 internal models / 1 external model</div></li>
-          <li><span class="res-kind">MaaSSubscription ×2</span><span class="res-name">sa-premium · gpt-5-6-luna-subscription</span>
-            <div class="res-detail">90k tok/1s (Degraded — GPU down) · 100k tok/1h (Active)</div></li>
+          <li><span class="res-kind">MaaSAuthPolicy ×3</span><span class="res-name">sa-premium-policy · gpt-5-6-luna-access · claude-sub-policy</span>
+            <div class="res-detail">All Active · cluster-admins everywhere; claude-sub also grants rhods-admins</div></li>
+          <li><span class="res-kind">MaaSSubscription ×3</span><span class="res-name">sa-premium · gpt-5-6-luna-subscription · claude-sub</span>
+            <div class="res-detail">sa-premium: 5 modelRefs, 90k tok/1s (55k for claude) — <strong>Degraded</strong>, 2 of 5 NotFound (a Stopped LLMISvc renders no HTTPRoute) · 100k tok/1h · 90k tok/1s · all priority 0 → SharedPriority</div></li>
         </ul>
         <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 12px; line-height: 1.5;">
           Intent layer. maas-controller compiles the two policies into <em>one</em> gateway AuthPolicy allow-map and one TokenRateLimitPolicy per model route.
@@ -852,18 +910,20 @@ footer {
       <div class="ns-box ns-model-ns">
         <div class="ns-header">swongpai-vllm</div>
         <ul class="resource-list">
-          <li><span class="res-kind">LLMInferenceService ×3</span><span class="res-name">muse-glimmer-llmisvc-nightly · qwen38-27b-018 · redhataiqwen3-coder-next-nvfp4</span>
-            <div class="res-detail">1 GPU each · router gateway+route (no scheduler) · all down: no GPU node</div></li>
-          <li><span class="res-kind">ExternalProvider</span><span class="res-name">openai-prod</span>
-            <div class="res-detail">openai · api.openai.com · apikey Secret openai-api-key → Service/ServiceEntry/DestinationRule</div></li>
-          <li><span class="res-kind">ExternalModel</span><span class="res-name">gpt-5.6-luna</span>
-            <div class="res-detail">inference.opendatahub.io · targetModel gpt-5.6-luna · owns HTTPRoute gpt-5.6-luna</div></li>
-          <li><span class="res-kind">MaaSModelRef ×4</span><span class="res-name">gpt-5.6-luna (Ready) · 3× internal (Pending)</span>
-            <div class="res-detail">Registers model with MaaS · Pending until governance pairs and runtime is healthy</div></li>
-          <li><span class="res-kind">HTTPRoute ×2</span><span class="res-name">gpt-5.6-luna · muse-…-kserve-route</span>
-            <div class="res-detail">Stopped LLMISvc render no route</div></li>
-          <li><span class="res-kind">TokenRateLimitPolicy ×2</span><span class="res-name">maas-trlp-gpt-5.6-luna · maas-trlp-muse-…</span>
-            <div class="res-detail">Created by MaaSSubscription · targets the model HTTPRoute</div></li>
+          <li><span class="res-kind">LLMInferenceService ×4</span><span class="res-name">muse-glimmer-llmd · muse-glimmer-llmisvc-nightly · qwen38-27b-018 · redhataiqwen3-coder-next-nvfp4</span>
+            <div class="res-detail">1 GPU each · <span class="code-inline">muse-glimmer-llmd</span> is the only one with <span class="code-inline">router.scheduler</span> (EPP + InferencePool) and the only one not <span class="code-inline">serving.kserve.io/stop</span> — its vLLM pod is <strong>Pending</strong>, no GPU node</div></li>
+          <li><span class="res-kind">InferencePool · EPP</span><span class="res-name">muse-glimmer-llmd-inference-pool · …-epp-service</span>
+            <div class="res-detail">Headless shadow Service :54321 · endpointPickerRef → epp-service:9002, FailOpen · scheduler pod 1/1 Running even with no vLLM behind it</div></li>
+          <li><span class="res-kind">ExternalProvider ×2</span><span class="res-name">openai-prod · anthropic-prod</span>
+            <div class="res-detail">Both Ready · ExternalName Service + ServiceEntry (MESH_EXTERNAL, DNS) + DestinationRule (TLS SIMPLE) each · anthropic is <span class="code-inline">apiFormat: messages</span></div></li>
+          <li><span class="res-kind">ExternalModel ×2</span><span class="res-name">gpt-5.6-luna · claude-sonnet-5</span>
+            <div class="res-detail">Both Ready · object name = targetModel = upstream id · each owns a 4-rule HTTPRoute</div></li>
+          <li><span class="res-kind">MaaSModelRef ×6</span><span class="res-name">gpt-5.6-luna · claude-sonnet-5 (Ready) · muse-glimmer-llmd (Unhealthy) · 3 × Pending</span>
+            <div class="res-detail">Unhealthy / Pending = <span class="code-inline">BackendNotReady</span> — governance is paired, the runtime is not</div></li>
+          <li><span class="res-kind">HTTPRoute ×3</span><span class="res-name">gpt-5.6-luna · claude-sonnet-5 · muse-glimmer-llmd-kserve-route</span>
+            <div class="res-detail">Stopped LLMISvc render no route — full wiring in section 05</div></li>
+          <li><span class="res-kind">TokenRateLimitPolicy ×3</span><span class="res-name">maas-trlp-gpt-5.6-luna · …-claude-sonnet-5 · …-muse-glimmer-llmd</span>
+            <div class="res-detail">Created by MaaSSubscription · targets the model HTTPRoute · all Enforced</div></li>
           <li><span class="res-kind">OGXServer · MCPServer</span><span class="res-name">lsd-genai-playground · rh-demo-mcp-ocp</span>
             <div class="res-detail">GenAI Studio backend (replaces LlamaStackDistribution) · MCP server (not yet on the gateway)</div></li>
         </ul>
@@ -887,7 +947,7 @@ footer {
         <div class="ns-header">openshift-ingress</div>
         <ul class="resource-list">
           <li><span class="res-kind">Gateway</span><span class="res-name">maas-default-gateway</span>
-            <div class="res-detail">HTTPS :443 · openshift-default class · AWS NLB · 3 routes · ArgoCD-owned</div></li>
+            <div class="res-detail">HTTPS :443 · openshift-default class · AWS NLB · <strong>4 attached routes</strong> · ArgoCD-owned</div></li>
           <li><span class="res-kind">Pod</span><span class="res-name">maas-default-gateway-openshift-default</span>
             <div class="res-detail">istio-proxy (Envoy) — the data plane</div></li>
           <li><span class="res-kind">Pod</span><span class="res-name">istiod-openshift-gateway</span>
@@ -901,7 +961,7 @@ footer {
           <li><span class="res-kind">AuthPolicy · TRLP</span><span class="res-name">maas-default-gateway-authn · gateway-default-deny</span>
             <div class="res-detail">Both Accepted, Enforced=False (overridden) — deny-by-default backstops</div></li>
           <li><span class="res-kind">TelemetryPolicy</span><span class="res-name">maas-telemetry</span>
-            <div class="res-detail">model / user / subscription labels (user+subscription unresolved on RHCL 1.4.2)</div></li>
+            <div class="res-detail">Config-owned since tenant telemetry was enabled · model / user / subscription / organization_id / cost_center, the last two CEL-guarded</div></li>
           <li><span class="res-kind">Secret</span><span class="res-name">maas-gateway-tls</span>
             <div class="res-detail">ROSA wildcard copy · CronJob tls-cert-rotator 1st &amp; 15th</div></li>
         </ul>
@@ -918,8 +978,10 @@ footer {
             <div class="res-detail">0.152.1 · statefulset 2/2 + target allocator</div></li>
           <li><span class="res-kind">Perses + 8 dashboards</span><span class="res-name">data-science-perses</span>
             <div class="res-detail">cluster · model · maas-usage · llm-d traffic / utilization / performance · tempo-traces</div></li>
-          <li><span class="res-kind">ServiceMonitor</span><span class="res-name">limitador-metrics</span>
-            <div class="res-detail">Config-owned · app=limitador · 30s</div></li>
+          <li><span class="res-kind">ServiceMonitor (coreos)</span><span class="res-name">limitador-metrics</span>
+            <div class="res-detail">Config-owned · app=limitador · 30s · read by the <strong>TargetAllocator</strong>, invisible to COO's Prometheus</div></li>
+          <li><span class="res-kind">ServiceMonitor (rhobs) ×5</span><span class="res-name">data-science-prometheus-monitor · …-collector-monitor · prometheus-self-fixed · thanos-querier · opendatahub-operator</span>
+            <div class="res-detail">The only monitors COO's Prometheus can see. <span class="code-inline">data-science-prometheus-monitor</span> → collector <span class="code-inline">:8889</span> is the single bridge that carries every MaaS metric</div></li>
         </ul>
       </div>
 
@@ -928,13 +990,998 @@ footer {
 </section>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
-<!-- 05 COMPONENT CATALOG -->
+<!-- 05 GATEWAY WIRING -->
 <!-- ══════════════════════════════════════════════════════════════ -->
 
 <section class="diagram-section">
-  <div class="section-number">05 — Reference</div>
+  <div class="section-number">05 — Wiring</div>
+  <h2 class="section-title">AI Gateway — Gateway, HTTPRoute, Service</h2>
+  <p class="section-subtitle">Exactly which objects carry MaaS traffic and how they reference each other — the graph first, then the same set as an inventory: one Gateway, four attached HTTPRoutes, six backends, and the policies that hang off each level. Read from the live cluster on <strong>2026-09-17</strong> — the route table at the bottom comes from the gateway pod's Envoy <span class="code-inline">config_dump</span>, not from the CRs.</p>
+
+  <div class="legend">
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-gateway)"></span> Gateway / listener</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--purple)"></span> HTTPRoute</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-model)"></span> in-cluster Service</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-external)"></span> ExternalName → provider</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-kuadrant)"></span> attached policy</div>
+  </div>
+
+  <div class="legend" style="margin-bottom:14px">
+    <div class="legend-item"><svg width="34" height="10" style="overflow:visible"><path d="M 0 5 L 30 5" stroke="#6b6960" stroke-width="1.5" fill="none"/></svg> traffic · backendRefs · parentRefs</div>
+    <div class="legend-item"><svg width="34" height="10" style="overflow:visible"><path d="M 0 5 L 30 5" stroke="#f4511e" stroke-width="1.5" stroke-dasharray="5 4" fill="none"/></svg> policy targetRef · endpointPickerRef</div>
+    <div class="legend-item"><svg width="34" height="10" style="overflow:visible"><path d="M 0 5 L 30 5" stroke="#c8c5be" stroke-width="1.5" stroke-dasharray="3 3" fill="none"/></svg> ownerReferences</div>
+  </div>
+  <div class="diagram-container" style="margin-bottom:28px">
+<svg viewBox="0 0 1352 1075" xmlns="http://www.w3.org/2000/svg" class="graph">
+<defs>
+<marker id="arrow-e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#6b6960"/></marker>
+<marker id="arrow-e-pol" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#f4511e"/></marker>
+<marker id="arrow-e-own" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#9c9890"/></marker>
+</defs>
+<g class="n gw"><rect x="16" y="310" width="205" height="190" rx="9"/>
+<text class="k" x="28" y="327">Gateway · openshift-ingress</text>
+<text class="t" x="28" y="342">maas-default-gateway</text>
+<text class="d" x="28" y="357">class openshift-default</text>
+<text class="d" x="28" y="370">listener https :443</text>
+<text class="d" x="28" y="383">tls Terminate · maas-gateway-tls</text>
+<text class="d" x="28" y="396">allowedRoutes: from All</text>
+<text class="d" x="28" y="409">attachedRoutes: 4</text>
+</g>
+<g class="n pol"><rect x="16" y="70" width="205" height="190" rx="9"/>
+<text class="k" x="28" y="87">targetRef: Gateway</text>
+<text class="t" x="28" y="102">4 policies</text>
+<text class="d" x="28" y="117">maas-gateway-auth</text>
+<text class="d" x="28" y="130">  AuthPolicy · Enforced</text>
+<text class="d" x="28" y="143">maas-default-gateway-authn</text>
+<text class="d" x="28" y="156">  AuthPolicy · overridden</text>
+<text class="d" x="28" y="169">gateway-default-deny</text>
+<text class="d" x="28" y="182">  TRLP · 0 tok/1m</text>
+<text class="d" x="28" y="195">maas-telemetry</text>
+<text class="d" x="28" y="208">  TelemetryPolicy</text>
+</g>
+<path class="e-pol" d="M 118.5 260 L 118.5 310" marker-end="url(#arrow-e-pol)"/>
+<text class="lbl" x="118.5" y="279.0" text-anchor="middle">targetRef</text>
+<g class="n svc"><rect x="16" y="540" width="205" height="110" rx="9"/>
+<text class="k" x="28" y="557">AWS NLB</text>
+<text class="t" x="28" y="572">gateway Service (LB)</text>
+<text class="d" x="28" y="587">443 → NodePort 31262</text>
+<text class="d" x="28" y="600">15021 health</text>
+<text class="d" x="28" y="613">1 pod istio-proxy (Envoy)</text>
+</g>
+<path class="e-own" d="M 118.5 500 L 118.5 540" marker-end="url(#arrow-e-own)"/>
+<text class="lbl" x="118.5" y="514.0" text-anchor="middle">programmed as</text>
+<g class="n own"><rect x="365" y="40" width="285" height="32" rx="16"/>
+<text class="t" x="377" y="57">Config/default</text>
+</g>
+<text class="d" x="660" y="61">maas-controller</text>
+<g class="n route"><rect x="365" y="98" width="285" height="87" rx="9"/>
+<text class="k" x="377" y="115">HTTPRoute · redhat-ai-gateway-infra</text>
+<text class="t" x="377" y="130">maas-api-route</text>
+<text class="d" x="377" y="145">4 rules, path prefix only</text>
+<text class="d" x="377" y="158">/v1/models · /v1/subscriptions</text>
+<text class="d" x="377" y="171">/v1/api-keys · /maas-api</text>
+</g>
+<path class="e-own" d="M 507.5 72 L 507.5 98" marker-end="url(#arrow-e-own)"/>
+<text class="lbl" x="577.5" y="88" text-anchor="start">ownerReferences</text>
+<path class="e" d="M 365 141.5 C 255 141.5, 336 338, 226 338" marker-end="url(#arrow-e)"/>
+<text class="lbl" x="293.0" y="231.75" text-anchor="middle">parentRefs</text>
+<g class="n svc"><rect x="730" y="98" width="278" height="74" rx="9"/>
+<text class="k" x="742" y="115">Service · ClusterIP</text>
+<text class="t" x="742" y="130">maas-api : 8443</text>
+<text class="d" x="742" y="145">DestinationRule maas-api-backend-tls</text>
+<text class="d" x="742" y="158">TLS SIMPLE, insecureSkipVerify</text>
+</g>
+<path class="e" d="M 650 141.5 C 690 141.5, 686 135.0, 726 135.0" marker-end="url(#arrow-e)"/>
+<text class="lbl" x="688.0" y="132.25" text-anchor="middle">backendRefs</text>
+<g class="n svc"><rect x="1038" y="98" width="300" height="74" rx="9"/>
+<text class="k" x="1050" y="115">Endpoints · EDS</text>
+<text class="t" x="1050" y="130">maas-api pod 1/1</text>
+<text class="d" x="1050" y="145">redhat-ai-gateway-infra</text>
+<text class="d" x="1050" y="158">key CRUD + catalog + validation</text>
+</g>
+<path class="e" d="M 1008 135.0 C 1038 135.0, 1004 135.0, 1034 135.0" marker-end="url(#arrow-e)"/>
+<g class="n own"><rect x="365" y="280" width="285" height="32" rx="16"/>
+<text class="t" x="377" y="297">ExternalModel/gpt-5.6-luna</text>
+</g>
+<text class="d" x="660" y="301">ipp-external-model-reconciler</text>
+<g class="n route"><rect x="365" y="338" width="285" height="87" rx="9"/>
+<text class="k" x="377" y="355">HTTPRoute · swongpai-vllm</text>
+<text class="t" x="377" y="370">gpt-5.6-luna</text>
+<text class="d" x="377" y="385">4 rules · header + path shapes</text>
+<text class="d" x="377" y="398">X-Gateway-Model-Name: gpt-5.6-luna</text>
+<text class="d" x="377" y="411">filter: set Host: api.openai.com</text>
+</g>
+<path class="e-own" d="M 507.5 312 L 507.5 338" marker-end="url(#arrow-e-own)"/>
+<text class="lbl" x="577.5" y="328" text-anchor="start">ownerReferences</text>
+<path class="e" d="M 365 381.5 C 255 381.5, 336 372, 226 372" marker-end="url(#arrow-e)"/>
+<g class="n pol"><rect x="365" y="453" width="285" height="30" rx="15"/>
+<text class="t" x="377" y="470">maas-trlp-gpt-5.6-luna · Enforced</text>
+</g>
+<path class="e-pol" d="M 507.5 453 L 507.5 425" marker-end="url(#arrow-e-pol)"/>
+<text class="lbl" x="660" y="473" text-anchor="start">targetRef</text>
+<g class="n ext"><rect x="730" y="338" width="278" height="87" rx="9"/>
+<text class="k" x="742" y="355">Service · ExternalName</text>
+<text class="t" x="742" y="370">openai-prod : 443</text>
+<text class="d" x="742" y="385">+ ServiceEntry (MESH_EXTERNAL, DNS)</text>
+<text class="d" x="742" y="398">+ DestinationRule TLS SIMPLE</text>
+<text class="d" x="742" y="411">made by ExternalProvider/openai-prod</text>
+</g>
+<path class="e" d="M 650 381.5 C 690 381.5, 686 381.5, 726 381.5" marker-end="url(#arrow-e)"/>
+<g class="n ext"><rect x="1038" y="338" width="300" height="74" rx="9"/>
+<text class="k" x="1050" y="355">Upstream · STRICT_DNS</text>
+<text class="t" x="1050" y="370">api.openai.com : 443</text>
+<text class="d" x="1050" y="385">provider key injected by ipp</text>
+<text class="d" x="1050" y="398">apikey-injection plugin</text>
+</g>
+<path class="e" d="M 1008 381.5 C 1038 381.5, 1004 375.0, 1034 375.0" marker-end="url(#arrow-e)"/>
+<g class="n own"><rect x="365" y="520" width="285" height="32" rx="16"/>
+<text class="t" x="377" y="537">ExternalModel/claude-sonnet-5</text>
+</g>
+<text class="d" x="660" y="541">ipp-external-model-reconciler</text>
+<g class="n route"><rect x="365" y="578" width="285" height="87" rx="9"/>
+<text class="k" x="377" y="595">HTTPRoute · swongpai-vllm</text>
+<text class="t" x="377" y="610">claude-sonnet-5</text>
+<text class="d" x="377" y="625">4 rules · same shape</text>
+<text class="d" x="377" y="638">X-Gateway-Model-Name: claude-sonnet-5</text>
+<text class="d" x="377" y="651">filter: set Host: api.anthropic.com</text>
+</g>
+<path class="e-own" d="M 507.5 552 L 507.5 578" marker-end="url(#arrow-e-own)"/>
+<text class="lbl" x="577.5" y="568" text-anchor="start">ownerReferences</text>
+<path class="e" d="M 365 621.5 C 255 621.5, 336 406, 226 406" marker-end="url(#arrow-e)"/>
+<text class="lbl" x="293.0" y="505.75" text-anchor="middle">parentRefs</text>
+<g class="n pol"><rect x="365" y="693" width="285" height="30" rx="15"/>
+<text class="t" x="377" y="710">maas-trlp-claude-sonnet-5 · Enforced</text>
+</g>
+<path class="e-pol" d="M 507.5 693 L 507.5 665" marker-end="url(#arrow-e-pol)"/>
+<text class="lbl" x="660" y="713" text-anchor="start">targetRef</text>
+<g class="n ext"><rect x="730" y="578" width="278" height="87" rx="9"/>
+<text class="k" x="742" y="595">Service · ExternalName</text>
+<text class="t" x="742" y="610">anthropic-prod : 443</text>
+<text class="d" x="742" y="625">+ ServiceEntry (MESH_EXTERNAL, DNS)</text>
+<text class="d" x="742" y="638">+ DestinationRule TLS SIMPLE</text>
+<text class="d" x="742" y="651">made by ExternalProvider/anthropic-prod</text>
+</g>
+<path class="e" d="M 650 621.5 C 690 621.5, 686 621.5, 726 621.5" marker-end="url(#arrow-e)"/>
+<text class="lbl" x="688.0" y="615.5" text-anchor="middle">backendRefs</text>
+<g class="n ext"><rect x="1038" y="578" width="300" height="74" rx="9"/>
+<text class="k" x="1050" y="595">Upstream · STRICT_DNS</text>
+<text class="t" x="1050" y="610">api.anthropic.com : 443</text>
+<text class="d" x="1050" y="625">apiFormat: messages</text>
+<text class="d" x="1050" y="638">needs response api-translation</text>
+</g>
+<path class="e" d="M 1008 621.5 C 1038 621.5, 1004 615.0, 1034 615.0" marker-end="url(#arrow-e)"/>
+<g class="n own"><rect x="365" y="760" width="285" height="32" rx="16"/>
+<text class="t" x="377" y="777">LLMInferenceService/muse-glimmer-llmd</text>
+</g>
+<text class="d" x="660" y="781">llmisvc-controller · router.scheduler set</text>
+<g class="n route"><rect x="365" y="818" width="285" height="113" rx="9"/>
+<text class="k" x="377" y="835">HTTPRoute · swongpai-vllm</text>
+<text class="t" x="377" y="850">muse-glimmer-llmd-kserve-route</text>
+<text class="d" x="377" y="865">12 rules · widest route on the gateway</text>
+<text class="d" x="377" y="878">/swongpai-vllm/muse-glimmer-llmd/v1/*</text>
+<text class="d" x="377" y="891">/publishers/swongpai-vllm/models/…/v1/*</text>
+<text class="d" x="377" y="904">X-Gateway-Model-Name: publishers/…/llmd</text>
+<text class="d" x="377" y="917">URLRewrite → bare /v1/… on every API rule</text>
+</g>
+<path class="e-own" d="M 507.5 792 L 507.5 818" marker-end="url(#arrow-e-own)"/>
+<text class="lbl" x="577.5" y="808" text-anchor="start">ownerReferences</text>
+<path class="e" d="M 365 874.5 C 255 874.5, 336 440, 226 440" marker-end="url(#arrow-e)"/>
+<text class="lbl" x="293.0" y="649.25" text-anchor="middle">parentRefs</text>
+<g class="n pol"><rect x="365" y="959" width="285" height="30" rx="15"/>
+<text class="t" x="377" y="976">maas-trlp-muse-glimmer-llmd · Enforced</text>
+</g>
+<path class="e-pol" d="M 507.5 959 L 507.5 931" marker-end="url(#arrow-e-pol)"/>
+<text class="lbl" x="660" y="979" text-anchor="start">targetRef</text>
+<g class="n svc"><rect x="730" y="808" width="278" height="87" rx="9"/>
+<text class="k" x="742" y="825">InferencePool · x-k8s.io · port 8000</text>
+<text class="t" x="742" y="840">muse-glimmer-llmd-inference-pool</text>
+<text class="d" x="742" y="855">Envoy cluster → shadow Service :54321</text>
+<text class="d" x="742" y="868">selector kserve.io/component=workload</text>
+<text class="d" x="742" y="881">per-API rules only</text>
+</g>
+<path class="e" d="M 650 854.5 C 690 854.5, 686 851.5, 726 851.5" marker-end="url(#arrow-e)"/>
+<text class="lbl" x="688.0" y="847.0" text-anchor="middle">backendRefs</text>
+<g class="n svc"><rect x="730" y="941" width="278" height="87" rx="9"/>
+<text class="k" x="742" y="958">Service · ClusterIP · port 8000</text>
+<text class="t" x="742" y="973">muse-glimmer-llmd-kserve-workload-svc</text>
+<text class="d" x="742" y="988">catch-alls + the body-based header rule</text>
+<text class="d" x="742" y="1001">DestinationRule TLS SIMPLE, service-ca</text>
+<text class="d" x="742" y="1014">0 endpoints — vLLM pod Pending</text>
+</g>
+<path class="e" d="M 650 894.5 C 690 894.5, 686 984.5, 726 984.5" marker-end="url(#arrow-e)"/>
+<g class="n epp"><rect x="1038" y="808" width="300" height="87" rx="9"/>
+<text class="k" x="1050" y="825">EPP · endpointPickerRef · FailOpen</text>
+<text class="t" x="1050" y="840">muse-glimmer-llmd-epp-service</text>
+<text class="d" x="1050" y="855">ext_proc override on InferencePool routes</text>
+<text class="d" x="1050" y="868">9002 grpc · 9003 health · 9090 metrics</text>
+<text class="d" x="1050" y="881">5557 zmq (KV cache events) · 1/1 Running</text>
+</g>
+<path class="e-pol" d="M 1008 851.5 C 1038 851.5, 1004 851.5, 1034 851.5" marker-end="url(#arrow-e-pol)"/>
+<text class="lbl" x="1023.0" y="794" text-anchor="middle">endpointPickerRef</text>
+<g class="n svc"><rect x="1038" y="941" width="300" height="87" rx="9"/>
+<text class="k" x="1050" y="958">Endpoints · EDS</text>
+<text class="t" x="1050" y="973">vLLM pods (Pending)</text>
+<text class="d" x="1050" y="988">1 GPU requested · no GPU node today</text>
+<text class="d" x="1050" y="1001">muse-glimmer-llmd-kserve-* Deployment</text>
+<text class="d" x="1050" y="1014">EPP picks the pod; Service round-robins</text>
+</g>
+<path class="e" d="M 1008 984.5 C 1038 984.5, 1004 984.5, 1034 984.5" marker-end="url(#arrow-e)"/>
+<path class="e" d="M 1188.0 895 L 1188.0 941" marker-end="url(#arrow-e)"/>
+<text class="lbl" x="1198.0" y="922.0" text-anchor="start">picks the endpoint</text>
+<text class="cap" x="16" y="28">GATEWAY</text>
+<text class="cap" x="365" y="28">HTTPROUTE</text>
+<text class="cap" x="730" y="28">BACKEND REF</text>
+<text class="cap" x="1038" y="28">ENDPOINTS</text>
+</svg>
+  </div>
+
+  <div class="explanation-full" style="margin-bottom:28px">
+    <h3>Every Reference Field in That Graph</h3>
+    <p>Solid arrows are traffic and <span class="code-inline">backendRefs</span>; dashed orange is a policy <span class="code-inline">targetRef</span>; dotted grey is <span class="code-inline">ownerReferences</span>. Each edge is a real field on a real object — this is the list, with what it points at here.</p>
+    <table class="components-table">
+      <thead><tr><th style="width:300px">Field</th><th style="width:210px">Points at</th><th>On this cluster</th></tr></thead>
+      <tbody>
+        <tr><td>HTTPRoute <span class="code-inline">.spec.parentRefs</span></td><td>Gateway</td>
+          <td>All four routes name <span class="code-inline">openshift-ingress/maas-default-gateway</span> from two other namespaces. Cross-namespace attach only works because the listener sets <span class="code-inline">allowedRoutes.namespaces.from: All</span> — there is no ReferenceGrant in play.</td></tr>
+        <tr><td>HTTPRoute <span class="code-inline">.spec.rules[].backendRefs</span></td><td>Service · InferencePool</td>
+          <td>Must be in the route's own namespace. Three kinds appear: <span class="code-inline">Service</span> (maas-api, workload-svc), <span class="code-inline">Service</span> of type ExternalName (openai-prod, anthropic-prod), and <span class="code-inline">InferencePool</span> (group <span class="code-inline">inference.networking.x-k8s.io</span>).</td></tr>
+        <tr><td>InferencePool <span class="code-inline">.spec.endpointPickerRef</span></td><td>Service (EPP) :9002</td>
+          <td><span class="code-inline">muse-glimmer-llmd-epp-service</span>, <span class="code-inline">failureMode: FailOpen</span>. This is what becomes the per-route <span class="code-inline">ExtProcPerRoute</span> override in Envoy.</td></tr>
+        <tr><td>InferencePool <span class="code-inline">.spec.selector</span> / <span class="code-inline">.targetPorts</span></td><td>Pods, by label</td>
+          <td><span class="code-inline">kserve.io/component=workload</span> + the llmisvc name, port 8000. Zero pods match today.</td></tr>
+        <tr><td>AuthPolicy · TokenRateLimitPolicy · TelemetryPolicy <span class="code-inline">.spec.targetRef</span></td><td>Gateway or HTTPRoute</td>
+          <td>Four policies target the Gateway; three TRLPs target one model HTTPRoute each. A TRLP whose route does not exist stays unenforced — that is exactly why two <span class="code-inline">sa-premium</span> modelRefs read <span class="code-inline">NotFound</span>.</td></tr>
+        <tr><td><span class="code-inline">.metadata.ownerReferences</span></td><td>The CR that generated the object</td>
+          <td><span class="code-inline">Config/default</span> → maas-api-route + the payload-processing EnvoyFilter; <span class="code-inline">ExternalModel/&lt;name&gt;</span> → its route; <span class="code-inline">LLMInferenceService</span> → route, InferencePool, EPP, Services. Delete the owner and the whole subtree goes with it.</td></tr>
+        <tr><td>Gateway <span class="code-inline">.spec.gatewayClassName</span></td><td>GatewayClass</td>
+          <td><span class="code-inline">openshift-default</span>, controller <span class="code-inline">openshift.io/gateway-controller/v1</span> — OpenShift's built-in istiod, no Service Mesh operator.</td></tr>
+        <tr><td>Gateway <span class="code-inline">.spec.listeners[].tls.certificateRefs</span></td><td>Secret</td>
+          <td><span class="code-inline">maas-gateway-tls</span> in <span class="code-inline">openshift-ingress</span> — a copy of the ROSA wildcard cert, refreshed by the <span class="code-inline">tls-cert-rotator</span> CronJob.</td></tr>
+        <tr><td>AITenant <span class="code-inline">.spec.gateway</span></td><td>Gateway, by name</td>
+          <td><span class="code-inline">AITenant/models-as-a-service</span> (namespace <span class="code-inline">ai-tenants</span>) binds the tenant to <span class="code-inline">maas-default-gateway</span>. This is the link that makes maas-controller write policy onto <em>this</em> gateway.</td></tr>
+        <tr><td>MaaSSubscription <span class="code-inline">.spec.modelRefs[]</span></td><td>MaaSModelRef, by name + namespace</td>
+          <td>Generates the TRLP limits. <span class="code-inline">sa-premium</span> lists five; each entry carries its own <span class="code-inline">tokenRateLimits</span>, which is how claude gets 55k/1s there and 90k/1s under <span class="code-inline">claude-sub</span>.</td></tr>
+        <tr><td>Service <span class="code-inline">.spec.externalName</span> ↔ ServiceEntry <span class="code-inline">.spec.hosts</span> ↔ DestinationRule <span class="code-inline">.spec.host</span></td><td>A hostname string</td>
+          <td><strong>Not an object reference.</strong> The three objects are joined only by the literal <span class="code-inline">api.openai.com</span> / <span class="code-inline">api.anthropic.com</span>. Typo one and nothing errors — TLS origination silently stops applying, which is the same silent-failure pattern as the rest of this stack.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="diagram-container">
+    <div class="wiring">
+
+      <div>
+        <div class="wire-col-label">Gateway</div>
+        <div class="wire-card gw">
+          <div class="wc-kind">Gateway · openshift-ingress</div>
+          <div class="wc-name">maas-default-gateway</div>
+          <div class="wc-line">class openshift-default</div>
+          <div class="wc-line">listener https :443 Terminate</div>
+          <div class="wc-line">host maas.apps.&lt;cluster-domain&gt;</div>
+          <div class="wc-line">tls secret maas-gateway-tls</div>
+          <div class="wc-line">allowedRoutes: from All</div>
+          <div class="wc-line">attachedRoutes: <strong>4</strong> · Programmed</div>
+        </div>
+        <div class="wire-card">
+          <div class="wc-kind">Service · LoadBalancer</div>
+          <div class="wc-name">maas-default-gateway-openshift-default</div>
+          <div class="wc-line">443 → 31262 · 15021 health</div>
+          <div class="wc-line">AWS NLB &lt;nlb&gt;…elb</div>
+          <div class="wc-line">1 pod: istio-proxy (Envoy)</div>
+        </div>
+        <div class="wire-card pol">
+          <div class="wc-kind">Gateway-scoped policies</div>
+          <div class="wc-name">maas-gateway-auth</div>
+          <div class="wc-line">AuthPolicy · Enforced</div>
+          <div class="wc-name" style="margin-top:8px">maas-default-gateway-authn</div>
+          <div class="wc-line">AuthPolicy · Enforced=False</div>
+          <div class="wc-name" style="margin-top:8px">gateway-default-deny</div>
+          <div class="wc-line">TokenRateLimitPolicy · 0 tok/1m</div>
+          <div class="wc-name" style="margin-top:8px">maas-telemetry</div>
+          <div class="wc-line">TelemetryPolicy · Enforced</div>
+        </div>
+        <div class="wire-card" style="border-style:dashed">
+          <div class="wc-kind">Not MaaS — same namespace</div>
+          <div class="wc-name">data-science-gateway</div>
+          <div class="wc-line">class data-science-gateway-class</div>
+          <div class="wc-line">4 routes: rhods-dashboard,</div>
+          <div class="wc-line">model-catalog, mlflow, oauth-callback</div>
+          <div class="wc-line">kube-auth-proxy, own EnvoyFilter</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="wire-col-label">HTTPRoutes attached</div>
+
+        <div class="wire-card route">
+          <div class="wc-kind">HTTPRoute · redhat-ai-gateway-infra · owner Config/default</div>
+          <div class="wc-name">maas-api-route</div>
+          <div class="wc-line">4 rules, path only</div>
+          <div><span class="match-tag path">/v1/models</span><span class="match-tag path">/v1/subscriptions</span><span class="match-tag path">/v1/api-keys</span><span class="match-tag path">/maas-api → / (rewrite)</span></div>
+          <div class="wc-line" style="margin-top:6px">no TRLP · exempted from deny-all</div>
+          <div class="wc-line">ext_proc disabled per-route (MERGE patches)</div>
+        </div>
+
+        <div class="wire-card route">
+          <div class="wc-kind">HTTPRoute · swongpai-vllm · owner ExternalModel/gpt-5.6-luna</div>
+          <div class="wc-name">gpt-5.6-luna</div>
+          <div class="wc-line">4 rules · 2 shapes × (with / without provider header)</div>
+          <div><span class="match-tag hdr">X-Gateway-Model-Name: gpt-5.6-luna</span><span class="match-tag hdr">x-ipp-selected-provider: openai-prod</span><span class="match-tag path">/swongpai-vllm/gpt-5.6-luna</span></div>
+          <div class="wc-line" style="margin-top:6px">filter: set Host: api.openai.com</div>
+          <div class="wc-line">TRLP maas-trlp-gpt-5.6-luna · Enforced</div>
+        </div>
+
+        <div class="wire-card route">
+          <div class="wc-kind">HTTPRoute · swongpai-vllm · owner ExternalModel/claude-sonnet-5</div>
+          <div class="wc-name">claude-sonnet-5</div>
+          <div class="wc-line">4 rules · same shape as gpt-5.6-luna</div>
+          <div><span class="match-tag hdr">X-Gateway-Model-Name: claude-sonnet-5</span><span class="match-tag hdr">x-ipp-selected-provider: anthropic-prod</span><span class="match-tag path">/swongpai-vllm/claude-sonnet-5</span></div>
+          <div class="wc-line" style="margin-top:6px">filter: set Host: api.anthropic.com</div>
+          <div class="wc-line">TRLP maas-trlp-claude-sonnet-5 · Enforced</div>
+        </div>
+
+        <div class="wire-card route">
+          <div class="wc-kind">HTTPRoute · swongpai-vllm · owner LLMInferenceService/muse-glimmer-llmd</div>
+          <div class="wc-name">muse-glimmer-llmd-kserve-route</div>
+          <div class="wc-line">12 rules · the widest route on the gateway</div>
+          <div><span class="match-tag path">/swongpai-vllm/muse-glimmer-llmd/v1/*</span><span class="match-tag path">/publishers/swongpai-vllm/models/muse-glimmer-llmd/v1/*</span><span class="match-tag hdr">X-Gateway-Model-Name: publishers/swongpai-vllm/models/muse-glimmer-llmd</span></div>
+          <div class="wc-line" style="margin-top:6px">URLRewrite → bare /v1/… on every API rule</div>
+          <div class="wc-line">TRLP maas-trlp-muse-glimmer-llmd · Enforced</div>
+        </div>
+
+        <div class="wire-card pol">
+          <div class="wc-kind">Orphaned route targets — no route exists</div>
+          <div class="wc-name">maas-auth-redhataiqwen3-coder-next-nvfp4</div>
+          <div class="wc-line">AuthPolicy · Accepted=False (TargetNotFound)</div>
+          <div class="wc-name" style="margin-top:8px">maas-api-auth-policy <em>(redhat-ods-applications)</em></div>
+          <div class="wc-line">3.4 leftover · targets a route in the wrong namespace</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="wire-col-label">Backends</div>
+
+        <div class="wire-card svc">
+          <div class="wc-kind">Service · redhat-ai-gateway-infra</div>
+          <div class="wc-name">maas-api : 8443</div>
+          <div class="wc-line">ClusterIP 172.30.x.x · 1/1 pod</div>
+          <div class="wc-line">DestinationRule maas-api-backend-tls</div>
+          <div class="wc-line">TLS SIMPLE · insecureSkipVerify</div>
+        </div>
+
+        <div class="wire-card ext">
+          <div class="wc-kind">Service · ExternalName · swongpai-vllm</div>
+          <div class="wc-name">openai-prod : 443 → api.openai.com</div>
+          <div class="wc-line">ServiceEntry openai-prod (MESH_EXTERNAL, DNS)</div>
+          <div class="wc-line">DestinationRule · TLS SIMPLE (origination)</div>
+          <div class="wc-line">ExternalProvider/openai-prod · Ready</div>
+        </div>
+
+        <div class="wire-card ext">
+          <div class="wc-kind">Service · ExternalName · swongpai-vllm</div>
+          <div class="wc-name">anthropic-prod : 443 → api.anthropic.com</div>
+          <div class="wc-line">ServiceEntry anthropic-prod (MESH_EXTERNAL, DNS)</div>
+          <div class="wc-line">DestinationRule · TLS SIMPLE</div>
+          <div class="wc-line">ExternalProvider/anthropic-prod · apiFormat messages</div>
+        </div>
+
+        <div class="wire-card svc">
+          <div class="wc-kind">InferencePool backend · swongpai-vllm</div>
+          <div class="wc-name">muse-glimmer-llmd-inference-pool : 8000</div>
+          <div class="wc-line">Envoy cluster → shadow Service :54321</div>
+          <div class="wc-line">muse-glimmer-llmd-inference-pool-ip-83dce731</div>
+          <div class="wc-line">selector kserve.io/component=workload</div>
+          <div class="wc-line">endpointPickerRef → EPP :9002 · FailOpen</div>
+        </div>
+
+        <div class="wire-card svc">
+          <div class="wc-kind">Service · swongpai-vllm (EPP)</div>
+          <div class="wc-name">muse-glimmer-llmd-epp-service</div>
+          <div class="wc-line">9002 grpc (ext_proc) · 9003 health</div>
+          <div class="wc-line">9090 metrics · 5557 zmq (KV events)</div>
+          <div class="wc-line">1/1 Running — scheduler pod is up</div>
+        </div>
+
+        <div class="wire-card svc">
+          <div class="wc-kind">Service · swongpai-vllm</div>
+          <div class="wc-name">muse-glimmer-llmd-kserve-workload-svc : 8000</div>
+          <div class="wc-line">DestinationRule · TLS SIMPLE, service-ca</div>
+          <div class="wc-line"><strong>0 endpoints</strong> — vLLM pod Pending (no GPU)</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="explanation-full" style="margin-top:32px">
+    <h3>Who Creates What</h3>
+    <p>No HTTPRoute on this gateway is hand-written. Each one has a controller owner, so editing a route by hand is reverted on the next reconcile — change the owning CR instead.</p>
+    <table class="components-table">
+      <thead><tr><th style="width:250px">HTTPRoute</th><th style="width:230px">Created &amp; owned by</th><th style="width:150px">Backend kind</th><th>What the owner keys the match on</th></tr></thead>
+      <tbody>
+        <tr><td>maas-api-route</td><td><span class="code-inline">Config/default</span> (maas-controller)</td><td>Service</td>
+          <td>Fixed control-plane paths. Also the four paths <span class="code-inline">gateway-default-deny</span> exempts, which is why <span class="code-inline">/v1/models</span> answers without a subscription.</td></tr>
+        <tr><td>gpt-5.6-luna<br>claude-sonnet-5</td><td><span class="code-inline">ExternalModel/&lt;name&gt;</span> via <span class="code-inline">ipp-external-model-reconciler</span></td><td>Service (ExternalName)</td>
+          <td><strong>The object name.</strong> It becomes the catalog id, the <span class="code-inline">X-Gateway-Model-Name</span> value, and the OPA allow-map key. <span class="code-inline">spec.targetModel</span> is the only thing the route itself matches — set it equal to the object name or the model 404s on its own name.</td></tr>
+        <tr><td>muse-glimmer-llmd-kserve-route</td><td><span class="code-inline">LLMInferenceService/muse-glimmer-llmd</span> (llmisvc-controller)</td><td>InferencePool + Service</td>
+          <td>Namespace/name and the 3.5 catalog form <span class="code-inline">publishers/&lt;ns&gt;/models/&lt;name&gt;</span>, across four OpenAI-shaped APIs.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="explanation-full">
+    <h3>Backend Resolution — Three Different Mechanisms</h3>
+    <table class="components-table">
+      <thead><tr><th style="width:200px">Backend</th><th style="width:210px">Envoy cluster</th><th>How the endpoint is found</th></tr></thead>
+      <tbody>
+        <tr><td>maas-api</td><td class="img-tag">outbound|8443||maas-api.redhat-ai-gateway-infra.svc</td>
+          <td>EDS from the ClusterIP Service. Upstream TLS is originated by the DestinationRule (<span class="code-inline">insecureSkipVerify</span>, service-ca cert on the pod).</td></tr>
+        <tr><td>openai-prod<br>anthropic-prod</td><td class="img-tag">outbound|443||api.openai.com<br>outbound|443||api.anthropic.com</td>
+          <td><strong>STRICT_DNS</strong> — the ExternalName Service plus a ServiceEntry puts the public hostname in the mesh; the DestinationRule originates TLS. The route's <span class="code-inline">RequestHeaderModifier</span> sets <span class="code-inline">Host</span>, and <span class="code-inline">apikey-injection</span> in <em>ipp</em> adds the provider key.</td></tr>
+        <tr><td>InferencePool</td><td class="img-tag">outbound|54321||…inference-pool-ip-83dce731.svc</td>
+          <td>The pool renders a headless shadow Service on :54321. Envoy sends the request to it, but the endpoint is <em>chosen</em> by the EPP: routes that target the pool carry a per-route <span class="code-inline">ExtProcPerRoute</span> override pointing the placeholder <span class="code-inline">envoy.filters.http.ext_proc</span> filter at <span class="code-inline">…epp-service:9002</span>, FULL_DUPLEX_STREAMED both ways, <span class="code-inline">failure_mode_allow: true</span>.</td></tr>
+        <tr><td>workload-svc</td><td class="img-tag">outbound|8000||…kserve-workload-svc.svc</td>
+          <td>Plain EDS on the vLLM pods, no EPP in the path. Used by the catch-all rules <em>and</em> by the body-based header rule.</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:14px"><strong>Consequence worth knowing.</strong> On the llm-d route the per-API rules (<span class="code-inline">/v1/chat/completions</span> and friends) go to the InferencePool, but the two catch-alls and the pure <span class="code-inline">X-Gateway-Model-Name</span> rule go straight to <span class="code-inline">workload-svc</span>. A body-based call therefore <strong>skips the endpoint picker</strong> and lands on plain round-robin, while the same call in path form gets KV-cache-aware scheduling.</p>
+  </div>
+
+
+  <div class="explanation-full">
+    <h3>External Providers — ExternalName Service, ServiceEntry, DestinationRule</h3>
+    <p>An external model does not talk to a pod, so the "backend" is three Istio-adjacent objects plus a Secret. You write <strong>one</strong> CR — <span class="code-inline">ExternalProvider</span> — and <span class="code-inline">ipp-external-provider-reconciler</span> generates the other three, all owner-referenced back to it. Both providers on this cluster are byte-for-byte the same shape; only the hostname differs.</p>
+  </div>
+
+  <div class="diagram-container" style="margin-bottom:28px">
+<svg viewBox="0 0 1330 500" xmlns="http://www.w3.org/2000/svg" class="graph">
+<defs>
+<marker id="arrow-e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#6b6960"/></marker>
+<marker id="arrow-e-pol" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#f4511e"/></marker>
+<marker id="arrow-e-own" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#c8c5be"/></marker>
+</defs>
+<text class="cap" x="16" y="26">THE CR YOU WRITE</text>
+<text class="cap" x="360" y="26">WHAT THE RECONCILER GENERATES</text>
+<text class="cap" x="730" y="26">WHAT ENVOY BUILDS</text>
+<text class="cap" x="1070" y="26">UPSTREAM</text>
+<g class="n gw"><rect x="16" y="60" width="300" height="120" rx="9"/>
+<text class="k" x="28" y="77">inference.opendatahub.io · swongpai-vllm</text>
+<text class="t" x="28" y="92">ExternalProvider/openai-prod</text>
+<text class="d" x="28" y="107">provider: openai        (anthropic-prod: anthropic)</text>
+<text class="d" x="28" y="120">endpoint: api.openai.com</text>
+<text class="d" x="28" y="133">auth.type: apikey</text>
+<text class="d" x="28" y="146">auth.secretRef.name: openai-api-key</text>
+<text class="d" x="28" y="159">status: Ready · Reconciled</text>
+<text class="d" x="28" y="172">one per upstream, shared by every model on it</text>
+</g>
+<g class="n pol"><rect x="16" y="230" width="300" height="86" rx="9"/>
+<text class="k" x="28" y="247">auth.secretRef</text>
+<text class="t" x="28" y="262">Secret/openai-api-key</text>
+<text class="d" x="28" y="277">Opaque · single key: api-key</text>
+<text class="d" x="28" y="290">label inference.llm-d.ai/ipp-managed: true</text>
+<text class="d" x="28" y="303">no ownerRef — you create it, IPP adopts it</text>
+</g>
+<path class="e-pol" d="M 166.0 180 C 166.0 180, 166.0 230, 166.0 230" marker-end="url(#arrow-e-pol)"/>
+<text class="lbl" x="176.0" y="210" text-anchor="start">secretRef</text>
+<g class="n svc"><rect x="16" y="360" width="300" height="100" rx="9"/>
+<text class="k" x="28" y="377">payload-processing · openshift-ingress</text>
+<text class="t" x="28" y="392">apikey-injection plugin (ipp)</text>
+<text class="d" x="28" y="407">reads the Secret at request time</text>
+<text class="d" x="28" y="420">replaces the client's Authorization header</text>
+<text class="d" x="28" y="433">with the provider key · marks the request</text>
+<text class="d" x="28" y="446">label inference.llm-d.ai/ipp-managed</text>
+</g>
+<path class="e-own" d="M 166.0 316 C 166.0 316, 166.0 360, 166.0 360" marker-end="url(#arrow-e-own)"/>
+<text class="lbl" x="176.0" y="342" text-anchor="start">read by</text>
+<g class="n ext"><rect x="360" y="60" width="310" height="97" rx="9"/>
+<text class="k" x="372" y="77">1 · ExternalName Service</text>
+<text class="t" x="372" y="92">Service/openai-prod</text>
+<text class="d" x="372" y="107">type: ExternalName → api.openai.com</text>
+<text class="d" x="372" y="120">port 443 → targetPort 443</text>
+<text class="d" x="372" y="133">what the HTTPRoute names in backendRefs</text>
+<text class="d" x="372" y="146">name only — Envoy builds no cluster for it</text>
+</g>
+<g class="n ext"><rect x="360" y="164" width="310" height="90" rx="9"/>
+<text class="k" x="372" y="181">2 · networking.istio.io</text>
+<text class="t" x="372" y="196">ServiceEntry/openai-prod</text>
+<text class="d" x="372" y="211">hosts: [api.openai.com]</text>
+<text class="d" x="372" y="224">location: MESH_EXTERNAL · resolution: DNS</text>
+<text class="d" x="372" y="237">ports: 443 name https protocol HTTPS</text>
+<text class="d" x="372" y="250">puts the public host inside the mesh</text>
+</g>
+<g class="n ext"><rect x="360" y="274" width="310" height="90" rx="9"/>
+<text class="k" x="372" y="291">3 · networking.istio.io</text>
+<text class="t" x="372" y="306">DestinationRule/openai-prod</text>
+<text class="d" x="372" y="321">host: api.openai.com</text>
+<text class="d" x="372" y="334">trafficPolicy.tls.mode: SIMPLE</text>
+<text class="d" x="372" y="347">no caCertificates → system root store</text>
+<text class="d" x="372" y="360">TLS origination happens here, not in the route</text>
+</g>
+<path class="e-own" d="M 316 120 C 356 120, 315 102, 355 102" marker-end="url(#arrow-e-own)"/>
+<text class="lbl" x="338.0" y="46" text-anchor="middle">owns</text>
+<path class="e-own" d="M 316 120 C 356 120, 315 209, 355 209" marker-end="url(#arrow-e-own)"/>
+<path class="e-own" d="M 316 120 C 356 120, 315 319, 355 319" marker-end="url(#arrow-e-own)"/>
+<g class="n gw"><rect x="730" y="150" width="300" height="150" rx="9"/>
+<text class="k" x="742" y="167">Envoy cluster · gateway pod</text>
+<text class="t" x="742" y="182">outbound|443||api.openai.com</text>
+<text class="d" x="742" y="197">type: STRICT_DNS · dns_refresh 60s · V4_ONLY</text>
+<text class="d" x="742" y="210">lb: LEAST_REQUEST · connect_timeout 10s</text>
+<text class="d" x="742" y="223">transport_socket: UpstreamTlsContext</text>
+<text class="d" x="742" y="236">  validation ← SDS file-root:system (system CAs)</text>
+<text class="d" x="742" y="249">  TLS 1.2 – 1.3 · alpn_override false → HTTP/1.1</text>
+<text class="d" x="742" y="262">upstream_http_protocol_options:</text>
+<text class="d" x="742" y="275">  auto_sni: true · auto_san_validation: true</text>
+<text class="d" x="742" y="288">metadata.config = destination-rule/openai-prod</text>
+</g>
+<path class="e" d="M 670 209 C 710 209, 685 200, 725 200" marker-end="url(#arrow-e)"/>
+<text class="lbl" x="700.0" y="140" text-anchor="middle">creates</text>
+<path class="e" d="M 670 319 C 710 319, 685 258, 725 258" marker-end="url(#arrow-e)"/>
+<text class="lbl" x="700.0" y="330" text-anchor="middle">TLS</text>
+<path class="e-own" d="M 670 102 C 710 102, 685 160, 725 160" marker-end="url(#arrow-e-own)"/>
+<g class="n route"><rect x="730" y="360" width="300" height="100" rx="9"/>
+<text class="k" x="742" y="377">the missing link</text>
+<text class="t" x="742" y="392">HTTPRoute/gpt-5.6-luna</text>
+<text class="d" x="742" y="407">filter: RequestHeaderModifier</text>
+<text class="d" x="742" y="420">set Host: api.openai.com</text>
+<text class="d" x="742" y="433">this header is what auto_sni sends as SNI</text>
+<text class="d" x="742" y="446">auto_san_validation checks the cert with it</text>
+</g>
+<path class="e-pol" d="M 880.0 360 C 880.0 360, 880.0 300, 880.0 300" marker-end="url(#arrow-e-pol)"/>
+<text class="lbl" x="890.0" y="334" text-anchor="start">Host header → SNI</text>
+<g class="n ext"><rect x="1070" y="180" width="250" height="90" rx="9"/>
+<text class="k" x="1082" y="197">Upstream</text>
+<text class="t" x="1082" y="212">api.openai.com : 443</text>
+<text class="d" x="1082" y="227">resolved by DNS, refreshed every 60s</text>
+<text class="d" x="1082" y="240">one Envoy endpoint, weight 1</text>
+<text class="d" x="1082" y="253">body forwarded unchanged</text>
+<text class="d" x="1082" y="266">provider key injected by ipp</text>
+</g>
+<path class="e" d="M 1030 225 C 1050 225, 1045 225, 1065 225" marker-end="url(#arrow-e)"/>
+</svg>
+  </div>
+
+  <div class="explanation-full">
+    <h3>What Each Object Contributes</h3>
+    <table class="components-table">
+      <thead><tr><th style="width:230px">Object</th><th style="width:190px">Key fields</th><th>Why it is needed — and what breaks without it</th></tr></thead>
+      <tbody>
+        <tr><td>Service (ExternalName)<br><span class="code-inline">openai-prod</span> · <span class="code-inline">anthropic-prod</span></td>
+          <td class="img-tag">type: ExternalName<br>externalName: api.openai.com<br>port 443 → 443</td>
+          <td>The only kind an HTTPRoute <span class="code-inline">backendRefs</span> can name for an off-cluster target. It contributes <em>nothing</em> to the data path beyond the name: there is <strong>no Envoy cluster for <span class="code-inline">openai-prod.swongpai-vllm.svc</span></strong> — Istio resolves the route straight to <span class="code-inline">outbound|443||api.openai.com</span>. Delete it and the route has no valid backendRef.</td></tr>
+        <tr><td>ServiceEntry<br><span class="code-inline">networking.istio.io</span></td>
+          <td class="img-tag">hosts: [api.openai.com]<br>location: MESH_EXTERNAL<br>resolution: DNS<br>ports: 443 https/HTTPS</td>
+          <td>Registers the public hostname in the mesh, which is what makes Envoy build the cluster at all — <span class="code-inline">STRICT_DNS</span>, refreshed every 60s, <span class="code-inline">respect_dns_ttl</span>, <span class="code-inline">V4_ONLY</span>. Without it the gateway has no cluster to route to and the request 503s.</td></tr>
+        <tr><td>DestinationRule<br><span class="code-inline">networking.istio.io</span></td>
+          <td class="img-tag">host: api.openai.com<br>trafficPolicy.tls.mode: SIMPLE</td>
+          <td><strong>TLS origination.</strong> The gateway receives plain HTTP internally and must speak TLS to the provider; this attaches the <span class="code-inline">UpstreamTlsContext</span> (TLS 1.2–1.3, validation from the SDS <span class="code-inline">file-root:system</span> store). Envoy's cluster metadata names the rule, which is how you prove it applied. Without it you get a cleartext request to port 443.</td></tr>
+        <tr><td>Secret<br><span class="code-inline">openai-api-key</span> · <span class="code-inline">claude-api-key</span></td>
+          <td class="img-tag">Opaque · one key: api-key<br>label inference.llm-d.ai/<br>ipp-managed: true</td>
+          <td>Not generated — you create it and the provider references it by name. Read by the <span class="code-inline">apikey-injection</span> plugin in <em>ipp</em>, which swaps the caller's <span class="code-inline">Authorization</span> for the provider key. A missing or wrong key surfaces as <span class="code-inline">500 credentials not found</span>, never as a TLS or routing error.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="explanation-full" style="border-left: 4px solid var(--orange); background: var(--orange-light);">
+    <p style="margin:0 0 10px"><strong>Three things about this triple that are not obvious:</strong></p>
+    <p style="margin:0 0 8px"><strong>1. They are joined by a hostname string, not by references.</strong> <span class="code-inline">Service.spec.externalName</span>, <span class="code-inline">ServiceEntry.spec.hosts[0]</span> and <span class="code-inline">DestinationRule.spec.host</span> all just say <span class="code-inline">api.openai.com</span>. Nothing validates that they agree. Change one and the others keep reporting healthy while TLS origination quietly stops applying.</p>
+    <p style="margin:0 0 8px"><strong>2. SNI comes from the HTTPRoute, not from the DestinationRule.</strong> The cluster sets <span class="code-inline">auto_sni: true</span> and <span class="code-inline">auto_san_validation: true</span> with no explicit <span class="code-inline">sni</span> field, so Envoy takes both the SNI it sends and the name it validates the certificate against <em>from the Host header</em> — which is set by the route's <span class="code-inline">RequestHeaderModifier</span>. Drop that filter and the handshake fails on a name mismatch, not on anything visible in the Istio config.</p>
+    <p style="margin:0"><strong>3. Validation uses the system root store.</strong> <span class="code-inline">SIMPLE</span> with no <span class="code-inline">caCertificates</span> resolves to the SDS secret <span class="code-inline">file-root:system</span>. Fine for public providers; a provider behind a corporate TLS-inspecting proxy or a private CA would need <span class="code-inline">caCertificates</span> added to the DestinationRule — and that object is owned by the ExternalProvider, so the edit has to go in the CR, not the rule.</p>
+  </div>
+
+  <details class="yaml-block">
+    <summary>The four objects, both providers, as applied<span class="src-badge">live cluster</span></summary>
+    <pre># ── what you write ───────────────────────────────────────────────────────────
+apiVersion: inference.opendatahub.io/v1alpha1
+kind: ExternalProvider
+metadata: {name: openai-prod, namespace: swongpai-vllm}       # anthropic-prod is identical
+spec:
+  provider: openai                                            # anthropic
+  endpoint: api.openai.com                                    # api.anthropic.com
+  auth: {type: apikey, secretRef: {name: openai-api-key}}     # claude-api-key
+status: {phase: Ready}   # Ready/Reconciled — "All resources created successfully"
+
+# ── what the reconciler generates (labels: app.kubernetes.io/managed-by:
+#    ipp-external-provider-reconciler, inference.opendatahub.io/external-provider: openai-prod;
+#    every one ownerReferenced to ExternalProvider/openai-prod) ─────────────────
+kind: Service
+spec: {type: ExternalName, externalName: api.openai.com, ports: [{port: 443, targetPort: 443}]}
+---
+kind: ServiceEntry                      # networking.istio.io
+spec:
+  hosts: [api.openai.com]
+  location: MESH_EXTERNAL
+  resolution: DNS
+  ports: [{number: 443, name: https, protocol: HTTPS}]
+---
+kind: DestinationRule                   # networking.istio.io
+spec:
+  host: api.openai.com
+  trafficPolicy: {tls: {mode: SIMPLE}}  # no caCertificates → system roots
+
+# ── the model that uses it ───────────────────────────────────────────────────
+kind: ExternalModel
+metadata: {name: gpt-5.6-luna}
+spec:
+  modelName: gpt-5.6-luna
+  externalProviderRefs:
+  - ref: {name: openai-prod}
+    targetModel: gpt-5.6-luna           # must equal the object name
+    apiFormat: openai-chat              # claude-sonnet-5: messages
+    path: /v1/chat/completions          # claude-sonnet-5: /v1/messages
+    weight: 1                           # claude-sonnet-5: 100
+
+# Note: apiFormat + path are per-provider-ref, not per-model. apiFormat: messages is what
+# pulls api-translation into the ipp chain — and on the response side it is also what forces
+# the SSE buffering described in the gotchas.</pre>
+  </details>
+
+  <details class="yaml-block">
+    <summary>Envoy's side — proof the ServiceEntry and DestinationRule both landed<span class="src-badge">live cluster</span></summary>
+    <pre>$ oc exec -n openshift-ingress &lt;gateway-pod&gt; \
+    -- pilot-agent request GET config_dump      # 269 clusters; these two are the providers
+
+outbound|443||api.openai.com                     # ← from the ServiceEntry, NOT the ExternalName Service
+  type: STRICT_DNS                               # there is no outbound|443||openai-prod.swongpai-vllm.svc
+  dns_refresh_rate: 60s · respect_dns_ttl: true · dns_lookup_family: V4_ONLY
+  lb_policy: LEAST_REQUEST · connect_timeout: 10s · circuit breakers: unlimited
+  load_assignment: [api.openai.com:443, weight 1]
+
+  transport_socket: envoy.transport_sockets.tls  # ← from the DestinationRule
+    UpstreamTlsContext:
+      tls_params: {minimum: TLSv1_2, maximum: TLSv1_3}
+      combined_validation_context:
+        validation_context_sds_secret_config: {name: "file-root:system"}   # system CA bundle
+
+  typed_extension_protocol_options:
+    upstream_http_protocol_options: {auto_sni: true, auto_san_validation: true}
+    explicit_http_config: {http_protocol_options: {}}      # HTTP/1.1; alpn_override false
+
+  metadata.filter_metadata.istio:
+    external: true
+    config: /apis/networking.istio.io/v1/namespaces/swongpai-vllm/destination-rule/openai-prod
+
+outbound|443||api.anthropic.com                  # byte-for-byte the same, different host</pre>
+  </details>
+
+  <div class="explanation-full" style="border-left: 4px solid var(--orange); background: var(--orange-light);">
+    <p style="margin:0"><strong>Route order is not the order you wrote.</strong> Envoy evaluates the vhost's routes top-down after Istio sorts them: exact paths first, then <span class="code-inline">path_separated_prefix</span>, then bare <span class="code-inline">/</span> prefixes — and within a tie, more header matches wins. That is why each external model has its provider-header rule <em>and</em> a header-less twin: <span class="code-inline">ipp-pre</span> sets <span class="code-inline">x-ipp-selected-provider</span> when it can resolve a provider, and the twin catches the request when it cannot. Read the real order out of the gateway, never off the CR.</p>
+  </div>
+
+  <details class="yaml-block">
+    <summary>Envoy filter chain and vhost route table — gateway pod config_dump<span class="src-badge">live cluster</span></summary>
+    <pre>$ oc exec -n openshift-ingress &lt;gateway-pod&gt; \
+    -- pilot-agent request GET config_dump
+
+LISTENER 0.0.0.0_443  →  route_config https.443.default.maas-default-gateway-istio-autogenerated-k8s-gateway-https.openshift-ingress
+  http_filters:
+    istio.metadata_exchange
+    envoy.filters.http.ext_proc          # placeholder, cluster "dummy", modes SKIP — overridden per-route to the EPP
+    envoy.filters.http.grpc_stats
+    istio.alpn · envoy.filters.http.fault · envoy.filters.http.cors · istio.stats
+    envoy.filters.http.ext_proc.ipp-pre  # payload-pre-processing:9004 · failure_mode_allow: true
+    envoy.filters.http.wasm              # kuadrant shim → Authorino :50051, Limitador :8081
+    envoy.filters.http.ext_proc.ipp      # payload-processing:9004   · failure_mode_allow: FALSE
+    envoy.filters.http.router
+
+VHOST maas.apps.&lt;cluster-domain&gt;:443     (30 routes, in match order)
+
+  match                                                     headers                                      cluster
+  ── exact ────────────────────────────────────────────────────────────────────────────────────────────────────────
+  /v1/chat/completions[/]                                   X-Gateway-Model-Name=publishers/…/muse-glimmer-llmd   inference-pool:54321
+  /v1/completions[/] · /v1/responses[/] · /v1/messages[/]    (same header)                                 inference-pool:54321
+  ── path_separated_prefix ────────────────────────────────────────────────────────────────────────────────────────
+  /publishers/swongpai-vllm/models/muse-glimmer-llmd/v1/*   —                                             inference-pool:54321
+  /swongpai-vllm/muse-glimmer-llmd/v1/*                     —                                             inference-pool:54321
+  /publishers/swongpai-vllm/models/muse-glimmer-llmd        —                                             workload-svc:8000
+  /swongpai-vllm/muse-glimmer-llmd                          —                                             workload-svc:8000
+  /swongpai-vllm/claude-sonnet-5                            x-ipp-selected-provider=anthropic-prod        api.anthropic.com:443
+  /swongpai-vllm/claude-sonnet-5                            —                                             api.anthropic.com:443
+  /swongpai-vllm/gpt-5.6-luna                               x-ipp-selected-provider=openai-prod           api.openai.com:443
+  /swongpai-vllm/gpt-5.6-luna                               —                                             api.openai.com:443
+  /v1/subscriptions · /v1/api-keys · /v1/models · /maas-api —                                             maas-api:8443
+  ── prefix "/" (body-based) ──────────────────────────────────────────────────────────────────────────────────────
+  /                                                         X-Gateway-Model-Name=gpt-5.6-luna + provider  api.openai.com:443
+  /                                                         X-Gateway-Model-Name=claude-sonnet-5 + prov.  api.anthropic.com:443
+  /                                                         X-Gateway-Model-Name=gpt-5.6-luna             api.openai.com:443
+  /                                                         X-Gateway-Model-Name=publishers/…/muse-…-llmd  workload-svc:8000
+  /                                                         X-Gateway-Model-Name=claude-sonnet-5          api.anthropic.com:443
+
+# per-route override on the InferencePool rules:
+#   typed_per_filter_config."envoy.filters.http.ext_proc":
+#     overrides.grpc_service.envoy_grpc.cluster_name: outbound|9002||muse-glimmer-llmd-epp-service.swongpai-vllm.svc
+#     overrides.processing_mode: request/response header SEND, both bodies FULL_DUPLEX_STREAMED
+#     failure_mode_allow: true</pre>
+  </details>
+
+  <details class="yaml-block">
+    <summary>Gateway + the four parentRefs, as applied<span class="src-badge">live cluster</span></summary>
+    <pre>Gateway/maas-default-gateway (openshift-ingress)        # ArgoCD: openshift-ai-maas-config
+  gatewayClassName: openshift-default                   # controller openshift.io/gateway-controller/v1
+  listeners: [{name: https, port: 443, protocol: HTTPS,
+               hostname: maas.apps.&lt;cluster-domain&gt;,
+               tls: {mode: Terminate, certificateRefs: [{kind: Secret, name: maas-gateway-tls}]},
+               allowedRoutes: {namespaces: {from: All}}}]
+  status:
+    addresses: [&lt;nlb&gt;.ap-northeast-1.elb.amazonaws.com]
+    listeners[0].attachedRoutes: 4
+    conditions: Accepted · Programmed
+                kuadrant.io/AuthPolicyAffected           [maas-default-gateway-authn, maas-gateway-auth]
+                kuadrant.io/TokenRateLimitPolicyAffected [gateway-default-deny]
+
+# every attached route names the gateway across namespaces — allowedRoutes.from: All is what permits it
+HTTPRoute/maas-api-route                 (redhat-ai-gateway-infra) → Service/maas-api:8443
+HTTPRoute/gpt-5.6-luna                   (swongpai-vllm)          → Service/openai-prod:443      (ExternalName)
+HTTPRoute/claude-sonnet-5                (swongpai-vllm)          → Service/anthropic-prod:443   (ExternalName)
+HTTPRoute/muse-glimmer-llmd-kserve-route (swongpai-vllm)          → InferencePool/muse-glimmer-llmd-inference-pool:8000
+                                                                  + Service/muse-glimmer-llmd-kserve-workload-svc:8000
+  parentRefs:
+  - {group: gateway.networking.k8s.io, kind: Gateway,
+     name: maas-default-gateway, namespace: openshift-ingress}</pre>
+  </details>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- 06 TELEMETRY WIRING -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<section class="diagram-section">
+  <div class="section-number">06 — Telemetry Wiring</div>
+  <h2 class="section-title">MaaS Metrics Land in COO's Prometheus</h2>
+  <p class="section-subtitle">There is no user-workload monitoring on this cluster. Every MaaS metric is scraped by the RHOAI <strong>OpenTelemetry collector</strong>, re-exported on <span class="code-inline">:8889</span>, and stored by the <strong>Cluster Observability Operator</strong>'s MonitoringStack Prometheus — which never scrapes a MaaS namespace itself. Read live on <strong>2026-09-17</strong> from the Prometheus targets API and the TargetAllocator's job list.</p>
+
+  <div class="legend">
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-model)"></span> working target</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--accent)"></span> resolves to 0 targets</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--border-strong)"></span> labelled but no pods today</div>
+    <div class="legend-item"><span class="swatch" style="border-color: var(--ns-gateway)"></span> pipeline / store</div>
+  </div>
+
+  <div class="diagram-container" style="margin-bottom:28px">
+<svg viewBox="0 0 1360 740" xmlns="http://www.w3.org/2000/svg" class="graph">
+<defs>
+<marker id="arrow-e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#6b6960"/></marker>
+<marker id="arrow-e-pol" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#f4511e"/></marker>
+<marker id="arrow-e-own" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#c8c5be"/></marker>
+<marker id="arrow-e-dead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#c62828"/></marker>
+</defs>
+<text class="cap" x="16" y="26">MAAS METRIC SOURCES</text>
+<text class="cap" x="360" y="26">SCRAPE PIPELINE (RHOAI)</text>
+<text class="cap" x="730" y="26">STORE — CLUSTER OBSERVABILITY OPERATOR</text>
+<text class="cap" x="1095" y="26">CONSUMERS</text>
+<g class="n svc"><rect x="16" y="44" width="300" height="98" rx="9"/>
+<text class="k" x="28" y="61">PodMonitor · openshift-ingress</text>
+<text class="t" x="28" y="76">maas-default-gateway-metrics</text>
+<text class="d" x="28" y="91">istio-proxy :15020 /stats/prometheus</text>
+<text class="d" x="28" y="104">owner Gateway · keeps istio_* only</text>
+<text class="d" x="28" y="117">adds gateway_name, llm_isvc_gateway</text>
+<text class="d" x="28" y="130">1 target · UP</text>
+</g>
+<g class="n svc"><rect x="16" y="146" width="300" height="98" rx="9"/>
+<text class="k" x="28" y="163">ServiceMonitor · redhat-ods-monitoring</text>
+<text class="t" x="28" y="178">limitador-metrics</text>
+<text class="d" x="28" y="193">limitador-limitador :8080 /metrics</text>
+<text class="d" x="28" y="206">owner Config/default · 30s · any namespace</text>
+<text class="d" x="28" y="219">authorized_calls_total · limitador_up</text>
+<text class="d" x="28" y="232">1 target · UP</text>
+</g>
+<g class="n svc"><rect x="16" y="248" width="300" height="85" rx="9"/>
+<text class="k" x="28" y="265">PodMonitor · redhat-ods-applications</text>
+<text class="t" x="28" y="280">maas-controller-metrics</text>
+<text class="d" x="28" y="295">maas-controller :8080</text>
+<text class="d" x="28" y="308">controller_runtime_* · 198 metric names</text>
+<text class="d" x="28" y="321">1 target · UP</text>
+</g>
+<g class="n svc"><rect x="16" y="337" width="300" height="72" rx="9"/>
+<text class="k" x="28" y="354">ServiceMonitor · swongpai-vllm</text>
+<text class="t" x="28" y="369">lsd-genai-playground-service-monitor</text>
+<text class="d" x="28" y="384">OGX GenAI playground :9464</text>
+<text class="d" x="28" y="397">owner OGXServer · 1 target · UP</text>
+</g>
+<g class="n dead"><rect x="16" y="413" width="300" height="85" rx="9"/>
+<text class="k" x="28" y="430">PodMonitor · redhat-ai-gateway-infra</text>
+<text class="t" x="28" y="445">maas-api-metrics</text>
+<text class="d" x="28" y="460">selects port: metrics — pod exposes https:8443</text>
+<text class="d" x="28" y="473">0 targets · not in the allocator's job list</text>
+<text class="d" x="28" y="486">open bug: maas-api metrics never scraped</text>
+</g>
+<g class="n idle"><rect x="16" y="502" width="300" height="85" rx="9"/>
+<text class="k" x="28" y="519">PodMonitor + ServiceMonitor · swongpai-vllm</text>
+<text class="t" x="28" y="534">kserve-llm-isvc-vllm-engine · …-scheduler</text>
+<text class="d" x="28" y="549">vLLM :8080 and EPP :9090</text>
+<text class="d" x="28" y="562">labelled and watched, but 0 pods match</text>
+<text class="d" x="28" y="575">vllm:* series exist in the 90d index only</text>
+</g>
+<g class="n dead"><rect x="16" y="612" width="300" height="88" rx="9"/>
+<text class="k" x="28" y="629">NOT IN THE PATH</text>
+<text class="t" x="28" y="644">openshift-user-workload-monitoring</text>
+<text class="d" x="28" y="659">enableUserWorkload: false · 0 pods</text>
+<text class="d" x="28" y="672">ArgoCD-owned ConfigMap — do not re-enable</text>
+<text class="d" x="28" y="685">nothing here scrapes MaaS</text>
+</g>
+<g class="n gw"><rect x="360" y="120" width="330" height="128" rx="9"/>
+<text class="k" x="372" y="137">TargetAllocator · redhat-ods-monitoring</text>
+<text class="t" x="372" y="152">data-science-collector-targetallocator</text>
+<text class="d" x="372" y="167">prometheusCR.enabled · 30s · consistent-hashing</text>
+<text class="d" x="372" y="180">serviceMonitor/podMonitorSelector:</text>
+<text class="d" x="372" y="193">  monitoring.opendatahub.io/scrape: true</text>
+<text class="d" x="372" y="206">namespace selectors empty → cluster-wide</text>
+<text class="d" x="372" y="219">13 monitors carry the label · 4 resolve targets</text>
+</g>
+<g class="n svc"><rect x="360" y="320" width="330" height="153" rx="9"/>
+<text class="k" x="372" y="337">OpenTelemetry Collector</text>
+<text class="t" x="372" y="352">data-science-collector-collector</text>
+<text class="d" x="372" y="367">statefulset ×2 · prometheus + OTLP receivers</text>
+<text class="d" x="372" y="380">exporter prometheus → :8889 (TLS)</text>
+<text class="d" x="372" y="393">exporter otlp/tempo → tempo gateway :4317</text>
+<text class="d" x="372" y="406">scrapes the 4 live jobs every 30s</text>
+<text class="d" x="372" y="419">extra scrape jobs: pod-label :8080 · DCGM GPU</text>
+<text class="d" x="372" y="432">re-exported series carry container=otc-container</text>
+<text class="d" x="372" y="445">and exported_namespace=&lt;source namespace&gt;</text>
+</g>
+<path class="e-own" d="M 525.0 248 C 525.0 248, 525.0 320, 525.0 320" marker-end="url(#arrow-e-own)"/>
+<text class="lbl" x="535.0" y="288" text-anchor="start">assigns jobs to collectors</text>
+<path class="e" d="M 316 74 C 361 74, 310 390, 355 390" marker-end="url(#arrow-e)"/>
+<path class="e" d="M 316 176 C 361 176, 310 390, 355 390" marker-end="url(#arrow-e)"/>
+<path class="e" d="M 316 278 C 361 278, 310 390, 355 390" marker-end="url(#arrow-e)"/>
+<path class="e" d="M 316 367 C 361 367, 310 390, 355 390" marker-end="url(#arrow-e)"/>
+<path class="e-dead" d="M 316 443 C 361 443, 310 400, 355 400" marker-end="url(#arrow-e-dead)"/>
+<path class="e-own" d="M 316 532 C 361 532, 310 390, 355 390" marker-end="url(#arrow-e-own)"/>
+<g class="n gw"><rect x="730" y="300" width="340" height="196" rx="9"/>
+<text class="k" x="742" y="317">Prometheus · COO 1.5.2</text>
+<text class="t" x="742" y="332">prometheus-data-science-monitoringstack-0</text>
+<text class="d" x="742" y="347">MonitoringStack data-science-monitoringstack</text>
+<text class="d" x="742" y="360">API monitoring.rhobs (not monitoring.coreos.com)</text>
+<text class="d" x="742" y="373">prometheus ×1 · 5Gi PVC · retention 90d · web TLS</text>
+<text class="d" x="742" y="386">selectors {} + no namespaceSelector → own namespace</text>
+<text class="d" x="742" y="399">enableOTLPReceiver: true · thanos sidecar :10901</text>
+<text class="d" x="742" y="412">owner Monitoring/default-monitoring (DSCI)</text>
+<text class="d" x="742" y="425">its one MaaS feed: rhobs ServiceMonitor</text>
+<text class="d" x="742" y="438">data-science-prometheus-monitor → :8889 https</text>
+</g>
+<path class="e" d="M 690 390 C 710 390, 705 385, 725 385" marker-end="url(#arrow-e)"/>
+<text class="lbl" x="710.0" y="374" text-anchor="middle">:8889</text>
+<g class="n svc"><rect x="730" y="540" width="340" height="86" rx="9"/>
+<text class="k" x="742" y="557">TempoMonolithic</text>
+<text class="t" x="742" y="572">tempo-data-science-tempomonolithic</text>
+<text class="d" x="742" y="587">OTLP :4317 from the collector</text>
+<text class="d" x="742" y="600">2160h retention · sampleRatio 0.1</text>
+<text class="d" x="742" y="613">traces, not metrics — same collector</text>
+</g>
+<path class="e" d="M 690 458 C 735 458, 680 575, 725 575" marker-end="url(#arrow-e)"/>
+<text class="lbl" x="710.0" y="530" text-anchor="middle">OTLP traces</text>
+<g class="n svc"><rect x="1095" y="200" width="250" height="85" rx="9"/>
+<text class="k" x="1107" y="217">Perses · 8 dashboards</text>
+<text class="t" x="1107" y="232">data-science-perses</text>
+<text class="d" x="1107" y="247">dashboard-3-maas-usage-admin</text>
+<text class="d" x="1107" y="260">llm-d traffic / utilization / performance</text>
+<text class="d" x="1107" y="273">model + cluster + tempo-traces</text>
+</g>
+<path class="e" d="M 1070 385 C 1110 385, 1050 242.5, 1090 242.5" marker-end="url(#arrow-e)"/>
+<g class="n svc"><rect x="1095" y="315" width="250" height="72" rx="9"/>
+<text class="k" x="1107" y="332">ThanosQuerier</text>
+<text class="t" x="1107" y="347">data-science-thanos-querier</text>
+<text class="d" x="1107" y="362">unified query across shards</text>
+<text class="d" x="1107" y="375">used by the RHOAI console</text>
+</g>
+<path class="e" d="M 1070 385 C 1110 385, 1050 351.0, 1090 351.0" marker-end="url(#arrow-e)"/>
+<g class="n svc"><rect x="1095" y="410" width="250" height="72" rx="9"/>
+<text class="k" x="1107" y="427">Alertmanager ×2</text>
+<text class="t" x="1107" y="442">data-science-monitoringstack</text>
+<text class="d" x="1107" y="457">alert routing</text>
+<text class="d" x="1107" y="470">matcherStrategy: None</text>
+</g>
+<path class="e" d="M 1070 385 C 1110 385, 1050 446.0, 1090 446.0" marker-end="url(#arrow-e)"/>
+<g class="n svc"><rect x="1095" y="505" width="250" height="72" rx="9"/>
+<text class="k" x="1107" y="522">Dashboard proxies</text>
+<text class="t" x="1107" y="537">cluster-proxy · namespace-proxy</text>
+<text class="d" x="1107" y="552">:8443 · RBAC in front of Prometheus</text>
+<text class="d" x="1107" y="565">per-namespace metric scoping</text>
+</g>
+<path class="e" d="M 1070 385 C 1110 385, 1050 541.0, 1090 541.0" marker-end="url(#arrow-e)"/>
+</svg>
+  </div>
+
+  <div class="explanation-full">
+    <h3>What COO's Prometheus Actually Scrapes</h3>
+    <p>Four active scrape pools, all inside <span class="code-inline">redhat-ods-monitoring</span>. None of them is a MaaS component — MaaS arrives second-hand, through the collector's re-export.</p>
+    <table class="components-table">
+      <thead><tr><th style="width:290px">Scrape pool</th><th style="width:230px">Target</th><th>What it carries</th></tr></thead>
+      <tbody>
+        <tr><td>serviceMonitor/…/data-science-prometheus-monitor</td><td class="img-tag">https://&lt;collector-pod&gt;:8889/metrics ×2</td>
+          <td><strong>The MaaS path.</strong> Everything the collector scraped, re-exported. Series arrive labelled <span class="code-inline">job="data-science-collector-prometheus"</span>, <span class="code-inline">container="otc-container"</span>, <span class="code-inline">exported_namespace="&lt;real namespace&gt;"</span>.</td></tr>
+        <tr><td>serviceMonitor/…/data-science-collector-monitor</td><td class="img-tag">http://&lt;collector-pod&gt;:8888/metrics ×2</td>
+          <td>The collector's own health — queue depth, refused spans, scrape failures.</td></tr>
+        <tr><td>prometheus-self-fixed</td><td class="img-tag">https://…:9090/metrics</td>
+          <td>Prometheus scraping itself. (The operator's stock <span class="code-inline">prometheus-self</span> pool is <span class="code-inline">down</span> — the <span class="code-inline">-fixed</span> monitor is the one that works.)</td></tr>
+        <tr><td>alertmanager-self</td><td class="img-tag">http://…:9093/metrics ×2</td><td>Alertmanager's own metrics.</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:14px">The Prometheus CR is <span class="code-inline">monitoring.rhobs/v1</span>, generated by the MonitoringStack, with <span class="code-inline">serviceMonitorSelector: {}</span>, <span class="code-inline">podMonitorSelector: {}</span> and <em>no</em> namespace selector — empty selector means "everything", but with no namespace selector that is everything <strong>in its own namespace</strong>. Five rhobs ServiceMonitors live there; four produce the pools above.</p>
+  </div>
+
+  <div class="explanation-full">
+    <h3>What the Collector Scrapes on MaaS's Behalf</h3>
+    <p>The TargetAllocator watches <span class="code-inline">monitoring.coreos.com</span> ServiceMonitors and PodMonitors cluster-wide, filtered on <span class="code-inline">monitoring.opendatahub.io/scrape: true</span>. Thirteen monitors carry that label today; <strong>four resolve to targets</strong>.</p>
+    <table class="components-table">
+      <thead><tr><th style="width:250px">Monitor</th><th style="width:210px">Endpoint</th><th style="width:110px">State</th><th>Live evidence</th></tr></thead>
+      <tbody>
+        <tr><td>PodMonitor<br>maas-default-gateway-metrics<br><span style="color:var(--text-tertiary)">openshift-ingress</span></td><td class="img-tag">istio-proxy :15020<br>/stats/prometheus</td><td><strong>1 target, UP</strong></td>
+          <td>Owned by the Gateway object. <span class="code-inline">metricRelabelings</span> keep only <span class="code-inline">istio_requests_total</span> and the request/response duration and byte histograms, and stamp <span class="code-inline">gateway_name</span> + <span class="code-inline">llm_isvc_gateway="true"</span>. Those names are in the index; there are <strong>0 live series</strong> right now because the gateway has served no requests since its last restart.</td></tr>
+        <tr><td>ServiceMonitor<br>limitador-metrics<br><span style="color:var(--text-tertiary)">redhat-ods-monitoring</span></td><td class="img-tag">limitador-limitador :8080<br>/metrics · 30s</td><td><strong>1 target, UP</strong></td>
+          <td>Owned by <span class="code-inline">Config/default</span>, <span class="code-inline">namespaceSelector.any: true</span>. Live series: <span class="code-inline">limitador_up=1</span>, <span class="code-inline">authorized_calls_total</span>, <span class="code-inline">authorized_hits_total</span>, <span class="code-inline">datastore_partitioned</span> — all tagged <span class="code-inline">exported_namespace="kuadrant-system"</span>. This is the token-accounting feed.</td></tr>
+        <tr><td>PodMonitor<br>maas-controller-metrics</td><td class="img-tag">maas-controller :8080</td><td><strong>1 target, UP</strong></td>
+          <td>198 metric names, mostly <span class="code-inline">controller_runtime_*</span> — reconcile rates and errors for the MaaS CRs.</td></tr>
+        <tr><td>ServiceMonitor<br>lsd-genai-playground-service-monitor</td><td class="img-tag">OGX :9464</td><td><strong>1 target, UP</strong></td>
+          <td>GenAI Studio backend.</td></tr>
+        <tr><td>PodMonitor<br>maas-api-metrics<br><span style="color:var(--text-tertiary)">redhat-ai-gateway-infra</span></td><td class="img-tag">port: metrics<br>pod exposes https:8443</td><td style="color:var(--accent)"><strong>0 targets</strong></td>
+          <td>The port name does not exist on the pod, so the job never appears in the allocator's list at all — no error anywhere. <strong>maas-api metrics are simply not collected.</strong> Open bug.</td></tr>
+        <tr><td>PodMonitor / ServiceMonitor<br>kserve-llm-isvc-vllm-engine<br>kserve-llm-isvc-scheduler</td><td class="img-tag">vLLM :8080 · EPP :9090</td><td>0 pods</td>
+          <td>Correctly labelled and watched; nothing matches while the GPU node is down. <span class="code-inline">vllm:*</span> and <span class="code-inline">kserve_vllm:*</span> names remain in the 90-day index from when it was up.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="explanation-full" style="border-left: 4px solid var(--orange); background: var(--orange-light);">
+    <p style="margin:0"><strong>Two API groups, and that is the whole trick.</strong> The TargetAllocator watches <span class="code-inline">monitoring.coreos.com</span> monitors — the ones MaaS components create. COO's Prometheus watches <span class="code-inline">monitoring.rhobs</span> monitors — a different CRD group entirely, so it cannot see a single MaaS monitor even though <span class="code-inline">limitador-metrics</span> sits in its own namespace. The bridge is one rhobs ServiceMonitor pointing at the collector's <span class="code-inline">:8889</span> exporter. Break that one object and every MaaS metric disappears while every monitor still reads healthy.</p>
+  </div>
+
+  <details class="yaml-block">
+    <summary>Live proof — targets, allocator jobs, and a MaaS series<span class="src-badge">live cluster</span></summary>
+    <pre># 1. What Prometheus is scraping (from inside the pod, web TLS is on)
+$ oc exec -n redhat-ods-monitoring prometheus-data-science-monitoringstack-0 -c prometheus \
+    -- curl -sk https://localhost:9090/api/v1/targets?state=active
+
+  alertmanager-self                           …:9093/metrics                       up
+  prometheus-self                             …:9090/metrics                       down
+  prometheus-self-fixed                       https://…:9090/metrics               up
+  serviceMonitor/…/data-science-collector-…   http://…:8888/metrics   ×2           up
+  serviceMonitor/…/data-science-prometheus-…  https://…:8889/metrics  ×2           up   ← MaaS arrives here
+
+# 2. What the TargetAllocator handed the collectors — 4 jobs, no maas-api
+$ oc exec -n redhat-ods-monitoring prometheus-…-0 -c prometheus \
+    -- curl -s http://data-science-collector-targetallocator/jobs
+
+  podMonitor/openshift-ingress/maas-default-gateway-metrics/0
+  podMonitor/redhat-ods-applications/maas-controller-metrics/0
+  serviceMonitor/redhat-ods-monitoring/limitador-metrics/0
+  serviceMonitor/swongpai-vllm/lsd-genai-playground-service-monitor/0
+
+# 3. A MaaS series as stored — note it is the collector's job, with the real namespace re-exported
+limitador_up{
+  job="data-science-collector-prometheus",       # not "limitador"
+  container="otc-container",                     # the collector, not the target
+  exported_namespace="kuadrant-system",          # the real source
+  namespace="redhat-ods-monitoring",
+  pod="data-science-collector-collector-0",
+  service="data-science-collector-prometheus"
+} = 1
+
+# 4. Series per source namespace, right now
+   (none)                    2550    # the collector's and Prometheus' own metrics
+   redhat-ods-applications    917    # maas-controller
+   kuadrant-system             14    # limitador — authorized_calls_total, limitador_up …
+   openshift-ingress            5    # gateway: scrape meta only, no traffic since restart
+   swongpai-vllm                5    # scrape meta only, GPU node down
+
+# 5. The gateway's own TelemetryPolicy decides the labels on usage metrics
+TelemetryPolicy/maas-telemetry (openshift-ingress) → targetRef Gateway/maas-default-gateway
+  metrics.default.labels:
+    model:           responseBodyJSON("/model")
+    user:            auth.identity.userid
+    subscription:    auth.identity.selected_subscription
+    organization_id: has(auth.identity.subscription_info.organizationId) ? … : ""
+    cost_center:     has(auth.identity.subscription_info.costCenter)     ? … : ""</pre>
+  </details>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- 07 COMPONENT CATALOG -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+<section class="diagram-section">
+  <div class="section-number">07 — Reference</div>
   <h2 class="section-title">Component Catalog</h2>
-  <p class="section-subtitle">Every component in the request path and control plane, by layer — with live images, ports, and role. Pulled from the running 3.5 cluster on 2026-09-04.</p>
+  <p class="section-subtitle">Every component in the request path and control plane, by layer — with live images, ports, and role. Pulled from the running 3.5 cluster on 2026-09-17.</p>
 
   <div class="diagram-container">
 
@@ -943,7 +1990,7 @@ footer {
       <thead><tr><th style="width:220px">Component</th><th style="width:120px">Ports</th><th>Role</th><th style="width:300px">Image</th></tr></thead>
       <tbody>
         <tr><td>AWS NLB + Route53</td><td><span class="port-tag">443</span></td>
-          <td>Cloud entry point. <span class="code-inline">swongpai-maas.apps.…</span> → NLB → gateway pod. Created by OpenShift when the Gateway was applied.</td>
+          <td>Cloud entry point. <span class="code-inline">maas.apps.&lt;cluster-domain&gt;</span> → NLB → gateway pod. Created by OpenShift when the Gateway was applied.</td>
           <td class="img-tag">—</td></tr>
         <tr><td>maas-default-gateway<br>(istio-proxy)</td><td><span class="port-tag">443 TLS</span><span class="port-tag">15021 health</span></td>
           <td>The Envoy data plane. Terminates TLS, runs ipp-pre → Kuadrant wasm → ipp → router, matches HTTPRoutes. Everything flows through this pod.</td>
@@ -1000,16 +2047,19 @@ footer {
       <thead><tr><th style="width:220px">Component</th><th style="width:120px">Ports</th><th>Role</th><th style="width:300px">Image</th></tr></thead>
       <tbody>
         <tr><td>llmisvc-controller-manager</td><td>—</td>
-          <td>KServe's LLMInferenceService controller. Expands one CR into vLLM Deployment, Services, HTTPRoute (and EPP + InferencePool when <span class="code-inline">router.scheduler</span> is set — not on the current three). 3.5 adds <span class="code-inline">v3-5-0-*</span> presets incl. single/multi-node and prefill/decode templates.</td>
+          <td>KServe's LLMInferenceService controller. Expands one CR into vLLM Deployment, Services, HTTPRoute (and EPP + InferencePool when <span class="code-inline">router.scheduler</span> is set — of the current four, only <span class="code-inline">muse-glimmer-llmd</span> does). 3.5 adds <span class="code-inline">v3-5-0-*</span> presets incl. single/multi-node and prefill/decode templates.</td>
           <td class="img-tag">rhoai/odh-kserve-llmisvc-controller-rhel9</td></tr>
-        <tr><td>vLLM pods (×3 defined, 0 running)</td><td><span class="port-tag">8000 http</span></td>
-          <td><span class="code-inline">muse-glimmer-llmisvc-nightly</span> (pvc, Muse-Glimmer-30B-NVFP4), <span class="code-inline">qwen38-27b-018</span> (oci modelcar-catalog), <span class="code-inline">redhataiqwen3-coder-next-nvfp4</span> (oci registry.redhat.io/rhai). 1 GPU each; two are annotated <span class="code-inline">serving.kserve.io/stop</span>. Need the H100 node.</td>
+        <tr><td>vLLM pods (×4 defined, 0 running)</td><td><span class="port-tag">8000 http</span></td>
+          <td><span class="code-inline">muse-glimmer-llmd</span> (pvc, Muse-Glimmer-30B-NVFP4, <em>with</em> <span class="code-inline">router.scheduler</span>), <span class="code-inline">muse-glimmer-llmisvc-nightly</span>, <span class="code-inline">qwen38-27b-018</span> (oci modelcar-catalog), <span class="code-inline">redhataiqwen3-coder-next-nvfp4</span> (oci registry.redhat.io/rhai). 1 GPU each; three are annotated <span class="code-inline">serving.kserve.io/stop</span> and the fourth is <strong>Pending</strong> — the GPU machinepool was scaled back down, so nothing schedules.</td>
           <td class="img-tag">rhaii/vllm-cuda-rhel9 + modelcar</td></tr>
-        <tr><td>ExternalProvider openai-prod<br>+ Service / ServiceEntry / DestinationRule</td><td><span class="port-tag">→ 443</span></td>
-          <td><strong>New in 3.5.</strong> <span class="code-inline">inference.opendatahub.io</span> CRD. One per upstream: ExternalName Service to api.openai.com, ServiceEntry (MESH_EXTERNAL, DNS), DestinationRule (TLS SIMPLE). Shared by every ExternalModel on that provider.</td>
+        <tr><td>EPP (router-scheduler)<br>muse-glimmer-llmd</td><td><span class="port-tag">9002 grpc</span><span class="port-tag">9003 health</span><span class="port-tag">9090 metrics</span><span class="port-tag">5557 zmq</span></td>
+          <td>Endpoint picker behind <span class="code-inline">InferencePool/muse-glimmer-llmd-inference-pool</span>. Envoy calls it as a per-route ext_proc override; it returns the pod to use. <span class="code-inline">failureMode: FailOpen</span> — it dies, balancing goes cache-blind but traffic survives. Running today with zero endpoints behind it.</td>
+          <td class="img-tag">rhoai/odh-llm-d-router-endpoint-picker-rhel9</td></tr>
+        <tr><td>ExternalProvider ×2<br>openai-prod · anthropic-prod<br>+ Service / ServiceEntry / DestinationRule</td><td><span class="port-tag">→ 443</span></td>
+          <td><strong>New in 3.5.</strong> <span class="code-inline">inference.opendatahub.io</span> CRD. One per upstream: ExternalName Service to the provider host, ServiceEntry (MESH_EXTERNAL, DNS), DestinationRule (TLS SIMPLE). Shared by every ExternalModel on that provider. <span class="code-inline">anthropic-prod</span> is <span class="code-inline">apiFormat: messages</span>, which is what pulls the <span class="code-inline">api-translation</span> response plugin into the chain.</td>
           <td class="img-tag">— (CRD)</td></tr>
-        <tr><td>ExternalModel gpt-5.6-luna</td><td>—</td>
-          <td>Object name = <span class="code-inline">modelName</span> = <span class="code-inline">targetModel</span> = upstream id — the one naming rule. Owns <span class="code-inline">HTTPRoute/gpt-5.6-luna</span> (4 rules: path-based and header-based, each with and without the provider header). Body is forwarded to OpenAI untouched.</td>
+        <tr><td>ExternalModel ×2<br>gpt-5.6-luna · claude-sonnet-5</td><td>—</td>
+          <td>Object name = <span class="code-inline">modelName</span> = <span class="code-inline">targetModel</span> = upstream id — the one naming rule. Each owns a 4-rule HTTPRoute (path-based and header-based, with and without the provider header). Body is forwarded to the provider untouched on the request side.</td>
           <td class="img-tag">— (CRD)</td></tr>
         <tr><td>OGXServer lsd-genai-playground</td><td><span class="port-tag">8321</span></td>
           <td>GenAI Studio backend. Replaces the 3.4 LlamaStackDistribution (DSC <span class="code-inline">llamastackoperator: Removed</span>, <span class="code-inline">ogx: Managed</span>). <span class="code-inline">VLLM_TLS_VERIFY=false</span> for intra-namespace vLLM; pgvector for RAG.</td>
@@ -1024,11 +2074,11 @@ footer {
     <table class="components-table">
       <thead><tr><th style="width:220px">Component</th><th style="width:120px">Ports</th><th>Role</th><th style="width:300px">Image</th></tr></thead>
       <tbody>
-        <tr><td>Prometheus (MonitoringStack)</td><td><span class="port-tag">9090</span></td>
-          <td>Scrapes gateway / Limitador (Config-owned ServiceMonitor, 30s) / vLLM metrics with the TelemetryPolicy's labels. 5Gi PV, 90-day retention, Thanos sidecar.</td>
+        <tr><td>Prometheus (MonitoringStack)<br>COO 1.5.2</td><td><span class="port-tag">9090 https</span><span class="port-tag">10901 thanos</span></td>
+          <td>The metric store — and it scrapes <strong>no MaaS component directly</strong>. Its CR is <span class="code-inline">monitoring.rhobs/v1</span> with empty selectors and no namespace selector, so it sees only rhobs monitors in <span class="code-inline">redhat-ods-monitoring</span>: four active pools, of which <span class="code-inline">data-science-prometheus-monitor</span> (the collector's <span class="code-inline">:8889</span> re-export) is the entire MaaS feed. 1 replica, 5Gi PV, 90-day retention, Thanos sidecar, OTLP receiver enabled. Section 06 has the full path.</td>
           <td class="img-tag">cluster-observability-operator/prometheus-rhel9</td></tr>
-        <tr><td>OpenTelemetry Collector</td><td>—</td>
-          <td>Statefulset 2/2 + target allocator (0.152.1). Metrics and traces from RHOAI components → Prometheus / Tempo.</td>
+        <tr><td>OpenTelemetry Collector<br>+ TargetAllocator</td><td><span class="port-tag">8889 re-export</span><span class="port-tag">4317/4318 otlp</span><span class="port-tag">8888 self</span></td>
+          <td>Statefulset 2/2 plus the TargetAllocator. <strong>This is what actually scrapes MaaS.</strong> The allocator watches <span class="code-inline">monitoring.coreos.com</span> monitors cluster-wide filtered on <span class="code-inline">monitoring.opendatahub.io/scrape: true</span> (13 labelled, 4 with targets: gateway, Limitador, maas-controller, OGX) and hands them to the collectors; the collectors re-export on <span class="code-inline">:8889</span> for COO's Prometheus and push traces to Tempo over OTLP.</td>
           <td class="img-tag">rhosdt/opentelemetry-collector-rhel9</td></tr>
         <tr><td>Tempo (monolithic)</td><td>—</td>
           <td>Tracing backend, Tempo 2.10.5. PV storage, 2160h retention, 0.1 sample ratio from the DSCI.</td>
@@ -1046,16 +2096,16 @@ footer {
 </section>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
-<!-- 06 LLM-D & ENDPOINT PICKER -->
+<!-- 08 LLM-D & ENDPOINT PICKER -->
 <!-- ══════════════════════════════════════════════════════════════ -->
 
 <section class="diagram-section">
-  <div class="section-number">06 — The Brain of the Data Plane</div>
+  <div class="section-number">08 — The Brain of the Data Plane</div>
   <h2 class="section-title">llm-d &amp; the Endpoint Picker</h2>
   <p class="section-subtitle">llm-d is a Kubernetes-native distributed inference framework (Red Hat, Google, CoreWeave, IBM, NVIDIA — built on vLLM and the Gateway API Inference Extension). RHOAI 3.5 ships it as the engine behind every <span class="code-inline">LLMInferenceService</span>. Its core idea: <strong>the load balancer should understand LLMs.</strong></p>
 
   <div class="explanation-full" style="border-left: 4px solid var(--orange); background: var(--orange-light);">
-    <p style="margin:0"><strong>Provenance.</strong> This section was recorded on 2026-07-06 against <span class="code-inline">redhataillama-31-8b-instruct</span> (2 replicas, namespace <span class="code-inline">swongpai-maas</span>) when the H100 was up and the LLMInferenceService set <span class="code-inline">router.scheduler</span>. The three models defined today run <span class="code-inline">router.gateway + router.route</span> only — no EPP, no InferencePool, plain Service routing — and the GPU node is scaled down. The mechanics are unchanged on 3.5 and 3.5 adds <span class="code-inline">v3-5-0-*</span> presets for single/multi-node and prefill/decode; add <span class="code-inline">spec.router.scheduler: {}</span> to an LLMInferenceService to get the picture below.</p>
+    <p style="margin:0"><strong>Provenance.</strong> This section was recorded on 2026-07-06 against <span class="code-inline">redhataillama-31-8b-instruct</span> (2 replicas, namespace <span class="code-inline">swongpai-maas</span>) when the H100 was up and the LLMInferenceService set <span class="code-inline">router.scheduler</span>. That has since changed: <span class="code-inline">muse-glimmer-llmd</span> (created 2026-09-05) sets <span class="code-inline">router.scheduler: {}</span>, so an EPP Deployment, an <span class="code-inline">InferencePool</span> and the per-route ext_proc override described in section 05 are all live on this gateway today — the scheduler pod is Running, only the vLLM pod behind it is Pending while the GPU node is down. The other three LLMInferenceServices still run <span class="code-inline">router.gateway + router.route</span> only. The mechanics below are unchanged on 3.5, which also adds <span class="code-inline">v3-5-0-*</span> presets for single/multi-node and prefill/decode.</p>
   </div>
 
   <div class="explanation-full">
@@ -1742,32 +2792,40 @@ spec:
       small requests and disaggregated mode for large ones — the closest thing to "mixed" within one model.
     </p>
 
-    <h4 style="margin-top: 28px; font-size: 18px;">What Fits When the H100 Returns? (2 × 3g.40gb MIG slices)</h4>
-    <p>The machinepool is at zero today. After respin and MIG relabeling, the node exposes exactly 2 GPU slots:</p>
+    <h4 style="margin-top: 28px; font-size: 18px;">What Fits on the H100 When It Is Up? (1 × full 80GB, MIG disabled)</h4>
+    <p>
+      <strong>No GPU node right now</strong> — the <span class="code-inline">p5.4xlarge</span> that ran from
+      <strong>2026-09-05</strong> was scaled back down a day later, and <span class="code-inline">muse-glimmer-llmd</span> has been
+      <span class="code-inline">Pending</span> ever since. The numbers below are what that node offered and what it will offer again on
+      respin: it came up with <span class="code-inline">nvidia.com/mig.config=all-disabled</span>, <em>not</em> the planned
+      <span class="code-inline">all-3g.40gb</span>, so it advertised <strong>one</strong>
+      <span class="code-inline">nvidia.com/gpu</span> with the full 80GB behind it — not two 40GB slices. One scheduling slot,
+      one model, which is why three of the four LLMInferenceServices are Stopped.
+    </p>
     <table class="mode-fit">
       <thead>
         <tr><th style="width:300px">Configuration</th><th>Slot 1</th><th>Slot 2</th><th>Mode</th><th>Viable?</th></tr>
       </thead>
       <tbody>
         <tr>
-          <td>Historical July: Llama 8B × 2 unified</td>
-          <td>vLLM replica 1</td><td>vLLM replica 2</td><td>Unified</td>
-          <td><span class="yes">✓ Fit verified in July; not running today</span></td>
+          <td><strong>On respin:</strong> muse-glimmer 30B NVFP4 × 1 unified</td>
+          <td>vLLM replica 1 (full 80GB)</td><td>—</td><td>Unified</td>
+          <td><span class="yes">✓ Measured 2026-09-05 — 22.2 GiB weights + 46.45 GiB KV cache = 2.63M tokens, 20.1× concurrency at 131k ctx</span></td>
         </tr>
         <tr>
-          <td>Llama 8B disaggregated</td>
-          <td>Prefill pod</td><td>Decode pod</td><td>P/D</td>
-          <td><span class="maybe">⚠ Works, but no redundancy and no RDMA benefit (same node)</span></td>
+          <td>Historical July: Llama 8B × 2 unified</td>
+          <td>vLLM replica 1</td><td colspan="1">no second slot</td><td>Unified</td>
+          <td><span class="no">✗ Needs 2 slots — re-enable MIG first</span></td>
+        </tr>
+        <tr>
+          <td>Any model disaggregated (P/D)</td>
+          <td>Prefill pod</td><td>Decode pod — nowhere to land</td><td>P/D</td>
+          <td><span class="no">✗ Needs ≥ 2 GPUs</span></td>
         </tr>
         <tr>
           <td>Two different models unified</td>
-          <td>Model A × 1</td><td>Model B × 1</td><td>Mixed unified</td>
-          <td><span class="yes">✓ Both ≤ 40GB VRAM each</span></td>
-        </tr>
-        <tr>
-          <td>One model unified + one disaggregated</td>
-          <td colspan="2">Not enough slots — disaggregation needs ≥ 2 GPUs for one model</td><td>—</td>
-          <td><span class="no">✗ Need 3+ GPUs</span></td>
+          <td>Model A × 1</td><td>Model B × 1 — Pending</td><td>Mixed unified</td>
+          <td><span class="no">✗ One slot; second pod stays unschedulable</span></td>
         </tr>
         <tr>
           <td>Any multi-node / expert mode</td>
@@ -1777,9 +2835,18 @@ spec:
       </tbody>
     </table>
     <p style="margin-top: 16px;">
-      <strong>Practical recommendation for this cluster:</strong> With only two slices after respin, use unified serving unless a measured
-      workload justifies spending both slices on one disaggregated model. Two one-GPU models can coexist as independent
-      LLMInferenceServices behind the same Gateway. Add <span class="code-inline">router.scheduler</span> only when EPP scheduling is needed.
+      <strong>The one lever: MIG on or off.</strong> The GPU Operator (26.3.3) still runs
+      <span class="code-inline">mig.strategy: single</span> and the node is <span class="code-inline">mig.capable=true</span>, so relabelling
+      <span class="code-inline">nvidia.com/mig.config=all-3g.40gb</span> trades the single 80GB slot for two isolated 3g.40gb slots.
+      Worth it only to co-schedule two models, and the price is steep: muse-glimmer's 22.2 GiB of weights do fit a 40GB slice,
+      but the KV-cache budget collapses from 46.45 GiB to roughly a third of that, taking concurrency at 131k context down with it.
+      Leave MIG disabled while one large model owns the node.
+      The label is per node and does not survive machinepool replacement — re-apply it after every respin.
+    </p>
+    <p style="margin-top: 12px;">
+      <strong>Practical recommendation for this cluster:</strong> stay on unified serving. Add
+      <span class="code-inline">router.scheduler</span> only when there is more than one replica for EPP to pick between —
+      with one GPU there is nothing to schedule across.
     </p>
   </div>
 
@@ -1790,7 +2857,7 @@ spec:
 <!-- ══════════════════════════════════════════════════════════════ -->
 
 <section class="explanation">
-  <div class="section-number">07 — Deep Dive</div>
+  <div class="section-number">09 — Deep Dive</div>
   <h2 class="section-title">How It Works</h2>
   <p class="section-subtitle">The mechanics behind the diagrams — with the actual 3.5 configuration from the live cluster, collapsible below each explanation.</p>
 
@@ -1850,25 +2917,51 @@ rules:
 #   to /v1/chat/completions by ipp's api-translation stage, not by the route.</pre>
     </details>
     <details class="yaml-block">
-      <summary>HTTPRoute muse-glimmer-llmisvc-nightly-kserve-route — internal, 10 rules<span class="src-badge">live cluster</span></summary>
+      <summary>HTTPRoute muse-glimmer-llmd-kserve-route — internal, 12 rules, EPP-backed<span class="src-badge">live cluster</span></summary>
       <pre>rules:
-# four OpenAI-style APIs × two path forms, each rewritten to the bare API path
-- matches: [{path: {type: PathPrefix, value: /swongpai-vllm/muse-glimmer-llmisvc-nightly/v1/chat/completions}}]
+# four OpenAI-style APIs × two path forms → the InferencePool, each rewritten to the bare API path
+- matches: [{path: {type: PathPrefix, value: /swongpai-vllm/muse-glimmer-llmd/v1/chat/completions}}]
   filters: [{type: URLRewrite, urlRewrite: {path: {type: ReplacePrefixMatch, replacePrefixMatch: /v1/chat/completions}}}]
-  backendRefs: [{kind: Service, name: muse-glimmer-llmisvc-nightly-kserve-workload-svc, port: 8000}]
-  timeouts: {request: 0s, backendRequest: 0s}          # streaming: no timeout
-# identical rules for /v1/completions, /v1/responses, /v1/messages …
-# and for the 3.5 catalog form:
-- matches: [{path: {type: PathPrefix, value: /publishers/swongpai-vllm/models/muse-glimmer-llmisvc-nightly/v1/chat/completions}}]
-  # … same rewrite / backend …
-# catch-all for both prefixes → / on the workload Service
-- matches: [{path: {type: PathPrefix, value: /swongpai-vllm/muse-glimmer-llmisvc-nightly}}]
+  backendRefs: [{group: inference.networking.x-k8s.io, kind: InferencePool,
+                 name: muse-glimmer-llmd-inference-pool, port: 8000}]
+# identical rules for /v1/completions, /v1/responses, /v1/messages, and for the 3.5 catalog form
+# /publishers/swongpai-vllm/models/muse-glimmer-llmd/v1/…
+
+# NEW on this route (the nightly one does not have it): body-based match, exact paths
+- matches:
+  - path:    {type: Exact, value: /v1/chat/completions}
+    headers: [{name: X-Gateway-Model-Name, type: Exact,
+               value: publishers/swongpai-vllm/models/muse-glimmer-llmd}]
+  # … same for /v1/completions, /v1/responses, /v1/messages, each with and without a trailing slash …
+  backendRefs: [{kind: InferencePool, name: muse-glimmer-llmd-inference-pool, port: 8000}]
+
+# catch-alls for both prefixes, and the header-only rule → the plain workload Service (no EPP)
+- matches: [{path: {type: PathPrefix, value: /swongpai-vllm/muse-glimmer-llmd}}]
   filters: [{type: URLRewrite, urlRewrite: {path: {type: ReplacePrefixMatch, replacePrefixMatch: /}}}]
-  backendRefs: [{kind: Service, name: muse-glimmer-llmisvc-nightly-kserve-workload-svc, port: 8000}]</pre>
+  backendRefs: [{kind: Service, name: muse-glimmer-llmd-kserve-workload-svc, port: 8000}]
+- matches: [{path: {type: PathPrefix, value: /}, headers: [{name: X-Gateway-Model-Name, type: Exact,
+             value: publishers/swongpai-vllm/models/muse-glimmer-llmd}]}]
+  backendRefs: [{kind: Service, name: muse-glimmer-llmd-kserve-workload-svc, port: 8000}]</pre>
     </details>
+    <div class="explanation-full" style="border-left: 4px solid var(--orange); background: var(--orange-light); margin: 20px 0;">
+      <p style="margin:0"><strong>Body-based routing for internal models: route shape depends on which LLMInferenceService generated it.</strong>
+      Tested on 2026-09-05 against <span class="code-inline">muse-glimmer-llmisvc-nightly</span>, whose route carries
+      <strong>path matches only</strong>: <span class="code-inline">POST /v1/chat/completions</span> with
+      <span class="code-inline">{"model": …}</span> returned <strong>404</strong> for all three plausible ids while the
+      path form returned <strong>200</strong>. The newer <span class="code-inline">muse-glimmer-llmd</span> route,
+      generated on 3.5 with <span class="code-inline">router.scheduler</span>, <em>does</em> carry
+      <span class="code-inline">X-Gateway-Model-Name</span> rules — but only for the catalog id
+      <span class="code-inline">publishers/swongpai-vllm/models/muse-glimmer-llmd</span>, which is also the
+      allow-map key. A bare <span class="code-inline">muse-glimmer-llmd</span> in the body still matches nothing.
+      Not re-tested end to end: the vLLM pod is Pending while the GPU node is down.
+      Note also that the header rule targets the plain workload Service, so a body-based call
+      <strong>skips the endpoint picker</strong> — see section 05.</p>
+    </div>
     <p>
-      No <span class="code-inline">InferencePool</span> appears here: the three current LLMInferenceServices set <span class="code-inline">router.gateway</span> + <span class="code-inline">router.route</span> only.
-      Section 06 describes what changes when <span class="code-inline">router.scheduler</span> is added.
+      One <span class="code-inline">InferencePool</span> exists on this gateway — <span class="code-inline">muse-glimmer-llmd</span> is the only
+      LLMInferenceService that sets <span class="code-inline">router.scheduler</span>; the other three are
+      <span class="code-inline">router.gateway</span> + <span class="code-inline">router.route</span> only.
+      Section 05 has the wiring, section 08 the scheduling logic behind it.
     </p>
   </div>
 
@@ -1910,13 +3003,17 @@ defaults:
         cache: {ttl: 60}
         opa:
           rego: |
-            model_access := {
-              "gpt-5.6-luna":                                                 {"groups": ["cluster-admins"]},
-              "swongpai-vllm/gpt-5.6-luna":                                   {"groups": ["cluster-admins"]},
-              "swongpai-vllm/muse-glimmer-llmisvc-nightly":                   {"groups": ["cluster-admins"]},
-              "publishers/swongpai-vllm/models/muse-glimmer-llmisvc-nightly": {"groups": ["cluster-admins"]},
-              "swongpai-vllm/redhataiqwen3-coder-next-nvfp4":                 {"groups": ["cluster-admins"]},
-            }
+            model_access := {                                   # 9 keys live on 2026-09-17
+              "claude-sonnet-5":                                             {"groups": ["cluster-admins", "rhods-admins"]},
+              "swongpai-vllm/claude-sonnet-5":                               {"groups": ["cluster-admins", "rhods-admins"]},
+              "gpt-5.6-luna":                                                {"groups": ["cluster-admins"]},
+              "swongpai-vllm/gpt-5.6-luna":                                  {"groups": ["cluster-admins"]},
+              "swongpai-vllm/muse-glimmer-llmd":                             {"groups": ["cluster-admins"]},
+              "publishers/swongpai-vllm/models/muse-glimmer-llmd":           {"groups": ["cluster-admins"]},
+              "swongpai-vllm/muse-glimmer-llmisvc-nightly":                  {"groups": ["cluster-admins"]},
+              "publishers/swongpai-vllm/models/muse-glimmer-llmisvc-nightly":{"groups": ["cluster-admins"]},
+              "swongpai-vllm/redhataiqwen3-coder-next-nvfp4":                {"groups": ["cluster-admins"]},
+            }                                                   # note: a Stopped model keeps its keys
             path_parts := [p | p := split(request_path, "/")[_]; p != ""]
             path_model_identity := sprintf("%s/%s", [path_parts[0], path_parts[1]]) {
               count(path_parts) >= 2; path_parts[0] != "v1"; path_parts[0] != "maas-api"
@@ -1960,14 +3057,14 @@ spec:
   - name: https
     port: 443
     protocol: HTTPS
-    hostname: swongpai-maas.apps.rosa.rsaijp.na2y.p3.openshiftapps.com
+    hostname: maas.apps.&lt;cluster-domain&gt;
     tls:
       mode: Terminate
       certificateRefs: [{kind: Secret, name: maas-gateway-tls}]
     allowedRoutes:
       namespaces: {from: All}
-# status: Programmed=True · attachedRoutes: 3
-# address: a2d5644ffe0094200ac4bb0f2ec8f0b2-…elb.amazonaws.com (AWS NLB)</pre>
+# status: Programmed=True · attachedRoutes: 4
+# address: &lt;nlb&gt;.…elb.amazonaws.com (AWS NLB)</pre>
     </details>
     <details class="yaml-block">
       <summary>EnvoyFilter payload-processing — how the two ext_proc filters land<span class="src-badge">live cluster</span></summary>
@@ -2006,34 +3103,47 @@ configPatches:
 
   <!-- GPU -->
   <div class="explanation-full">
-    <h3>GPU Layout — NVIDIA H100 MIG (node scaled down)</h3>
+    <h3>GPU Layout — no GPU node today (scaled down, deliberate)</h3>
     <p>
-      The H100 machinepool is at zero right now to save cost; only two <span class="code-inline">c5.4xlarge</span> workers remain. What persists is the plan:
-      the GPU Operator (26.3.3, <span class="code-inline">mig.strategy: single</span>) and NFD stay installed, and on respin the node gets
-      <span class="code-inline">nvidia.com/mig.config=all-3g.40gb</span> — two isolated <strong>3g.40gb</strong> slices that surface as two plain <span class="code-inline">nvidia.com/gpu</span>.
-      Each LLMInferenceService asks for one. The label is per node and must be re-applied after any machinepool replacement.
+      The H100 machinepool was respun on <strong>2026-09-05</strong>, ran
+      <span class="code-inline">muse-glimmer-llmd</span>, and was <strong>scaled back down to save cost</strong> a day
+      later — the vLLM pod has been <span class="code-inline">Pending</span> for 11 days as of 2026-09-17. The cluster is
+      two <span class="code-inline">c5.4xlarge</span> workers, zero <span class="code-inline">nvidia.com/gpu</span>
+      allocatable. This is a cost decision, not a fault; the pool is spun back up on demand.
     </p>
-    <div style="display:flex; justify-content:center; margin:24px 0;">
-      <div class="gpu-outer">
-        <div class="gpu-outer-label">NVIDIA H100 80GB HBM3 — mig.config=all-3g.40gb — machinepool scaled to 0 (2026-09-04)</div>
-        <div class="gpu-diagram">
-          <div class="gpu-card">
-            <div class="gpu-label">Slice 0 — 3g.40gb</div>
-            <div class="gpu-detail">candidate: muse-glimmer-llmisvc-nightly</div>
-            <div class="gpu-detail">Muse-Glimmer-30B-NVFP4 · pvc</div>
-          </div>
-          <div class="gpu-card">
-            <div class="gpu-label">Slice 1 — 3g.40gb</div>
-            <div class="gpu-detail">candidate: redhataiqwen3-coder-next-nvfp4</div>
-            <div class="gpu-detail">or qwen38-27b-018 · oci modelcar</div>
-          </div>
-        </div>
-      </div>
-    </div>
     <p>
-      Three 1-GPU models are defined for two slices — on respin, two run and one stays <span class="code-inline">serving.kserve.io/stop: "true"</span>.
-      Until then every LLMInferenceService is <span class="code-inline">Stopped</span> / <span class="code-inline">MinimumReplicasUnavailable</span>, their MaaSModelRefs <span class="code-inline">Pending</span>,
-      and <span class="code-inline">sa-premium</span> reports <span class="code-inline">Degraded</span>. None of that is a fault.
+      When it was up it came back with <span class="code-inline">nvidia.com/mig.config=all-disabled</span> rather than the
+      planned <span class="code-inline">all-3g.40gb</span>: one <span class="code-inline">p5.4xlarge</span> advertising
+      <strong>one</strong> GPU backed by the whole 80 GB, not two 40 GB slices. The GPU Operator (26.3.3) still runs
+      <span class="code-inline">mig.strategy: single</span>, so the split is one relabel away — but the label is per node
+      and <strong>does not survive machinepool replacement</strong>, so it has to be reapplied on every respin.
+    </p>
+    <p>
+      What the missing GPU does to the rest of the stack — all expected, none of it worth fixing:
+    </p>
+    <table class="components-table">
+      <thead><tr><th style="width:320px">Resource</th><th style="width:170px">State</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><span class="code-inline">muse-glimmer-llmd</span></td><td>MinimumReplicasUnavailable</td>
+          <td>Not stopped — it wants to run. Pod Pending, no node with <span class="code-inline">nvidia.com/gpu</span>. Its HTTPRoute, InferencePool and EPP all stay in place, so the route table on the gateway is unchanged; only the workload Service has zero endpoints.</td></tr>
+        <tr><td><span class="code-inline">muse-glimmer-llmisvc-nightly</span> · <span class="code-inline">qwen38-27b-018</span> · <span class="code-inline">redhataiqwen3-coder-next-nvfp4</span></td><td>Stopped ×3</td>
+          <td>Annotated <span class="code-inline">serving.kserve.io/stop: "true"</span>. A Stopped LLMISvc renders no HTTPRoute, which is what makes its MaaSModelRef Pending.</td></tr>
+        <tr><td><span class="code-inline">MaaSModelRef/muse-glimmer-llmd</span></td><td>Unhealthy</td>
+          <td><span class="code-inline">GovernancePaired</span> + <span class="code-inline">RuntimeHealthFailure</span> / <span class="code-inline">BackendNotReady</span>. Governance is fine; the runtime is not.</td></tr>
+        <tr><td><span class="code-inline">MaaSModelRef</span> × 3 internal</td><td>Pending</td><td>No HTTPRoute while the LLMISvc is Stopped.</td></tr>
+        <tr><td><span class="code-inline">MaaSModelRef/gpt-5.6-luna</span> · <span class="code-inline">/claude-sonnet-5</span></td><td><strong>Ready</strong></td>
+          <td>External models do not care about the GPU. Both routes are live and both TRLPs are Enforced.</td></tr>
+        <tr><td><span class="code-inline">MaaSSubscription/sa-premium</span></td><td>Degraded</td>
+          <td><span class="code-inline">PartialFailure</span> — "2 of 5 model references are invalid or unavailable": <span class="code-inline">redhataiqwen3-coder-next-nvfp4</span> and <span class="code-inline">muse-glimmer-llmisvc-nightly</span> are <span class="code-inline">NotFound</span> (no route). The other three, including <span class="code-inline">muse-glimmer-llmd</span>, are <span class="code-inline">Valid</span> — a route is enough, a running pod is not required.</td></tr>
+        <tr><td>CNPG <span class="code-inline">postgres-ha-app</span> (maas-postgres)</td><td>3 instances, 2 ready</td>
+          <td>Unrelated to the GPU: instance 2's PV is in AZ 1c and both remaining workers are in 1a, so it stays Pending. Primary + one replica is still HA.</td></tr>
+      </tbody>
+    </table>
+    <p>
+      On the next respin, reapply the MIG label and expect <span class="code-inline">muse-glimmer-llmd</span> to schedule on
+      its own — nothing else needs touching. Cold start was ≈ 6 min last time: 181 s weight load
+      (21.78 GiB checkpoint against an 8 Gi pod memory limit, so no prefetch) + 89 s engine init, of which 57 s is
+      <span class="code-inline">torch.compile</span>.
     </p>
   </div>
 
@@ -2049,7 +3159,8 @@ configPatches:
         <tr><td>Limitador</td><td>Rate-limit checks fail; requests may pass unlimited or be denied depending on shim failure mode. Token accounting stops.</td></tr>
         <tr><td>payload-processing (ipp)</td><td><strong>All gateway traffic fails</strong> — <span class="code-inline">failure_mode_allow: false</span> and on 3.5 the filter is genuinely in the chain (it was not on 3.4.x). Deliberate: no silent loss of token accounting or provider-key injection. This is the live single point of failure to watch.</td></tr>
         <tr><td>api.openai.com / provider key</td><td>External model only. Bad or missing Secret → <span class="code-inline">500 credentials not found</span>; upstream outage → 5xx passed through. Internal models unaffected.</td></tr>
-        <tr><td>One vLLM pod</td><td>Its route's Service loses the endpoint; with one replica the model is down until rescheduled. (With an EPP, traffic would fail over across replicas.)</td></tr>
+        <tr><td>One vLLM pod</td><td>Its route's Service loses the endpoint; with one replica the model is down until rescheduled — the state the cluster is in right now. With more than one replica the EPP fails over across them.</td></tr>
+        <tr><td>EPP (router-scheduler)</td><td><span class="code-inline">failureMode: FailOpen</span> — Envoy's per-route ext_proc call fails and the request still goes to the InferencePool, just without KV-cache-aware placement. Degraded routing, not an outage.</td></tr>
         <tr><td>maas-api</td><td>No new keys, no key validation → API-key auth fails as caches expire. Kubernetes-token access keeps working (TokenReview does not touch maas-api).</td></tr>
         <tr><td>PostgreSQL (all instances)</td><td>maas-api loses state — key ops fail. Today 2 of 3 CNPG instances are up (AZ pinning); primary + one replica is still HA.</td></tr>
         <tr><td>maas-controller / llmisvc-controller</td><td>Data plane unaffected. CR changes stop reconciling — existing allow-map, TRLPs and pods keep running as-is.</td></tr>
@@ -2061,8 +3172,8 @@ configPatches:
 </section>
 
 <footer>
-  <span>Generated from live cluster state · rsaijp · 2026-09-04 (pass 4 — RHOAI 3.5 baseline; llm-d section retained from 2026-07-06)</span>
-  <span>OpenShift 4.20.32 · RHOAI 3.5.0 · RHCL 1.4.2 · COO 1.5.2 · CNPG 1.30.0 · GPU Operator 26.3.3 · Gateway API (built-in istiod)</span>
+  <span>Generated from live cluster state · &lt;cluster&gt; · 2026-09-17 (pass 5 — gateway wiring section added, phases re-read live; llm-d internals retained from 2026-07-06)</span>
+  <span>OpenShift 4.20.32 · RHOAI 3.5.0 · RHCL 1.4.2 · COO 1.5.2 · CNPG 1.30.0 · GPU Operator 26.3.3 (no GPU node) · Gateway API (built-in istiod)</span>
 </footer>
 
 
